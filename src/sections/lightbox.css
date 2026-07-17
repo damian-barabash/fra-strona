@@ -1,0 +1,44 @@
+/* fullscreen photo viewer (galleries across the site) */
+.lbx {
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8, 9, 11, .93);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  padding: clamp(16px, 4vw, 56px);
+  cursor: zoom-out;
+}
+/* flex parent has a definite height (the viewport), so max-height:100% actually constrains the
+   image — with the old grid track it was auto-sized and tall photos overflowed top & bottom */
+.lbx__img {
+  max-width: 100%; max-height: 100%; width: auto; height: auto; min-height: 0;
+  object-fit: contain; cursor: default;
+  box-shadow: 0 40px 100px rgba(0,0,0,.6);
+}
+.lbx__x {
+  position: absolute; top: 16px; right: 20px; z-index: 2;
+  width: 46px; height: 46px; display: grid; place-items: center;
+  font-size: 30px; line-height: 1; color: #fff; background: rgba(255,255,255,.08);
+  transition: background .2s, transform .2s;
+}
+.lbx__x:hover { background: var(--red); transform: rotate(90deg); }
+.lbx__nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 54px; height: 54px; display: grid; place-items: center;
+  font-size: 26px; color: #fff; background: rgba(255,255,255,.08);
+  transition: background .2s, transform .2s;
+}
+.lbx__nav--prev { left: clamp(8px, 2vw, 26px); }
+.lbx__nav--next { right: clamp(8px, 2vw, 26px); }
+.lbx__nav:hover { background: var(--red); }
+.lbx__count {
+  position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+  font: 700 11px/1 var(--font-display); letter-spacing: .16em; color: rgba(255,255,255,.7);
+  background: rgba(0,0,0,.4); padding: 8px 12px;
+}
+/* any element that opens the viewer */
+.zoomable { cursor: zoom-in; }
+
+@media (max-width: 700px) {
+  .lbx__nav { width: 44px; height: 44px; }
+  .lbx { padding: 12px; }
+}

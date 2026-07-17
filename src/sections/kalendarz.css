@@ -1,0 +1,266 @@
+/* ============ KALENDARZ (/kalendarz) ============
+   Pit-wall style month board driven by the CMS "Terminy" table.
+   Desktop: big grid + side rail with the selected training.
+   Mobile: the board fills the screen, days carry marker dots, tap → bottom sheet. */
+
+/* ---------- header ---------- */
+.kal-head {
+  position: relative; overflow: hidden;
+  background: var(--ink); color: #fff;
+  padding: clamp(104px, 11vw, 140px) 0 clamp(38px, 5vw, 62px);
+}
+.kal-head__flag {
+  position: absolute; inset: 0; pointer-events: none;
+  background: url(/assets/ui/menu_back.webp) no-repeat right -8% top -35%;
+  background-size: clamp(420px, 52%, 860px) auto;
+  opacity: .13;
+}
+.kal-head__inner { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr auto; gap: clamp(24px, 3vw, 48px); align-items: end; }
+.kal-head__title { margin: 12px 0 14px; }
+.kal-head__sub { color: rgba(255,255,255,.62); max-width: 560px; }
+
+.kal-stats { display: flex; gap: clamp(18px, 2.2vw, 34px); }
+.kal-stat { border-left: 2px solid var(--red); padding-left: 14px; }
+.kal-stat__v { display: block; font: 800 clamp(24px, 2.4vw, 38px)/1 var(--font-display); }
+.kal-stat__v--sm { font-size: clamp(14px, 1.15vw, 18px); line-height: 1.25; padding-top: 4px; max-width: 150px; }
+.kal-stat__l { display: block; margin-top: 7px; font: 700 10px/1 var(--font-display); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.45); }
+
+/* ---------- layout ---------- */
+.kal-wrap { padding-block: clamp(34px, 4vw, 60px) clamp(50px, 6vw, 90px); }
+.kal-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 26vw, 400px); gap: clamp(18px, 2.2vw, 32px); align-items: start; }
+.kal-main { min-width: 0; }
+
+/* ---------- toolbar ---------- */
+.kal-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.kal-bar__month { display: flex; align-items: center; gap: 12px; }
+.kal-bar__label { font: 800 clamp(19px, 2vw, 30px)/1 var(--font-display); text-transform: uppercase; letter-spacing: -.01em; min-width: clamp(180px, 15vw, 240px); }
+.kal-legend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kal-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: 700 11px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase;
+  padding: 10px 12px; border: 1.5px solid var(--line); background: #fff; color: var(--text);
+  transition: background .2s, color .2s, border-color .2s, transform .18s;
+}
+.kal-chip i { width: 9px; height: 9px; background: var(--tc); flex: 0 0 auto; }
+.kal-chip:hover { transform: translateY(-2px); border-color: var(--tc); }
+.kal-chip.on { background: var(--tc); border-color: var(--tc); color: #fff; }
+.kal-chip.on i { background: #fff; }
+.kal-bar__next { font: 700 11px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--red); padding: 10px 2px; }
+.kal-bar__next:hover { text-decoration: underline; }
+
+/* ---------- special events (Laponia seasons + trips) ---------- */
+.kal-specials { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.kal-special {
+  --sc: #5ec8f0;
+  display: flex; align-items: center; gap: 14px; text-align: left; width: 100%;
+  padding: 12px 16px; color: #fff; cursor: pointer;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--sc) 26%, var(--ink)) 0%, var(--ink) 78%);
+  border: 1px solid color-mix(in srgb, var(--sc) 45%, transparent);
+  border-left: 4px solid var(--sc);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.kal-special:hover { transform: translateX(3px); box-shadow: 0 14px 30px rgba(0,0,0,.4); background: linear-gradient(100deg, color-mix(in srgb, var(--sc) 38%, var(--ink)) 0%, var(--ink) 78%); }
+.kal-special.is-past { opacity: .72; }
+.kal-special__mark { flex: 0 0 auto; width: 40px; height: 40px; display: grid; place-items: center; font-size: 20px; color: var(--sc); background: color-mix(in srgb, var(--sc) 18%, transparent); }
+.kal-special__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.kal-special__kind { font: 800 9px/1 var(--font-display); letter-spacing: .2em; text-transform: uppercase; color: var(--sc); }
+.kal-special__ttl { font: 800 clamp(15px,1.5vw,19px)/1.1 var(--font-display); text-transform: uppercase; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kal-special__dates { font: 600 12px/1.3 var(--font-body); color: rgba(255,255,255,.62); }
+.kal-special__go { flex: 0 0 auto; font: 800 10px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: #fff; }
+
+/* ---------- board ---------- */
+.kal-board { position: relative; background: var(--ink); color: #fff; padding: 12px; overflow: hidden; }
+.kal-board::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: url(/assets/ui/menu_back.webp) no-repeat right -4% bottom -20%;
+  background-size: 340px auto; opacity: .07;
+}
+.kal-board::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--red), transparent 62%); }
+.kal-board__wd { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 10px 0 12px; }
+.kal-board__wd span { font: 700 10px/1 var(--font-display); letter-spacing: .18em; color: rgba(255,255,255,.42); padding-left: 8px; }
+.kal-board__grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+
+.kal-cell {
+  position: relative; display: flex; flex-direction: column;
+  min-height: clamp(78px, 7vw, 104px); padding: 7px 8px;
+  background: #171717; border: 1px solid rgba(255,255,255,.06); overflow: hidden;
+  transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
+  animation: kalCellIn .5s both cubic-bezier(.16,.8,.3,1);
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+@keyframes kalCellIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+.kal-cell.is-out { opacity: .26; }
+.kal-cell.is-past:not(.is-out) {
+  opacity: .5;
+  background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255,255,255,.045) 6px 7px);
+}
+.kal-cell.has { cursor: pointer; background: #1c1c1c; }
+.kal-cell.has:hover { background: #232323; transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.35); }
+.kal-cell.is-sel { background: #262626; box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+.kal-cell.is-today { box-shadow: inset 0 0 0 2px var(--red); }
+.kal-cell.is-today.is-sel { box-shadow: inset 0 0 0 2px var(--red); }
+
+/* a day covered by a Laponia season / a trip: soft tint + a coloured band across the top,
+   so consecutive days read as one multi-day range */
+.kal-cell.in-band { background: color-mix(in srgb, var(--sc) 13%, #171717); border-color: color-mix(in srgb, var(--sc) 34%, rgba(255,255,255,.06)); padding-top: 26px; cursor: pointer; }
+.kal-cell.in-band:hover { background: color-mix(in srgb, var(--sc) 20%, #171717); transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.35); }
+.kal-cell__band {
+  position: absolute; left: -1px; right: -1px; top: -1px; height: 20px; z-index: 1;
+  background: color-mix(in srgb, var(--sc) 92%, #000);
+  display: flex; align-items: center;
+}
+.kal-cell__band.is-start { left: 3px; border-top-left-radius: 3px; border-bottom-left-radius: 3px; }
+.kal-cell__band.is-end { right: 3px; border-top-right-radius: 3px; border-bottom-right-radius: 3px; }
+.kal-cell__band b {
+  font: 800 9.5px/1 var(--font-display); letter-spacing: .03em; text-transform: uppercase; color: #0a0d14;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 7px;
+}
+
+.kal-cell__n { font: 800 15px/1 var(--font-display); color: rgba(255,255,255,.5); }
+.kal-cell.has .kal-cell__n { color: #fff; }
+.kal-cell__today {
+  position: absolute; top: 8px; right: 8px;
+  font: 800 9px/1 var(--font-display); letter-spacing: .14em; color: var(--red);
+}
+.kal-cell__events { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+
+.kal-pill {
+  display: grid; gap: 1px; text-align: left; width: 100%;
+  padding: 5px 7px; border-left: 3px solid var(--tc); background: rgba(255,255,255,.07);
+  transition: background .18s ease, transform .18s ease;
+}
+.kal-pill:hover, .kal-pill.on { background: var(--tc); transform: translateX(2px); }
+.kal-pill__time { font: 800 10px/1.2 var(--font-display); letter-spacing: .05em; color: var(--tc); }
+.kal-pill:hover .kal-pill__time, .kal-pill.on .kal-pill__time { color: #fff; }
+.kal-pill__ttl {
+  font: 700 10px/1.2 var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: #fff;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.kal-pill__short { display: none; font: 800 8.5px/1.2 var(--font-display); letter-spacing: .04em; color: #fff; }
+.kal-pill__loc { font: 500 9.5px/1.2 var(--font-body); color: rgba(255,255,255,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kal-pill:hover .kal-pill__loc, .kal-pill.on .kal-pill__loc { color: rgba(255,255,255,.85); }
+
+.kal-board__empty {
+  position: relative; z-index: 1; margin-top: 10px; padding: 26px 18px;
+  display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap;
+  background: #171717; border: 1px dashed rgba(255,255,255,.16);
+  font: 500 14px/1.5 var(--font-body); color: rgba(255,255,255,.6); text-align: center;
+}
+.kal-board__empty .btn--ghost { color: #fff; border-color: rgba(255,255,255,.3); }
+.kal-board__empty .btn--ghost:hover { border-color: #fff; }
+
+/* ---------- side rail card ---------- */
+.kal-rail { min-width: 0; }
+.kal-card { background: #fff; border: 1px solid var(--line); overflow: hidden; box-shadow: 0 18px 44px rgba(0,0,0,.08); }
+.kal-card--empty { padding: 30px; text-align: center; color: var(--muted); font-size: 14px; }
+.kal-card__media { position: relative; height: clamp(150px, 15vw, 190px); background: #0d0d0d; overflow: hidden; }
+.kal-card__media img { width: 100%; height: 100%; object-fit: cover; }
+.kal-card__flag {
+  position: absolute; inset: 0;
+  background: url(/assets/ui/menu_back.webp) center/cover no-repeat; opacity: .3;
+}
+.kal-card__media::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 55%, transparent), rgba(13,13,13,.35) 70%);
+}
+.kal-card__badge {
+  position: absolute; left: 0; bottom: 0; z-index: 2;
+  background: var(--tc); color: #fff;
+  font: 800 11px/1 var(--font-display); letter-spacing: .14em; padding: 9px 13px;
+}
+.kal-card__body { padding: clamp(18px, 1.6vw, 24px); }
+.kal-card__wd { font: 700 10px/1 var(--font-display); letter-spacing: .18em; color: var(--tc); }
+.kal-card__ttl { margin: 10px 0 6px; font-size: clamp(19px, 1.5vw, 25px); text-transform: uppercase; line-height: 1.05; }
+.kal-card__date { font: 700 14px/1 var(--font-display); color: var(--muted); }
+.kal-card__facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; margin: 18px 0 0; padding-top: 16px; border-top: 1px solid var(--line); }
+.kal-card__facts dt { font: 700 9.5px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-2); }
+.kal-card__facts dd { margin: 6px 0 0; font: 800 14px/1.2 var(--font-display); color: var(--text); }
+.kal-card__desc { margin-top: 16px; font-size: 13.5px; line-height: 1.65; color: var(--muted); }
+.kal-card__btn { width: 100%; justify-content: center; margin-top: 18px; }
+.kal-card__hint { margin-top: 10px; text-align: center; font-size: 11.5px; line-height: 1.4; color: var(--muted-2); }
+
+/* ---------- upcoming list (dark) ---------- */
+.kal-list__head { position: relative; z-index: 1; margin-bottom: clamp(24px, 3vw, 40px); }
+.kal-list__head .h-section { margin-top: 10px; }
+.kal-list__empty { position: relative; z-index: 1; color: rgba(255,255,255,.55); font-size: 15px; }
+.kal-rows { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; }
+.kal-row {
+  display: grid; grid-template-columns: 74px minmax(0, 1fr) auto auto; align-items: center; gap: clamp(14px, 1.6vw, 24px);
+  background: #171717; border-left: 4px solid var(--tc); padding: 14px 18px;
+  transition: background .22s ease, transform .22s ease;
+}
+.kal-row:hover { background: #1f1f1f; transform: translateX(4px); }
+.kal-row__date { text-align: center; background: #0d0d0d; padding: 9px 6px; }
+.kal-row__day { display: block; font: 800 24px/1 var(--font-display); color: #fff; }
+.kal-row__mo { display: block; margin-top: 4px; font: 700 10px/1 var(--font-display); letter-spacing: .14em; color: var(--tc); }
+.kal-row__badge { font: 800 10px/1 var(--font-display); letter-spacing: .14em; color: var(--tc); }
+.kal-row__ttl { display: block; margin: 5px 0 5px; font: 800 clamp(15px, 1.3vw, 19px)/1.1 var(--font-display); text-transform: uppercase; color: #fff; }
+.kal-row__meta { font-size: 12.5px; color: rgba(255,255,255,.55); }
+.kal-row__pz { margin-left: 8px; padding: 2px 6px; background: var(--red); color: #fff; font: 800 9px/1.4 var(--font-display); letter-spacing: .1em; }
+.kal-row__price { text-align: right; white-space: nowrap; }
+.kal-row__price span { display: block; font: 700 9.5px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+.kal-row__price b { display: block; margin-top: 5px; font: 800 18px/1 var(--font-display); color: #fff; }
+
+/* ---------- CTA ---------- */
+.kal-cta__inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(24px, 3vw, 48px); align-items: center; }
+.kal-cta__title { margin: 12px 0 12px; }
+.kal-cta__btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- mobile sheet ---------- */
+.kal-sheet { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-end; background: rgba(0,0,0,.62); }
+.kal-sheet__box { width: 100%; max-height: 88svh; display: flex; flex-direction: column; background: var(--paper); }
+.kal-sheet__grab { width: 46px; height: 4px; margin: 10px auto 2px; background: rgba(0,0,0,.22); }
+.kal-sheet__head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 18px 12px; border-bottom: 1px solid var(--line);
+  font: 800 14px/1 var(--font-display); text-transform: uppercase;
+}
+.kal-sheet__x { font-size: 26px; line-height: 1; color: var(--text); padding: 0 4px; }
+.kal-sheet__body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.kal-card--sheet { box-shadow: none; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .kal-cell { min-height: 92px; }
+  .kal-card__facts { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  .kal-head__inner { grid-template-columns: 1fr; align-items: start; }
+  .kal-stats { flex-wrap: wrap; gap: 18px; }
+
+  .kal-grid { grid-template-columns: 1fr; }
+  .kal-rail { display: none; }
+
+  /* the board fills (nearly) the whole screen */
+  .kal-board { display: flex; flex-direction: column; min-height: calc(100svh - 300px); padding: 8px; }
+  .kal-board__wd { gap: 4px; padding: 6px 0 8px; }
+  .kal-board__wd span { padding-left: 0; text-align: center; font-size: 9.5px; letter-spacing: .1em; }
+  .kal-board__grid { flex: 1; gap: 4px; grid-auto-rows: minmax(0, 1fr); }
+  .kal-cell { min-height: 54px; padding: 5px 4px; overflow: hidden; }
+  .kal-cell__n { font-size: 13px; }
+  .kal-cell__today { top: 3px; right: 3px; font-size: 7px; letter-spacing: .04em; }
+  /* keep the pills (so a training is readable at a glance), just compact them */
+  .kal-cell__events { margin-top: 5px; gap: 3px; }
+  .kal-pill { padding: 3px 4px; border-left-width: 2px; }
+  .kal-pill:hover, .kal-pill.on { transform: none; }
+  .kal-pill__time { font-size: 8.5px; }
+  .kal-pill__ttl, .kal-pill__loc { display: none; }
+  .kal-pill__short { display: block; }
+  .kal-bar { gap: 10px; }
+  .kal-bar__label { min-width: 0; flex: 1; text-align: center; }
+  .kal-bar__month { width: 100%; justify-content: space-between; }
+  .kal-bar__month .navbtn { width: 46px; height: 46px; }
+  .kal-legend { width: 100%; justify-content: space-between; }
+}
+
+@media (max-width: 700px) {
+  .kal-row { grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 12px 14px; }
+  .kal-row__day { font-size: 20px; }
+  .kal-row__price { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; text-align: left; }
+  .kal-row__price b { margin-top: 0; font-size: 16px; }
+  .kal-row__btn { grid-column: 1 / -1; justify-content: center; }
+  .kal-row:hover { transform: none; }
+  .kal-cta__inner { grid-template-columns: 1fr; }
+  .kal-chip { padding: 9px 10px; font-size: 10px; letter-spacing: .08em; }
+}

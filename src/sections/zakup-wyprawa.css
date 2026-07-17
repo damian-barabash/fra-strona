@@ -1,0 +1,72 @@
+/* ============ /zakup-wyprawa — buying a trip package (accent colour from the trip) ============ */
+.zw-wrap { padding-block: clamp(96px, 12vh, 150px) clamp(50px, 7vw, 90px); background: var(--ivory); }
+.zw-head {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px;
+  background: var(--night); color: #fff; padding: clamp(24px, 3vw, 44px); overflow: hidden;
+}
+.zw-head::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(50% 90% at 100% 0%, color-mix(in srgb, var(--pc) 26%, transparent), transparent 70%); }
+.zw-head__title { position: relative; z-index: 1; margin: 10px 0 8px; font: 900 clamp(20px, 2.8vw, 36px)/1.1 var(--font-display); text-transform: uppercase; }
+.zw-head__title i { color: var(--pc); font-style: normal; }
+.zw-head__tag { position: relative; z-index: 1; font: 700 11px/1.4 var(--font-display); letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.5); }
+.zw-head__price { position: relative; z-index: 1; text-align: right; }
+.zw-head__price span { display: block; font: 700 10px/1 var(--font-display); letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.45); }
+.zw-head__price b { display: block; margin-top: 8px; font: 900 clamp(24px, 2.6vw, 38px)/1 var(--font-display); color: var(--pc); }
+.zw-head__price i { font: 600 11px/1 var(--font-body); color: rgba(255,255,255,.5); font-style: normal; }
+
+.zw-steps { display: flex; gap: 6px; margin: 14px 0 clamp(20px, 2.6vw, 30px); }
+.zw-step { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #fff; border: 1px solid var(--ivory-2);
+  font: 700 11px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.zw-step span { width: 20px; height: 20px; display: grid; place-items: center; background: var(--ivory-2); color: #14161a; font-size: 10px; }
+.zw-step.on { border-color: var(--pc); color: #14161a; }
+.zw-step.on span { background: var(--pc); color: #0a0d14; }
+.zw-step.done span { background: var(--night); color: #fff; }
+
+.zw-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 380px); gap: clamp(18px, 2.2vw, 30px); align-items: start; }
+.zw-body { background: #fff; border: 1px solid var(--ivory-2); padding: clamp(22px, 2.8vw, 42px); }
+.zw-h { font: 900 clamp(19px, 2vw, 26px)/1 var(--font-display); text-transform: uppercase; }
+.zw-sub { margin: 10px 0 22px; font-size: 14px; color: var(--muted); }
+.zw-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.zw-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.zw-field--full { grid-column: 1 / -1; }
+.zw-field span { font: 700 10px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.zw-field input, .zw-field textarea {
+  background: var(--ivory); border: 1px solid var(--ivory-2); padding: 13px 14px;
+  font: 500 14px var(--font-body); color: #14161a; outline: none; transition: border-color .2s, background .2s;
+}
+.zw-field input:focus, .zw-field textarea:focus { border-color: var(--pc); background: #fff; }
+.zw-err { margin-top: 14px; background: rgba(227,6,19,.07); border-left: 3px solid var(--red); color: var(--red); padding: 12px 14px; font-size: 13px; }
+.zw-foot { margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.zw-ghost { color: #14161a; border-color: var(--ivory-2); }
+.zw-missing { padding: 160px 0 100px; display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
+
+.zw-card { background: #fff; border: 1px solid var(--ivory-2); overflow: hidden; }
+.zw-card__img { width: 100%; height: 170px; object-fit: cover; }
+.zw-card__body { padding: 20px; }
+.zw-card__code { display: inline-block; background: var(--pc); color: #0a0d14; font: 900 10px/1 var(--font-display); letter-spacing: .14em; padding: 7px 10px; }
+.zw-card__t { margin: 12px 0; font: 900 clamp(16px, 1.5vw, 20px)/1.1 var(--font-display); text-transform: uppercase; }
+.zw-card__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.zw-card__list li { position: relative; padding-left: 16px; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.zw-card__list li::before { content: ""; position: absolute; left: 0; top: 7px; width: 7px; height: 7px; background: var(--pc); transform: rotate(45deg); }
+.zw-card__note { margin-top: 10px; font-size: 11.5px; color: var(--muted-2); }
+.zw-card__total { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ivory-2); display: flex; align-items: baseline; justify-content: space-between; }
+.zw-card__total span { font: 700 10px/1 var(--font-display); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.zw-card__total b { font: 900 20px/1 var(--font-display); color: var(--pc); }
+
+/* payment seal */
+.zw-pay { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 10px 0; }
+.zw-seal__track { fill: none; stroke: var(--ivory-2); stroke-width: 6; }
+.zw-seal__arc { fill: none; stroke: var(--pc); stroke-width: 6; stroke-linecap: round; transition: stroke-dasharray .12s linear; }
+.zw-seal__pct { font: 900 22px var(--font-display); fill: #14161a; }
+.zw-pay__status { font: 700 12px/1 var(--font-display); letter-spacing: .2em; text-transform: uppercase; color: var(--pc); }
+.zw-pay__done { text-align: center; }
+.zw-pay__t { margin: 6px 0 10px; font: 900 clamp(20px, 2.4vw, 30px)/1 var(--font-display); text-transform: uppercase; }
+.zw-pay__p { font-size: 14.5px; line-height: 1.7; color: var(--muted); max-width: 46ch; margin: 0 auto; }
+.zw-receipt { margin: 22px auto 0; max-width: 460px; text-align: left; background: var(--ivory); border: 1px solid var(--ivory-2); padding: 16px 18px; }
+.zw-receipt div { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--muted); padding: 5px 0; }
+.zw-receipt b { font: 900 17px var(--font-display); color: #14161a; }
+.zw-receipt__demo { border-top: 1px dashed var(--ivory-2); margin-top: 8px; padding-top: 10px !important; font-size: 11.5px !important; color: var(--muted-2) !important; }
+.zw-pay__btns { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+
+@media (max-width: 900px) { .zw-grid, .zw-head { grid-template-columns: 1fr; } .zw-head__price { text-align: left; } }
+@media (max-width: 640px) { .zw-form { grid-template-columns: 1fr; } .zw-foot { display: grid; } .zw-foot .btn { justify-content: center; } }

@@ -1,0 +1,80 @@
+/* =========================================================================
+   REZERWACJA (/rezerwacja) — page-based booking flow (was a modal)
+   Reuses .fl-bk / .fl-terms / .fl-pkgs / .fl-form / .fl-pay / .fl-tank from flota.css
+   ========================================================================= */
+
+.rz main { background: var(--paper); min-height: 60vh; }
+.rz-wrap { padding-block: clamp(90px, 12vh, 140px) clamp(50px, 7vw, 90px); }
+
+/* dark header with the progress gauge */
+.rz-head { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 28px;
+  background: var(--ink); color: #fff; padding: clamp(26px, 3.4vw, 46px) clamp(24px, 3.4vw, 48px);
+  border-top: 4px solid var(--red); overflow: hidden; }
+.rz-head::before { content: ""; position: absolute; inset: 0; background: url(/assets/ui/menu_back.webp) center/cover no-repeat; opacity: .06; }
+.rz-head__l { position: relative; z-index: 1; min-width: 0; }
+.rz-head__eyebrow { font: 700 12px/1 var(--font-display); letter-spacing: .26em; color: var(--red); text-transform: uppercase; }
+.rz-head__title { font: 900 clamp(26px, 4vw, 48px)/1 var(--font-display); text-transform: uppercase; margin: 10px 0 16px; }
+.rz-head__ctx { display: flex; flex-wrap: wrap; gap: 10px; }
+.rz-chip { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1 var(--font-body); color: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); padding: 9px 13px; }
+.rz-chip b { font: 700 10px/1 var(--font-display); letter-spacing: .12em; color: var(--red); text-transform: uppercase; }
+.rz-head__gauge { position: relative; z-index: 1; }
+@media (max-width: 720px) { .rz-head { grid-template-columns: 1fr; } .rz-head__gauge { justify-self: center; } }
+/* the gauge is a decorative dial — never let it push out of the dark header on a phone */
+.rz-head { overflow: hidden; }
+.rz-head__gauge .fuel--big { width: min(240px, 56vw); }
+@media (max-width: 560px) { .rz-head__gauge .fuel--big { width: min(190px, 52vw); } }
+
+/* steps bar (reuses .fl-steps) sits under the header */
+.rz-steps { padding: 18px clamp(24px, 3.4vw, 48px); background: #fff; border: 1px solid var(--line); border-top: none; }
+
+.rz-body { background: #fff; border: 1px solid var(--line); border-top: none; padding: clamp(22px, 3vw, 40px) clamp(24px, 3.4vw, 48px); min-height: clamp(380px, 42vh, 460px); }
+
+/* the fleet configurator slider embedded in the AUTO step — strip its section padding */
+.rz-auto .fl-slider { padding: clamp(4px, 1vw, 12px) 0 0; margin-top: 6px; background: transparent !important; }
+.rz-auto .fl-slider .container { padding-inline: 0; max-width: none; }
+.rz-auto .fl-slider__bottom { border-top: 1px solid var(--line); }
+
+/* car selector (AUTO step) */
+.rz-cars { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.rz-car { text-align: left; background: #fff; border: 1.5px solid var(--line); overflow: hidden; transition: transform .22s, border-color .22s, box-shadow .22s; }
+.rz-car:hover { transform: translateY(-4px); box-shadow: 0 18px 40px rgba(0,0,0,.12); }
+.rz-car.on { border-color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
+.rz-car__media { position: relative; aspect-ratio: 16/10; background: linear-gradient(135deg, var(--cc, #333), rgba(0,0,0,.25)); display: grid; place-items: center; overflow: hidden; }
+.rz-car__media img { width: 100%; height: 100%; object-fit: cover; }
+.rz-car__badge { position: absolute; right: 8px; bottom: 6px; font: 900 clamp(24px,3vw,40px)/.8 var(--font-display); color: rgba(255,255,255,.85); text-shadow: 0 3px 12px rgba(0,0,0,.4); }
+.rz-car__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; }
+.rz-car__name { font: 800 13px/1.1 var(--font-display); text-transform: uppercase; }
+.rz-car__from { font: 700 12px/1 var(--font-display); color: var(--red); white-space: nowrap; }
+
+/* footer nav */
+.rz-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  background: #fff; border: 1px solid var(--line); border-top: none; padding: 16px clamp(24px, 3.4vw, 48px); }
+.rz-foot__sum { display: flex; align-items: center; gap: 12px; font: 600 13px var(--font-body); color: var(--muted); min-width: 0; }
+.rz-foot__sum span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rz-foot__sum b { font: 900 20px var(--font-display); color: var(--text); white-space: nowrap; }
+.rz-foot .btn { padding: 14px 24px; }
+/* on a phone the three items no longer fit side by side — stack them, price on its own line */
+@media (max-width: 640px) {
+  .rz-foot { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .rz-foot__sum { grid-column: 1 / -1; order: -1; justify-content: space-between; }
+  .rz-foot .btn { justify-content: center; padding: 14px 16px; text-align: center; }
+}
+
+/* payment on-page */
+.rz-pay { padding: 20px 0 10px; }
+.rz-pay__btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* "no date" term option — distinct dashed card */
+.fl-term--nodate { border-style: dashed; justify-content: center; text-align: left; }
+.fl-term--nodate .fl-term__date { color: var(--red); }
+.fl-term--nodate.on { border-style: solid; }
+
+/* validation hint bar + "not ready yet" button look (still clickable → shows why) */
+.rz-err { background: #fff; border: 1px solid var(--line); border-top: none; padding: 12px clamp(24px, 3.4vw, 48px); color: var(--red); font: 600 13px var(--font-body); }
+.btn.is-locked { opacity: .5; }
+.btn.is-locked:hover { box-shadow: none; transform: none; }
+
+/* what is being booked (product line under the title) */
+.rz-head__product { margin: -6px 0 14px; font: 700 11.5px/1.4 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.62); }
+.rz-head__product i { color: var(--red); font-style: normal; margin: 0 4px; }

@@ -1,0 +1,47 @@
+/* legal documents — privacy policy, payment terms */
+.lg { background: var(--paper, #f4f2ee); }
+
+.lg-head { position: relative; background: #16181c; color: #fff; overflow: hidden; padding: clamp(96px, 12vw, 150px) 0 clamp(34px, 5vw, 60px); }
+.lg-head__flag {
+  position: absolute; inset: 0; opacity: .06; pointer-events: none;
+  background:
+    repeating-conic-gradient(#fff 0 25%, transparent 0 50%) 100% 0 / 38px 38px;
+  -webkit-mask-image: linear-gradient(260deg, #000 0 30%, transparent 58%);
+  mask-image: linear-gradient(260deg, #000 0 30%, transparent 58%);
+}
+.lg-head .eyebrow { color: var(--red); }
+.lg-head__title { position: relative; z-index: 1; margin-top: 12px; text-transform: uppercase; letter-spacing: -.01em; }
+
+.lg-body-wrap { position: relative; padding-block: clamp(38px, 5vw, 72px); }
+.lg-body {
+  position: relative; z-index: 1;
+  max-width: 860px; margin: 0 auto; color: #2a2f36;
+  font-family: var(--font-body); font-size: clamp(14.5px, 1.05vw, 16px); line-height: 1.8;
+  background: #fff; padding: clamp(26px, 4vw, 60px);
+  box-shadow: 0 26px 60px rgba(20,22,26,.08); border-top: 4px solid var(--red);
+}
+.lg-body h2 {
+  font-family: var(--font-display); font-weight: 800; text-transform: uppercase;
+  font-size: clamp(15px, 1.5vw, 20px); letter-spacing: -.01em; color: #14161a;
+  margin: clamp(28px, 3vw, 40px) 0 12px; padding-bottom: 10px;
+  border-bottom: 1px solid rgba(20,22,26,.1);
+}
+.lg-body h2:first-child { margin-top: 0; }
+.lg-body p { margin: 0 0 14px; }
+.lg-body ol, .lg-body ul { margin: 0 0 16px; padding-left: 22px; }
+.lg-body li { margin-bottom: 9px; }
+.lg-body ol { list-style: decimal; }
+.lg-body ul { list-style: disc; }
+.lg-body b, .lg-body strong { color: #14161a; font-weight: 700; }
+.lg-body a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.lg-body a:hover { color: var(--red-dark, #a5000c); }
+
+.lg-back { max-width: 860px; margin: 26px auto 0; }
+.lg-back a { font: 700 11px/1 var(--font-display); letter-spacing: .16em; text-transform: uppercase; color: var(--muted, #6b6f78); }
+.lg-back a:hover { color: var(--red); }
+
+.lg-missing { min-height: 60vh; display: grid; place-content: center; gap: 18px; text-align: center; }
+
+@media (max-width: 640px) {
+  .lg-body { padding: 20px 16px; }
+}

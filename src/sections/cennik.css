@@ -1,0 +1,107 @@
+/* ============ CENNIK (/cennik) — live price board driven by the CMS ============ */
+
+/* header */
+.cn-head {
+  position: relative; overflow: hidden; background: var(--ink); color: #fff;
+  padding: clamp(104px, 11vw, 142px) 0 clamp(38px, 5vw, 62px);
+}
+.cn-head__flag {
+  position: absolute; inset: 0; pointer-events: none;
+  background: url(/assets/ui/menu_back.webp) no-repeat right -6% top -30%;
+  background-size: clamp(420px, 52%, 880px) auto; opacity: .13;
+}
+.cn-head__inner { position: relative; z-index: 1; }
+.cn-head__title { margin: 12px 0 14px; }
+.cn-head__sub { color: rgba(255,255,255,.62); max-width: 640px; }
+
+/* board head + track switch */
+.cn-board__head { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: clamp(20px, 2.6vw, 34px); }
+.cn-board__title { margin-top: 10px; }
+.cn-switch { display: flex; border: 1.5px solid var(--line); background: #fff; }
+.cn-switch__b {
+  padding: 13px 22px; font: 700 11.5px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); transition: background .2s, color .2s;
+}
+.cn-switch__b:hover { color: var(--text); }
+.cn-switch__b.on { background: var(--ink); color: #fff; }
+
+/* the board itself — a timing sheet */
+.cn-table { position: relative; z-index: 1; background: #fff; border: 1px solid var(--line); overflow-x: auto; }
+.cn-row { display: grid; grid-template-columns: minmax(220px, 1.6fr) repeat(5, minmax(96px, 1fr)); align-items: stretch; border-bottom: 1px solid var(--line); }
+.cn-row:last-child { border-bottom: none; }
+.cn-row--head { background: var(--ink); color: #fff; border-bottom: none; position: sticky; top: 0; z-index: 2; }
+.cn-row--head .cn-cell--car { color: rgba(255,255,255,.5); font: 700 10px/1 var(--font-display); letter-spacing: .18em; text-transform: uppercase; }
+.cn-cell { display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-width: 0; }
+.cn-cell--pkg { flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
+.cn-cell--pkg b { font: 900 20px/1 var(--font-display); color: var(--red); }
+.cn-cell--pkg i { font: 700 9px/1.2 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.5); font-style: normal; }
+
+.cn-cell--car img { width: 76px; height: 46px; object-fit: contain; flex: 0 0 auto; }
+.cn-car { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cn-car b { font: 800 13.5px/1.15 var(--font-display); text-transform: uppercase; color: var(--text); }
+.cn-car i { font: 500 11.5px/1.2 var(--font-body); color: var(--muted); font-style: normal; }
+.cn-own { width: 76px; text-align: center; font-size: 26px; color: var(--red); flex: 0 0 auto; }
+.cn-row--own { background: var(--paper); }
+
+/* price cells double as booking buttons */
+.cn-cell--price {
+  position: relative; flex-direction: column; justify-content: center; align-items: center; gap: 2px;
+  border-left: 1px solid var(--line);
+  font: 800 15px/1 var(--font-display); color: var(--text);
+  transition: background .2s ease, color .2s ease;
+}
+.cn-cell__lbl { display: none; font: 700 9px/1 var(--font-display); letter-spacing: .1em; color: var(--muted); }
+.cn-cell__go {
+  position: absolute; inset: auto 0 6px 0; opacity: 0; transform: translateY(4px);
+  font: 700 8.5px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: #fff;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.cn-cell--price:not(.is-off):hover { background: var(--red); color: #fff; }
+.cn-cell--price:not(.is-off):hover .cn-cell__go { opacity: 1; transform: none; }
+.cn-cell--price.is-off { color: var(--muted-2); cursor: default; }
+
+.cn-notes { position: relative; z-index: 1; margin-top: 18px; display: flex; flex-direction: column; gap: 6px; }
+.cn-note { font-size: 13px; line-height: 1.6; color: var(--muted); }
+.cn-note--red { color: var(--red); font-weight: 600; }
+
+/* Laponia + Safe & Sport blocks */
+.cn-more__grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: clamp(18px, 2.2vw, 30px); }
+.cn-block { position: relative; background: #fff; border: 1px solid var(--line); padding: clamp(24px, 2.6vw, 38px); display: flex; flex-direction: column; transition: transform .3s ease, box-shadow .3s ease; }
+.cn-block:hover { transform: translateY(-4px); box-shadow: 0 24px 50px rgba(0,0,0,.1); }
+.cn-block--ice { border-color: #bfe4f4; background: linear-gradient(160deg, #f4fbfe, #ffffff); }
+.cn-block__eyebrow { font: 700 10px/1 var(--font-display); letter-spacing: .2em; text-transform: uppercase; color: var(--red); }
+.cn-block--ice .cn-block__eyebrow { color: #2a9fd0; }
+.cn-block__title { margin: 10px 0 4px; font: 900 clamp(20px, 2vw, 30px)/1 var(--font-display); text-transform: uppercase; }
+.cn-block__meta { font: 700 12px/1 var(--font-display); color: var(--muted); margin-bottom: 4px; }
+.cn-list { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; }
+.cn-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+.cn-list li:last-child { border-bottom: none; }
+.cn-list span { font: 800 13px/1.3 var(--font-display); text-transform: uppercase; color: var(--text); }
+.cn-list i { display: block; font: 500 11.5px/1.4 var(--font-body); color: var(--muted); text-transform: none; font-style: normal; }
+.cn-list b { font: 900 17px/1 var(--font-display); color: var(--text); white-space: nowrap; }
+.cn-block__link { margin-top: 18px; font: 700 11px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--red); }
+.cn-block__link:hover { text-decoration: underline; }
+
+/* CTA */
+.cn-cta__inner { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: clamp(24px, 3vw, 48px); align-items: center; }
+.cn-cta__title { margin: 12px 0 12px; }
+.cn-cta__sub { color: rgba(255,255,255,.6); max-width: 52ch; }
+.cn-cta__btns { display: flex; gap: 12px; flex-wrap: wrap; }
+.cn-cta__ghost { color: #fff; border-color: rgba(255,255,255,.28); }
+.cn-cta__ghost:hover { border-color: #fff; }
+
+/* ---------- responsive: the board turns into per-car cards ---------- */
+@media (max-width: 860px) {
+  .cn-table { border: none; background: transparent; overflow: visible; }
+  .cn-row--head { display: none; }
+  .cn-row {
+    grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+    background: #fff; border: 1px solid var(--line); margin-bottom: 12px;
+  }
+  .cn-cell--car { grid-column: 1 / -1; border-bottom: 1px solid var(--line); }
+  .cn-cell--price { border-left: none; border-right: 1px solid var(--line); padding: 12px 8px; font-size: 13.5px; }
+  .cn-cell--price:last-child { border-right: none; }
+  .cn-cell__lbl { display: block; }
+  .cn-cell__go { display: none; }
+  .cn-cta__inner { grid-template-columns: 1fr; }
+}
