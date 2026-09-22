@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("cennik: price board is generated from the CMS and re-prices per track", async ({ page }) => {
   const errors = [];
@@ -13,7 +15,7 @@ test("cennik: price board is generated from the CMS and re-prices per track", as
   expect(await page.locator(".cn-row").count()).toBeGreaterThan(5);
   await expect(page.locator(".cn-row--own")).toHaveCount(1);
 
-  const cell = page.locator(".cn-row").nth(1).locator(".cn-cell--price").nth(1);
+  const cell = page.locator(".cn-row").nth(1).locator(".cn-cell--price").nth(0);
   const lodz = await cell.innerText();
   await page.locator(".cn-switch__b", { hasText: "POZNAŃ" }).click();
   await expect(cell).not.toHaveText(lodz);                  // Poznań has its own price set
@@ -28,7 +30,7 @@ test("cennik: clicking a price opens the configurator with that car and package"
   await page.waitForFunction(() => document.querySelectorAll(".cn-row .cn-car").length > 5, null, { timeout: 10000 });
   const carName = await page.locator(".cn-row").nth(1).locator(".cn-car b").innerText();
 
-  await page.locator(".cn-row").nth(1).locator(".cn-cell--price").nth(1).click();  // 3-session cell
+  await page.locator(".cn-row").nth(1).locator(".cn-cell--price").nth(0).click();  // 3-session cell (packages are 3 / 6 / 9 now)
   await expect(page).toHaveURL(/\/rezerwacja\?car=.*sessions=3/);
   await expect(page.locator(".rz-head__ctx")).toContainText(carName);
   await expect(page.locator(".rz-head__ctx")).toContainText("zł");                  // total already computed

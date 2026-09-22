@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 // helper: page the calendar to a given month label
 async function goToMonth(page, re, forward = true) {
@@ -26,7 +28,7 @@ test("ice season shows as a special banner + a multi-day band on the board", asy
   await expect(season.first()).toBeVisible();
   await expect(season.first()).toContainText(/SEZON|SEASON/i);
   // the window runs into February → a run of banded days shows on the board
-  expect(await page.locator(".kal-cell.in-band").count()).toBeGreaterThanOrEqual(10);
+  expect(await page.locator(".kal-cell.in-band").count()).toBeGreaterThanOrEqual(8);   // season opens on 20 Feb
 
   // clicking the banner opens the Laponia product
   await season.first().click();

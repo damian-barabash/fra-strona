@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("Driver2Racer is the second product on the wall", async ({ page }) => {
   await page.goto("/produkty");
@@ -6,7 +8,7 @@ test("Driver2Racer is the second product on the wall", async ({ page }) => {
   const titles = await page.locator(".pp__title").allInnerTexts();
   expect(titles[0]).toContain("HEELS");
   expect(titles[1]).toContain("DRIVER 2 RACER");
-  expect(await page.locator(".pp").count()).toBe(9);
+  expect(await page.locator(".pp").count()).toBe(10);
 });
 
 test("Driver2Racer page renders the parsed program (hero video, gains, sessions, fleet)", async ({ page }) => {

@@ -1,15 +1,17 @@
 // Shared nav-menu config. Labels live in content keys `nav.*` (translated PL→EN),
 // hrefs in content keys `nav.*.href` (kind "url", NOT translated). Both are editable
 // in the admin "Menu" tab; labels are also inline-editable on the page.
-export const MENU_A = ["nav.forYou", "nav.forBiz"];
+// "nav.forYou" is rendered as the red KUP SZKOLENIE button (see Nav.jsx).
+export const MENU_A = ["nav.forBiz"];
 export const MENU_B = ["nav.products", "nav.calendar", "nav.pricing", "nav.about", "nav.fleet", "nav.contact"];
-export const MENU = [...MENU_A, ...MENU_B];
+export const MENU_CTA = "nav.forYou";
+export const MENU = [MENU_CTA, ...MENU_A, ...MENU_B];
 
 // default href per menu id (fallback when no content override exists)
 export const MENU_HREF = {
   "nav.forYou": "/rezerwacja",
-  "nav.forBiz": "#programy",
-  "nav.products": "/produkty",
+  "nav.forBiz": "/dla-firm",
+  "nav.products": "/oferta",
   "nav.calendar": "/kalendarz",
   "nav.pricing": "/cennik",
   "nav.about": "#instruktorzy",

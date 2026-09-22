@@ -203,11 +203,12 @@ export default function Laponia({ p }) {
   );
 }
 
-/* Tyre tracks left by a car drifting across the frozen lake: two parallel treads that get
-   "driven" across the section as you scroll (the SVG is clipped from the left). */
+/* Tyre tracks left by a car drifting across the frozen lake. Four treads (two per axle, the rear
+   pair stepping out wider in the slide), each built from real tread blocks — a dense dash pattern
+   over a pressed-snow base with a lighter centre groove — plus ice chips thrown out of the rear tyres.
+   The whole thing is "driven" across the section as you scroll (clipped from the left). */
 function DriftTracks({ flip = false }) {
   const ref = useRef(null);
-
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -218,8 +219,7 @@ function DriftTracks({ flip = false }) {
         raf = 0;
         const r = el.getBoundingClientRect();
         const vh = window.innerHeight || 1;
-        const p = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.85)));
-        el.style.setProperty("--tp", p.toFixed(3));
+        el.style.setProperty("--tp", Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.85))).toFixed(3));
       });
     };
     onScroll();
@@ -227,17 +227,30 @@ function DriftTracks({ flip = false }) {
     return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); };
   }, []);
 
-  // two treads of the same drifting line, offset by the track width of the car
-  const inner = "M-30,262 C 210,268 300,132 520,120 C 750,108 830,250 1060,240 C 1245,232 1330,150 1480,116";
-  const outer = "M-30,300 C 210,306 300,170 520,158 C 750,146 830,288 1060,278 C 1245,270 1330,188 1480,154";
-
+  const fl = "M-40,236 C 200,246 300,120 520,108 C 750,96 830,236 1060,226 C 1245,218 1330,138 1480,104";
+  const fr = "M-40,262 C 200,272 300,146 520,134 C 750,122 830,262 1060,252 C 1245,244 1330,164 1480,130";
+  const rl = "M-40,300 C 200,312 300,180 520,166 C 750,152 830,300 1060,290 C 1245,282 1330,204 1480,170";
+  const rr = "M-40,330 C 200,342 300,210 520,196 C 750,182 830,330 1060,320 C 1245,312 1330,234 1480,200";
   return (
-    <svg className={`lp-drift ${flip ? "lp-drift--flip" : ""}`} ref={ref}
-      viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-      <path className="lp-drift__tread" d={inner} pathLength="1" />
-      <path className="lp-drift__tread" d={outer} pathLength="1" />
-      <path className="lp-drift__spray" d={inner} pathLength="1" />
-      <path className="lp-drift__spray" d={outer} pathLength="1" />
+    <svg className={`lp-drift ${flip ? "lp-drift--flip" : ""}`} ref={ref} viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <filter id="lpRough" x="-2%" y="-20%" width="104%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9 0.05" numOctaves="2" seed="7" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+      <g filter="url(#lpRough)">
+        {[fl, fr, rl, rr].map((d, i) => (
+          <g key={i} className={`lp-tread ${i > 1 ? "lp-tread--rear" : ""}`}>
+            <path className="lp-tread__press" d={d} pathLength="1" />
+            <path className="lp-tread__blocks" d={d} pathLength="1" />
+            <path className="lp-tread__groove" d={d} pathLength="1" />
+            <path className="lp-tread__edge" d={d} pathLength="1" />
+          </g>
+        ))}
+      </g>
+      <path className="lp-drift__chips" d={rr} pathLength="1" />
+      <path className="lp-drift__chips lp-drift__chips--2" d={rl} pathLength="1" />
     </svg>
   );
 }

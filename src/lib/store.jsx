@@ -124,10 +124,16 @@ export function StoreProvider({ children }) {
   const setters = { cars: setCars, instructors: setInstructors, events: setEvents, programs: setPrograms, banners: setBanners, tracks: setTracks, media: setMediaList, terms: setTerms, products: setProducts, ice_packages: setIcePackages, ice_windows: setIceWindows, trip_packages: setTripPackages, trip_attractions: setTripAttractions, trip_points: setTripPoints };
   const getters = { cars, instructors, events, programs, banners, tracks, media: mediaList, terms, products, ice_packages: icePackages, ice_windows: iceWindows, trip_packages: tripPackages, trip_attractions: tripAttractions, trip_points: tripPoints };
 
-  // public: create a stub booking (no admin token needed — edge handles it)
-  const createBooking = (payload) => adminCall(token, "booking.create", payload);
-  const createIceBooking = (payload) => adminCall(token, "booking.createIce", payload);
-  const createTripBooking = (payload) => adminCall(token, "booking.createTrip", payload);
+  // public checkout: the edge function creates the pending booking + the Tpay transaction and
+  // answers with payment_url; the browser only ever sends ids (prices are computed server-side)
+  const checkout = (action) => (payload) =>
+    adminCall(token, action, { ...payload, return_origin: window.location.origin, lang });
+  const createBooking = checkout("booking.create");
+  const createIceBooking = checkout("booking.createIce");
+  const createTripBooking = checkout("booking.createTrip");
+  const createProductBooking = checkout("booking.createProduct");
+  const createVoucherBooking = checkout("booking.createVoucher");
+  const orderStatus = (id) => adminCall("", "booking.status", { id });
 
   const upsertEntity = async (table, row) => {
     const r = await adminCall(token, `${table}.upsert`, row);
@@ -157,7 +163,7 @@ export function StoreProvider({ children }) {
     cmsMode, setCmsMode,
     login, logout,
     setContentLocal, saveContent,
-    upsertEntity, deleteEntity, reorderEntity, getters, createBooking, createIceBooking, createTripBooking,
+    upsertEntity, deleteEntity, reorderEntity, getters, createBooking, createIceBooking, createTripBooking, createProductBooking, createVoucherBooking, orderStatus,
     adminCall: (action, payload) => adminCall(token, action, payload),
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

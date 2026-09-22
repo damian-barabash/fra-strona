@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { fmtEur, fmtDay, addDays, parseISO, isoOf, startDates, iceDateRange } from "../lib/ice";
+import ProductCard from "../components/ProductCard";
+import { usePayRedirect } from "../lib/pay";
+import { fmtZl } from "../lib/flota";
 import "../sections/laponia.css";
+import "../sections/productcard.css";
 
+const lines = (x) => String(x || "").split("\n").map((v) => v.trim()).filter(Boolean);
 const WD = { pl: ["PN", "WT", "ŚR", "CZ", "PT", "SB", "ND"], en: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] };
 
 /* The ice configurator: PAKIET → TERMIN (a start date inside the CMS season window) → DANE → PŁATNOŚĆ.
@@ -16,11 +20,10 @@ const WD = { pl: ["PN", "WT", "ŚR", "CZ", "PT", "SB", "ND"], en: ["MO", "TU", "
 export default function RezerwacjaIce() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
-  const { icePackages, iceWindows, cars, t, L, lang, createIceBooking } = useStore();
+  const { icePackages, iceWindows, products, raw, t, L, lang, createIceBooking } = useStore();
 
   const preset = sp.get("pkg");
   const [pkg, setPkg] = useState(null);
-  const [car, setCar] = useState(null);
   const [win, setWin] = useState(null);
   const [start, setStart] = useState("");
   const [persons, setPersons] = useState(1);
@@ -42,13 +45,15 @@ export default function RezerwacjaIce() {
   const end = start ? addDays(start, days - 1) : "";
   const total = (pkg?.price || 0) * persons;
 
-  const STEPS = ["pakiet", "auto", "termin", "dane", "platnosc"];
+  const STEPS = ["pakiet", "termin", "produkt", "dane", "platnosc"];
+  const laponia = products.find((x) => x.slug === "ice-driving-laponia");
+  const eurRate = parseFloat(String(raw("ice.eurRate").pl || "4.35").replace(",", ".")) || 4.35;
   const step = STEPS[stepIdx];
 
   const canNext =
     step === "pakiet" ? !!pkg :
-    step === "auto" ? !!car :
     step === "termin" ? !!start :
+    step === "produkt" ? true :
     step === "dane" ? (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim()) :
     true;
 
@@ -56,13 +61,13 @@ export default function RezerwacjaIce() {
     if (!canNext) {
       setErr(
         step === "pakiet" ? t("ice.errPkg") :
-        step === "auto" ? t("ice.errCar") :
         step === "termin" ? t("ice.errDate") : t("ice.errData"),
       );
       return;
     }
     setErr("");
     setStepIdx((i) => Math.min(STEPS.length - 1, i + 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const goPrev = () => {
     setErr("");
@@ -71,7 +76,7 @@ export default function RezerwacjaIce() {
   };
 
   const progress = stepIdx / (STEPS.length - 1);
-  const LBL = { pakiet: t("ice.sPkg"), auto: t("ice.sCar"), termin: t("ice.sDate"), dane: t("ice.sData"), platnosc: t("ice.sPay") };
+  const LBL = { pakiet: t("ice.sPkg"), termin: t("ice.sDate"), produkt: t("card.step"), dane: t("ice.sData"), platnosc: t("ice.sPay") };
 
   return (
     <div className="lp rz-ice">
@@ -89,7 +94,6 @@ export default function RezerwacjaIce() {
                 <div className="ri-head__product">{t("ice.bkSub")}</div>
                 <div className="ri-chips">
                   {pkg && <span className="lp-frost-chip"><b>{t("ice.sPkg")}</b>{L(pkg, "name")}</span>}
-                  {car && <span className="lp-frost-chip"><b>{t("ice.sCar")}</b>{car.name}</span>}
                   {start && <span className="lp-frost-chip"><b>{t("ice.sDate")}</b>{fmtDay(start, lang)}{days > 1 ? ` – ${fmtDay(end, lang)}` : ""}</span>}
                   {pkg && <span className="lp-frost-chip"><b>{t("ice.total")}</b>{fmtEur(total, pkg.currency)}</span>}
                 </div>
@@ -122,25 +126,6 @@ export default function RezerwacjaIce() {
                 </div>
               )}
 
-              {step === "auto" && (
-                <div className="ri-block">
-                  <h3 className="lp-h">{t("ice.pickCar")}</h3>
-                  <p className="ri-sub">{t("ice.carSub")}</p>
-                  <div className="ri-cars">
-                    {cars.map((c) => (
-                      <button key={c.id} className={`ri-car ${car?.id === c.id ? "on" : ""}`} onClick={() => setCar(c)}>
-                        <span className="ri-car__media">
-                          {(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}
-                          <span className="ri-car__frost" />
-                        </span>
-                        <span className="ri-car__name">{c.name}</span>
-                        <span className="ri-car__spec">{c.power || ""}{c.engine ? ` · ${c.engine}` : ""}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {step === "termin" && (
                 <div className="ri-block">
                   <h3 className="lp-h">{t("ice.pickDate")}</h3>
@@ -155,6 +140,21 @@ export default function RezerwacjaIce() {
                       <b>{fmtDay(start, lang)}{days > 1 ? ` – ${fmtDay(end, lang)}` : ""}</b>
                     </div>
                   )}
+                </div>
+              )}
+
+              {step === "produkt" && (
+                <div className="ri-block">
+                  <h3 className="lp-h">{t("card.title")}</h3>
+                  <ProductCard kind="ice" color="#2a9fd0"
+                    title={`${L(laponia, "title") || "ICE DRIVING EXPERIENCE"} · ${L(pkg, "name")}`}
+                    subtitle={L(pkg, "desc")} code={`${pkg?.days || 1} ${pkg?.days === 1 ? t("ice.day") : t("ice.days")}`}
+                    photo={laponia?.photo} photos={Array.isArray(laponia?.photos) ? laponia.photos : []}
+                    price={total} currency={pkg?.currency || "EUR"} pricePln={Math.round(total * eurRate)}
+                    lines={[[t("ice.sPkg"), L(pkg, "name")], [t("ice.sessions") || "SESJE", L(pkg, "sessions")], [t("ice.sDate"), `${fmtDay(start, lang)}${days > 1 ? ` – ${fmtDay(end, lang)}` : ""}`], [t("ice.persons"), String(persons)]]}
+                    includes={lines(L(laponia, "includes"))}
+                    onOrder={goNext}
+                  />
                 </div>
               )}
 
@@ -179,12 +179,14 @@ export default function RezerwacjaIce() {
               )}
 
               {step === "platnosc" && (
-                <PayIce pkg={pkg} car={car} win={win} start={start} end={end} days={days} persons={persons} total={total}
-                  form={form} t={t} L={L} lang={lang} createIceBooking={createIceBooking} />
+                <PayIce t={t} create={createIceBooking} payload={{
+                  package_id: pkg?.id, window_id: win?.id, date_from: start, persons,
+                  full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
+                }} />
               )}
             </div>
 
-            {step !== "platnosc" && (
+            {step !== "platnosc" && step !== "produkt" && (
               <>
                 {err && <div className="ri-err">{err}</div>}
                 <div className="ri-foot">
@@ -272,73 +274,17 @@ function IceCalendar({ win, allowed, days, start, onPick, lang }) {
   );
 }
 
-/* payment: the tank becomes a block of ice that freezes over, then "ZAMROŻONE — OPŁACONE" */
-function PayIce({ pkg, car, win, start, end, days, persons, total, form, t, L, lang, createIceBooking }) {
-  const [phase, setPhase] = useState("freezing");
-  const [fill, setFill] = useState(0);
-  const [err, setErr] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  const sent = useRef(false);
-
-  useEffect(() => {
-    let raf = 0, cancelled = false;
-    const t0 = performance.now(), dur = 2400;
-    const submit = async () => {
-      if (sent.current) return;
-      sent.current = true;
-      const r = await createIceBooking({
-        package_id: pkg?.id, window_id: win?.id, date_from: start, persons,
-        car_id: car?.id ?? null,
-        full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
-      });
-      if (cancelled) return;
-      if (r?.ok) setPhase("done");
-      else { setErr(r?.error || "Błąd rezerwacji"); setPhase("error"); }
-    };
-    const tick = (now) => {
-      if (cancelled) return;
-      const p = Math.min(1, (now - t0) / dur);
-      setFill(Math.round(p * 100));
-      if (p < 1) raf = requestAnimationFrame(tick); else submit();
-    };
-    raf = requestAnimationFrame(tick);
-    return () => { cancelled = true; cancelAnimationFrame(raf); };
-  }, [attempt]); // eslint-disable-line
-
-  const retry = () => { sent.current = false; setErr(""); setFill(0); setPhase("freezing"); setAttempt((a) => a + 1); };
-
+/* payment: the ice freezes over, the pending order + Tpay transaction are created, then off to the gateway */
+function PayIce({ t, create, payload }) {
+  const { phase, fill, err, retry } = usePayRedirect(create, payload);
   return (
     <div className="ri-pay">
       <div className="ri-ice" style={{ ["--f"]: `${fill}%` }}>
         <div className="ri-ice__fill" />
         <div className="ri-ice__crack" />
-        <span className="ri-ice__pct">{phase === "done" ? "100%" : `${fill}%`}</span>
+        <span className="ri-ice__pct">{`${fill}%`}</span>
       </div>
-
-      {phase === "freezing" && <div className="ri-pay__status">{t("ice.freezing")}</div>}
-
-      <AnimatePresence>
-        {phase === "done" && (
-          <motion.div className="ri-pay__done" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="ri-pay__check">❄</div>
-            <h3 className="ri-pay__title">{t("ice.doneTitle")}</h3>
-            <p className="ri-pay__thanks">{t("ice.thanks")}</p>
-            <div className="ri-receipt">
-              <div><span>{L(pkg, "name")} · {persons} {t("ice.personsShort")}</span><b>{fmtEur(total, pkg?.currency)}</b></div>
-              {car && <div><span>{car.name}</span></div>}
-              <div><span>{fmtDay(start, lang)}{days > 1 ? ` – ${fmtDay(end, lang)}` : ""} · Kuusamo, Laponia</span></div>
-              <div className="ri-receipt__demo">{t("flota.bk.demoNote")}</div>
-            </div>
-            <div className="ri-pay__btns">
-              <Link to="/produkty/ice-driving-laponia" className="btn lp-btn--ghost" onClick={() => window.scrollTo({ top: 0 })}>
-                {t("flota.bk.close")}
-              </Link>
-              <Link to="/" className="btn lp-btn" onClick={() => window.scrollTo({ top: 0 })}>Fastline</Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {phase !== "error" && <div className="ri-pay__status">{phase === "redirect" ? "→ Tpay" : t("ice.freezing")}</div>}
       {phase === "error" && (
         <div className="ri-pay__done">
           <h3 className="ri-pay__title" style={{ color: "var(--red)" }}>Ups!</h3>

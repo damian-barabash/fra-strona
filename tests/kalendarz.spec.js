@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("calendar renders the month board from CMS terms, with no console errors", async ({ page }) => {
   const errors = [];
@@ -65,23 +67,24 @@ test("type filter narrows the calendar to Heels dates", async ({ page }) => {
   await expect(page.locator(".kal-row__badge").first()).toHaveText("HEELS");
 });
 
-test("menu 'DLA CIEBIE' opens the full configurator (car → date → package → details → payment)", async ({ page, isMobile }) => {
+test("menu 'KUP SZKOLENIE' opens the full configurator (car → date → package → product → details → payment)", async ({ page, isMobile }) => {
   await page.goto("/");
   await page.waitForTimeout(1200);
   if (isMobile) {
     await page.locator(".nav__burger").click();
-    await page.locator(".mobile-menu a", { hasText: "DLA CIEBIE" }).click();
+    await page.locator(".mobile-menu__cta").click();
   } else {
-    await page.locator(".nav__menu a", { hasText: "DLA CIEBIE" }).click();
+    await page.locator(".nav__cta").click();
   }
   await expect(page).toHaveURL(/\/rezerwacja$/);
   // the header names the product, the line under it the flow
   await expect(page.locator(".rz-head__eyebrow")).toContainText("SPORT DRIVING EXPERIENCE");
   await expect(page.locator(".rz-head__product")).toContainText("SZKOLENIE Z JAZDY SPORTOWEJ");
   await expect(page.locator(".rz-head__product")).toContainText("KONFIGURATOR");
-  await expect(page.locator(".fl-steps__i")).toHaveCount(5);
+  await expect(page.locator(".fl-steps__i")).toHaveCount(6);
   await expect(page.locator(".fl-steps__i").nth(0)).toContainText(/AUTO/i);
   await expect(page.locator(".fl-steps__i").nth(1)).toContainText(/TERMIN/i);
   await expect(page.locator(".fl-steps__i").nth(2)).toContainText(/PAKIET/i);
+  await expect(page.locator(".fl-steps__i").nth(3)).toContainText(/PRODUKT/i);
   await expect(page.locator(".rz-auto .fl-stage")).toBeVisible(); // the car configurator slider
 });

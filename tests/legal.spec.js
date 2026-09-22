@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 const DOCS = [
   { slug: "polityka-prywatnosci", title: /POLITYKA PRYWATNOŚCI/i, needle: "DEFINICJE" },

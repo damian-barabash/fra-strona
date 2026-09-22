@@ -135,3 +135,11 @@
   .kt-form__head { flex-direction: column; }
   .kt-card:hover { transform: none; }
 }
+
+/* "lights out" success: the five lights blink red then go out, the check draws itself */
+.kt-done__lights span { background: var(--red); box-shadow: 0 0 12px 2px rgba(227,6,19,.75); animation: ktOut .5s forwards; animation-delay: calc(.7s + var(--i) * .06s); }
+@keyframes ktOut { to { background: #2a2a2a; box-shadow: inset 0 1px 2px rgba(0,0,0,.6); } }
+.kt-done__check { display: block; margin: 0 auto 12px; }
+.kt-done__ring { fill: none; stroke: var(--red); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ktDraw .9s cubic-bezier(.16,.8,.3,1) 1s forwards; }
+.kt-done__mark { fill: none; stroke: var(--ink); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: ktDraw .55s cubic-bezier(.16,.8,.3,1) 1.6s forwards; }
+@keyframes ktDraw { to { stroke-dashoffset: 0; } }

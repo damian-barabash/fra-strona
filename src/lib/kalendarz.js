@@ -55,7 +55,7 @@ export const weekdayName = (iso, lang) => {
 // cheapest entry ticket for a term: the lowest 1-session price across the fleet,
 // using the term's track (Poznań has its own price set)
 export const priceFrom = (cars, track) => {
-  const prices = (cars || []).map((c) => carPrice(c, 1, track)).filter((p) => p > 0);
+  const prices = (cars || []).map((c) => carPrice(c, 3, track)).filter((p) => p > 0);
   return prices.length ? Math.min(...prices) : 0;
 };
 
@@ -95,15 +95,17 @@ export function specialEvents(products, iceWindows, lang = "pl") {
     });
   });
 
-  (products || []).filter((p) => p.theme === "wyprawa").forEach((p) => {
+  // a trip lands in the calendar as soon as it has dates: explicit date_from/date_to from the CMS,
+  // or — for older entries — the first and last date mentioned in its schedule
+  (products || []).filter((p) => p.theme === "wyprawa" && p.visible !== false).forEach((p) => {
     const ds = datesInText(p.schedule_pl);
-    const from = ds[0], to = ds[ds.length - 1];
+    const from = p.date_from || ds[0], to = p.date_to || ds[ds.length - 1] || p.date_from;
     if (!from || !to) return;
     out.push({
       id: `trip-${p.slug}`, kind: "trip", slug: p.slug,
       color: p.color || "#c9a227",
       title: pick(p, "title", lang) || p.slug,
-      subtitle: pick(p, "trip_dates", lang) || "",
+      subtitle: pick(p, "place", lang) || pick(p, "trip_dates", lang) || "",
       from, to, past: p.trip_status === "past",
     });
   });

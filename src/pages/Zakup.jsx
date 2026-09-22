@@ -1,17 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { FuelTank } from "../components/Fuel";
+import { usePayRedirect } from "../lib/pay";
 import { fmtZl } from "../lib/flota";
 import "../sections/rezerwacja.css";
 import "../sections/d2r.css";
 
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
 /* /zakup?produkt=<slug> — buying a fixed-price package (Driver2Racer): no configurator,
@@ -19,7 +18,7 @@ const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boo
 export default function Zakup() {
   const [sp] = useSearchParams();
   const nav = useNavigate();
-  const { products, ready, t, L, adminCall } = useStore();
+  const { products, ready, t, L, createProductBooking } = useStore();
 
   const slug = sp.get("produkt") || "";
   const p = products.find((x) => x.slug === slug && x.buy_direct);
@@ -113,7 +112,7 @@ export default function Zakup() {
                 )}
 
                 {step === "platnosc" && (
-                  <PayStep p={p} form={form} t={t} L={L} adminCall={adminCall} />
+                  <PayStep p={p} form={form} t={t} create={createProductBooking} />
                 )}
               </div>
 
@@ -144,65 +143,13 @@ export default function Zakup() {
   );
 }
 
-/* payment — same fuel-fill language as the rest of the site, price computed server-side */
-function PayStep({ p, form, t, L, adminCall }) {
-  const [phase, setPhase] = useState("filling");
-  const [fill, setFill] = useState(0);
-  const [err, setErr] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  const sent = useRef(false);
-
-  useEffect(() => {
-    let raf = 0, cancelled = false;
-    const t0 = performance.now(), dur = 2400;
-    const submit = async () => {
-      if (sent.current) return;
-      sent.current = true;
-      const r = await adminCall("booking.createProduct", {
-        product_slug: p.slug,
-        full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
-      });
-      if (cancelled) return;
-      if (r?.ok) setPhase("done");
-      else { setErr(r?.error || "Błąd rezerwacji"); setPhase("error"); }
-    };
-    const tick = (now) => {
-      if (cancelled) return;
-      const q = clamp((now - t0) / dur, 0, 1);
-      setFill(Math.round(q * 100));
-      if (q < 1) raf = requestAnimationFrame(tick); else submit();
-    };
-    raf = requestAnimationFrame(tick);
-    return () => { cancelled = true; cancelAnimationFrame(raf); };
-  }, [attempt]); // eslint-disable-line
-
-  const retry = () => { sent.current = false; setErr(""); setFill(0); setPhase("filling"); setAttempt((a) => a + 1); };
-
+/* payment — the tank fills, the order + Tpay transaction are created server-side, then the gateway */
+function PayStep({ p, form, t, create }) {
+  const { phase, fill, err, retry } = usePayRedirect(create, { product_slug: p.slug, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note });
   return (
     <div className="zk-pay">
-      <FuelTank fill={fill} done={phase === "done"} />
-      {phase === "filling" && <div className="zk-pay__status">{t("flota.bk.processing")}</div>}
-
-      <AnimatePresence>
-        {phase === "done" && (
-          <motion.div className="zk-pay__done" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="zk-pay__check">✓</div>
-            <h3 className="zk-pay__t">{t("zak.doneTitle")}</h3>
-            <p className="zk-pay__p">{t("zak.doneSub")}</p>
-            <div className="zk-receipt">
-              <div><span>{L(p, "title")}</span><b>{fmtZl(p.price)}</b></div>
-              <div className="zk-receipt__demo">{t("flota.bk.demoNote")}</div>
-            </div>
-            <div className="zk-pay__btns">
-              <Link to={`/produkty/${p.slug}`} className="btn btn--ghost zk-ghost" onClick={() => window.scrollTo({ top: 0 })}>
-                {t("flota.bk.close")}
-              </Link>
-              <Link to="/" className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>Fastline</Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      <FuelTank fill={fill} done={phase === "redirect"} />
+      {phase !== "error" && <div className="zk-pay__status">{phase === "redirect" ? "→ Tpay" : t("flota.bk.processing")}</div>}
       {phase === "error" && (
         <div className="zk-pay__done">
           <h3 className="zk-pay__t" style={{ color: "var(--red)" }}>Ups!</h3>

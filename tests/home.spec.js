@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("homepage renders all sections with no console errors", async ({ page }) => {
   const errors = [];
@@ -12,7 +14,8 @@ test("homepage renders all sections with no console errors", async ({ page }) =>
   await expect(page.locator("text=POZNAJ NASZYCH INSTRUKTORÓW")).toBeVisible();
   await expect(page.locator("text=NADCHODZĄCE WYDARZENIA")).toBeVisible();
   await expect(page.locator(".pcard")).toHaveCount(6);
-  await expect(page.locator(".ecard").first()).toBeVisible();
+  await expect(page.locator(".evrow").first()).toBeVisible();
+  await expect(page.locator(".founder__title")).toBeVisible();
 
   // no horizontal scroll
   const scrollX = await page.evaluate(() => { window.scrollTo(400, 0); return window.scrollX; });
@@ -47,5 +50,5 @@ test("admin login works", async ({ page }) => {
   await page.fill('input[placeholder="Hasło"]', "fastline2026");
   await page.locator(".adm-login__box .adm-btn--red").click();
   await expect(page.locator(".adm-side")).toBeVisible({ timeout: 8000 });
-  await expect(page.locator(".adm-row").first()).toBeVisible();
+  await expect(page.locator(".adm-kpi").first()).toBeVisible();   // dashboard KPI cards
 });

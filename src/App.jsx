@@ -16,6 +16,11 @@ import Kontakt from "./pages/Kontakt";
 import Zakup from "./pages/Zakup";
 import ZakupWyprawa from "./pages/ZakupWyprawa";
 import Legal from "./pages/Legal";
+import Platnosc from "./pages/Platnosc";
+import Voucher from "./pages/Voucher";
+import DlaFirm from "./pages/DlaFirm";
+import CookieBar from "./components/CookieBar";
+import WhatsAppFab from "./components/WhatsAppFab";
 
 const Admin = lazy(() => import("./pages/Admin"));
 
@@ -59,6 +64,10 @@ function AnimatedRoutes() {
         <Route path="/cennik" element={<Cennik />} />
         <Route path="/kontakt" element={<Kontakt />} />
         <Route path="/produkty" element={<Produkty />} />
+        <Route path="/oferta" element={<Produkty />} />
+        <Route path="/dla-firm" element={<DlaFirm />} />
+        <Route path="/voucher" element={<Voucher />} />
+        <Route path="/platnosc" element={<Platnosc />} />
         <Route path="/produkty/:slug" element={<Produkt />} />
         <Route path="/rezerwacja" element={<Rezerwacja />} />
         <Route path="/rezerwacja-ice" element={<RezerwacjaIce />} />
@@ -87,5 +96,11 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
-  return <AnimatedRoutes />;
+  return (
+    <>
+      <AnimatedRoutes />
+      <WhatsAppFab />
+      <CookieBar />
+    </>
+  );
 }

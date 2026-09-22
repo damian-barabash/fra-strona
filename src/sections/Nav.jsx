@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
-import { MENU, MENU_A, MENU_B, MENU_HREF, hrefKey, ABOUT_ITEMS } from "../lib/menu";
+import { MENU, MENU_A, MENU_B, MENU_CTA, MENU_HREF, hrefKey, ABOUT_ITEMS } from "../lib/menu";
 
 const SOC = [
   { k: "facebook", href: "https://facebook.com" },
@@ -49,6 +49,10 @@ export default function Nav() {
           </Link>
 
           <nav className="nav__menu">
+            <Link to={hrefOf(MENU_CTA).startsWith("/") ? hrefOf(MENU_CTA) : "/rezerwacja"} className="nav__cta"
+              onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+              <EText id={MENU_CTA} /> <i>›</i>
+            </Link>
             {MENU_A.map((id) => <NavLink key={id} id={id} />)}
             <span className="nav__div" />
             {MENU_B.map((id) => <NavLink key={id} id={id} />)}
@@ -78,7 +82,10 @@ export default function Nav() {
         onClick={() => setOpen(false)}>
         <button className="mobile-menu__close" aria-label="close">×</button>
         {MENU.map((id) =>
-          id === "nav.about" ? (
+          id === MENU_CTA ? (
+            <Link key={id} to={hrefOf(id).startsWith("/") ? hrefOf(id) : "/rezerwacja"} className="mobile-menu__cta"
+              onClick={(e) => { if (editing) { e.preventDefault(); return; } setOpen(false); window.scrollTo({ top: 0 }); }}><EText id={id} /> ›</Link>
+          ) : id === "nav.about" ? (
             <div className="mobile-menu__group" key={id} onClick={(e) => e.stopPropagation()}>
               <span className="mobile-menu__grouplbl"><EText id="nav.about" /></span>
               {ABOUT_ITEMS.map((it) => (

@@ -5,6 +5,7 @@ import Banners from "../sections/Banners";
 import Programs from "../sections/Programs";
 import Fleet from "../sections/Fleet";
 import Training from "../sections/Training";
+import Founder from "../sections/Founder";
 import Instructors from "../sections/Instructors";
 import Tracks from "../sections/Tracks";
 import Events from "../sections/Events";
@@ -25,6 +26,7 @@ export default function Home() {
         <Programs />
         <Fleet />
         <Training />
+        <Founder />
         <Instructors />
         <Tracks />
         <Events />

@@ -297,6 +297,7 @@ export default function Kalendarz() {
                         <span className="kal-row__meta">
                           {weekdayName(e.date, lang)} · {e.time} · {e.location_pl ? L(e, "location") : trackLabel(e.track, lang)}
                           {isPoznan(e.track) && <b className="kal-row__pz">POZNAŃ</b>}
+                          {e.address && <small className="kal-row__addr">{e.address}</small>}
                         </span>
                       </div>
                       <div className="kal-row__price">
@@ -384,7 +385,7 @@ function TermCard({ term, cars, lang, t, L, onBook }) {
 
         <dl className="kal-card__facts">
           <div><dt>{t("kal.fTime")}</dt><dd>{term.time || "—"}</dd></div>
-          <div><dt>{t("kal.fTrack")}</dt><dd>{term.location_pl ? L(term, "location") : trackLabel(term.track, lang)}</dd></div>
+          <div><dt>{t("kal.fTrack")}</dt><dd>{term.location_pl ? L(term, "location") : trackLabel(term.track, lang)}{term.address && <small>{term.address}</small>}</dd></div>
           <div><dt>{t("kal.fSpots")}</dt><dd>{term.capacity || "—"}</dd></div>
           <div><dt>{t("kal.fPrice")}</dt><dd>{from > 0 ? `${t("kal.from")} ${fmtZl(from)}` : "—"}</dd></div>
         </dl>

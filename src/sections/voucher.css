@@ -1,0 +1,30 @@
+/* ============ /voucher — gift voucher configurator ============ */
+.vc-head { position: relative; overflow: hidden; background: var(--ink); color: #fff; padding: clamp(104px, 11vw, 142px) 0 clamp(36px, 5vw, 60px); }
+.vc-head__flag { position: absolute; inset: 0; pointer-events: none; background: url(/assets/ui/menu_back.webp) no-repeat right -6% top -30%; background-size: clamp(420px, 52%, 880px) auto; opacity: .13; }
+.vc-head__inner { position: relative; z-index: 1; }
+.vc-head__title { margin: 12px 0 14px; }
+.vc-head__sub { color: rgba(255,255,255,.66); max-width: 640px; }
+.vc-wrap { padding-top: clamp(24px, 3vw, 40px) !important; }
+.vc-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 27vw, 380px); gap: clamp(18px, 2.4vw, 34px); align-items: start; }
+.vc-main { min-width: 0; }
+.vc-steps { border-top: 4px solid var(--red) !important; }
+.vc-switch { display: inline-flex; }
+.vc-valid { margin-top: 16px; font-size: 13px; line-height: 1.6; color: var(--muted); border-left: 3px solid var(--red); padding-left: 12px; }
+.rz-car--own .rz-car__media { background: linear-gradient(135deg, #34373d, #0d0d0d); }
+.rz-car--own .rz-car__badge { position: static; font-size: 40px; color: var(--red); text-shadow: none; }
+.vc-side { position: sticky; top: 100px; }
+.vc-side__lbl { display: block; font: 700 10px/1 var(--font-display); letter-spacing: .22em; color: var(--muted); margin-bottom: 10px; }
+.vc-card { position: relative; overflow: hidden; background: #0d0d0d; color: #fff; padding: 26px 24px 22px; border-top: 4px solid var(--red); box-shadow: 0 30px 70px rgba(0,0,0,.28); min-height: 420px; display: flex; flex-direction: column; gap: 8px; }
+.vc-card__flag { position: absolute; right: -40px; top: -40px; width: 200px; height: 200px; background-image: repeating-conic-gradient(rgba(255,255,255,.07) 0% 25%, transparent 0% 50%); background-size: 22px 22px; transform: rotate(-12deg); }
+.vc-card__logo { height: 34px; width: auto; align-self: flex-start; }
+.vc-card__eyebrow { margin-top: 14px; font: 800 10px/1 var(--font-display); letter-spacing: .3em; color: var(--red); }
+.vc-card__for { font: 900 clamp(20px, 2vw, 26px)/1.1 var(--font-display); text-transform: uppercase; min-height: 1.2em; }
+.vc-card__what { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+.vc-card__what b { font: 800 14px/1.2 var(--font-display); text-transform: uppercase; }
+.vc-card__what span { font: 500 12px/1.4 var(--font-body); color: rgba(255,255,255,.6); }
+.vc-card__msg { font: italic 500 13px/1.55 var(--font-body); color: rgba(255,255,255,.8); border-left: 2px solid var(--red); padding-left: 10px; margin-top: 6px; }
+.vc-card__code { margin-top: auto; padding: 12px; border: 1px dashed rgba(255,255,255,.3); text-align: center; font: 800 10px/1 var(--font-display); letter-spacing: .22em; color: rgba(255,255,255,.55); }
+.vc-card__price { font: 900 26px/1 var(--font-display); }
+.vc-card__price small { font: 600 11px var(--font-body); color: var(--red); }
+.vc-card__car { position: absolute; right: -8%; bottom: 96px; width: 60%; opacity: .55; filter: drop-shadow(0 16px 26px rgba(0,0,0,.6)); pointer-events: none; }
+@media (max-width: 960px) { .vc-grid { grid-template-columns: 1fr; } .vc-side { position: static; } }

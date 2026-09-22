@@ -183,7 +183,11 @@ export default function Kontakt() {
                   <motion.div className="kt-done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <motion.div className="kt-done__box" initial={{ y: 22, scale: .96 }} animate={{ y: 0, scale: 1 }}
                       transition={{ type: "spring", stiffness: 260, damping: 22 }}>
-                      <div className="kt-done__lights">{[1, 2, 3, 4, 5].map((i) => <span key={i} />)}</div>
+                      <div className="kt-done__lights">{[1, 2, 3, 4, 5].map((i) => <span key={i} style={{ ["--i"]: i }} />)}</div>
+                      <svg className="kt-done__check" viewBox="0 0 120 120" width="96" height="96" aria-hidden="true">
+                        <circle className="kt-done__ring" cx="60" cy="60" r="52" pathLength="1" />
+                        <path className="kt-done__mark" d="M36 62 L53 78 L86 42" pathLength="1" />
+                      </svg>
                       <h3 className="kt-done__t">{t("kon.doneTitle")}</h3>
                       <p className="kt-done__p">{t("kon.doneSub")}</p>
                       <button type="button" className="btn btn--dark" onClick={() => setPhase("idle")}>{t("kon.doneBtn")}</button>

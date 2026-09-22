@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { fmtEur } from "../lib/ice";
+import { usePayRedirect } from "../lib/pay";
 import "../sections/wyprawa.css";
 import "../sections/zakup-wyprawa.css";
 
@@ -111,7 +111,7 @@ export default function ZakupWyprawa() {
                   </>
                 ) : (
                   <PayTrip pkg={pkg} trip={trip} persons={persons} total={total} form={form}
-                    t={t} L={L} createTripBooking={createTripBooking} />
+                    t={t} create={createTripBooking} />
                 )}
               </div>
 
@@ -142,72 +142,19 @@ export default function ZakupWyprawa() {
   );
 }
 
-/* payment — a luxury "sealing" animation in the trip's accent colour */
-function PayTrip({ pkg, trip, persons, total, form, t, L, createTripBooking }) {
-  const [phase, setPhase] = useState("paying");
-  const [fill, setFill] = useState(0);
-  const [err, setErr] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  const sent = useRef(false);
-
-  useEffect(() => {
-    let raf = 0, cancelled = false;
-    const t0 = performance.now(), dur = 2300;
-    const submit = async () => {
-      if (sent.current) return;
-      sent.current = true;
-      const r = await createTripBooking({
-        package_id: pkg.id, persons,
-        full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
-      });
-      if (cancelled) return;
-      if (r?.ok) setPhase("done");
-      else { setErr(r?.error || "Błąd rezerwacji"); setPhase("error"); }
-    };
-    const tick = (now) => {
-      if (cancelled) return;
-      const q = Math.min(1, (now - t0) / dur);
-      setFill(Math.round(q * 100));
-      if (q < 1) raf = requestAnimationFrame(tick); else submit();
-    };
-    raf = requestAnimationFrame(tick);
-    return () => { cancelled = true; cancelAnimationFrame(raf); };
-  }, [attempt]); // eslint-disable-line
-
-  const retry = () => { sent.current = false; setErr(""); setFill(0); setPhase("paying"); setAttempt((a) => a + 1); };
-
+/* payment — a luxury "sealing" animation, then the order + Tpay transaction and the gateway */
+function PayTrip({ pkg, persons, form, t, create }) {
+  const { phase, fill, err, retry } = usePayRedirect(create, { package_id: pkg.id, persons, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note });
   return (
     <div className="zw-pay">
       <div className="zw-seal" style={{ ["--f"]: `${fill}%` }}>
         <svg viewBox="0 0 120 120" width="150" height="150">
           <circle cx="60" cy="60" r="52" className="zw-seal__track" />
-          <circle cx="60" cy="60" r="52" className="zw-seal__arc"
-            strokeDasharray={`${(fill / 100) * 327} 327`} transform="rotate(-90 60 60)" />
+          <circle cx="60" cy="60" r="52" className="zw-seal__arc" strokeDasharray={`${(fill / 100) * 327} 327`} transform="rotate(-90 60 60)" />
           <text x="60" y="68" textAnchor="middle" className="zw-seal__pct">{fill}%</text>
         </svg>
       </div>
-
-      {phase === "paying" && <div className="zw-pay__status">{t("flota.bk.processing")}</div>}
-
-      <AnimatePresence>
-        {phase === "done" && (
-          <motion.div className="zw-pay__done" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-            <h3 className="zw-pay__t">{t("wy.doneTitle")}</h3>
-            <p className="zw-pay__p">{t("wy.doneSub")}</p>
-            <div className="zw-receipt">
-              <div><span>{L(trip, "title")} · {L(pkg, "name")} · {persons} {t("ice.personsShort")}</span><b>{fmtEur(total, pkg.currency)}</b></div>
-              <div className="zw-receipt__demo">{t("flota.bk.demoNote")}</div>
-            </div>
-            <div className="zw-pay__btns">
-              <Link to={`/produkty/${trip.slug}`} className="btn wy-btn--ghost zw-ghost" onClick={() => window.scrollTo({ top: 0 })}>
-                {t("flota.bk.close")}
-              </Link>
-              <Link to="/" className="btn wy-btn" onClick={() => window.scrollTo({ top: 0 })}>Fastline</Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {phase !== "error" && <div className="zw-pay__status">{phase === "redirect" ? "→ Tpay" : t("flota.bk.processing")}</div>}
       {phase === "error" && (
         <div className="zw-pay__done">
           <h3 className="zw-pay__t">Ups!</h3>

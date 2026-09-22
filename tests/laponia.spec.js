@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("products lead with Heels → Driver2Racer, then the premium pair (Monaco + Laponia)", async ({ page }) => {
   await page.goto("/produkty");
@@ -7,10 +9,10 @@ test("products lead with Heels → Driver2Racer, then the premium pair (Monaco +
   expect(codes[0]).toContain("HEELS");
   expect(codes[1]).toContain("DRIVER 2 RACER");
   // Monaco and Laponia sit right after (their order relative to each other is CMS-controlled)
-  const premium = [codes[2], codes[3]].join(" | ");
+  const premium = [codes[2], codes[3], codes[4]].join(" | ");   // Andaluzja 2026 joined the premium group
   expect(premium).toContain("MONACO");
   expect(premium).toContain("ICE DRIVING");
-  expect(await page.locator(".pp").count()).toBe(9);
+  expect(await page.locator(".pp").count()).toBe(10);
 });
 
 test("Laponia page renders in the ice theme with hero video and CMS packages", async ({ page }) => {
@@ -34,28 +36,29 @@ test("Laponia page renders in the ice theme with hero video and CMS packages", a
   expect(errors, errors.join("\n")).toHaveLength(0);
 });
 
-test("ice configurator: package → car → date inside the season window → details → payment", async ({ page }) => {
+test("ice configurator: package → date inside the season window → product card → details → payment", async ({ page }) => {
   await page.goto("/produkty/ice-driving-laponia");
   await page.waitForSelector(".lp-pkg__btn");
   await page.locator(".lp-pkg__btn").first().click();   // 2-day package
   await expect(page).toHaveURL(/\/rezerwacja-ice\?pkg=/);
 
-  // the package is preset, so we start on the car step
-  await expect(page.locator(".ri-step.on")).toContainText("AUTO");
-  await expect(page.locator(".ri-chips")).toContainText("5450");
-  expect(await page.locator(".ri-car").count()).toBeGreaterThan(3);
-  await page.locator(".ri-car").first().click();
-  await page.locator(".ri-foot .lp-btn").click();       // → TERMIN
+  // the package is preset, so we start on the date step (no car choice for the ice programme)
   await expect(page.locator(".ri-step.on")).toContainText("TERMIN");
-  await expect(page.locator(".ri-chips")).toContainText("PORSCHE");
+  await expect(page.locator(".ri-chips")).toContainText("5450");
+  await expect(page.locator(".ri-step", { hasText: "AUTO" })).toHaveCount(0);
 
   // only dates where a 2-day stay fits inside the window are selectable
   const free = page.locator(".ri-day.is-free");
-  expect(await free.count()).toBeGreaterThan(20);
+  expect(await free.count()).toBeGreaterThan(15);   // 20 Feb – 10 Mar window, 2-day stays
   await free.nth(2).click();
   await expect(page.locator(".ri-range")).toContainText("2027");
 
-  await page.locator(".ri-foot .lp-btn").click();       // → DANE
+  await page.locator(".ri-foot .lp-btn").click();       // → PRODUKT (the shop-style card)
+  await expect(page.locator(".ri-step.on")).toContainText("PRODUKT");
+  await expect(page.locator(".pcard-x__price b")).toContainText("€");
+  await expect(page.locator(".pcard-x__price i")).toContainText("PLN");
+  await page.locator(".pcard-x__btn").click();          // ZAMAWIAM → DANE
+  await expect(page.locator(".ri-step.on")).toContainText("DANE");
   await page.fill('.ri-field:has(span:text-is("Imię i nazwisko")) input', "Playwright Ice");
   await page.fill('.ri-field:has(span:text-is("Telefon")) input', "+48 500 100 200");
   await page.fill('.ri-field input[type=email]', "pw-ice@example.com");

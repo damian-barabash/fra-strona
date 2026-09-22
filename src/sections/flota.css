@@ -116,9 +116,10 @@
 .fl-grid__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .fl-card { position: relative; text-align: left; background: #fff; border: 1px solid var(--line); overflow: hidden; transition: transform .3s cubic-bezier(.16,.8,.3,1), box-shadow .3s; }
 .fl-card:hover { transform: translateY(-6px); box-shadow: 0 24px 50px rgba(0,0,0,.14); }
-.fl-card__media { position: relative; aspect-ratio: 16/10; background: linear-gradient(135deg, var(--cc, #333), rgba(0,0,0,.25)); display: grid; place-items: center; overflow: hidden; }
-.fl-card__media img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
-.fl-card:hover .fl-card__media img { transform: scale(1.06); }
+.fl-card__media { position: relative; aspect-ratio: 16/10; background: radial-gradient(120% 90% at 50% 20%, color-mix(in srgb, var(--cc, #333) 70%, #fff) 0%, var(--cc, #333) 55%, rgba(0,0,0,.35) 100%); display: grid; place-items: center; overflow: hidden; }
+/* the whole car stays visible — contain, not cover — with a floor shadow under it */
+.fl-card__media img { width: 90%; height: 84%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 22px 24px rgba(0,0,0,.45)); transition: transform .5s; }
+.fl-card:hover .fl-card__media img { transform: scale(1.05) translateY(-3px); }
 .fl-card__badge { position: absolute; right: 10px; bottom: 8px; font: 900 clamp(30px,3.6vw,52px)/.8 var(--font-display); color: rgba(255,255,255,.85); text-shadow: 0 3px 14px rgba(0,0,0,.4); pointer-events: none; }
 .fl-card__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 15px 16px; }
 .fl-card__name { font: 800 14px/1.1 var(--font-display); text-transform: uppercase; letter-spacing: .01em; color: var(--text); }

@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("products wall renders every product from the CMS, no console errors", async ({ page }) => {
   const errors = [];
@@ -8,13 +10,13 @@ test("products wall renders every product from the CMS, no console errors", asyn
   await page.goto("/produkty");
   await page.waitForSelector(".pp", { timeout: 10000 });
 
-  expect(await page.locator(".pp").count()).toBe(9);
+  expect(await page.locator(".pp").count()).toBe(10);
   // Heels and Laponia carry their own logos, so the first code plate belongs to Driver2Racer
   await expect(page.locator(".pp__code").first()).toHaveText("D2R");
   await expect(page.locator(".pp__logo")).toHaveCount(2);
   // every plate has a photo
   const withPhoto = await page.locator(".pp__photo").count();
-  expect(withPhoto).toBe(9);
+  expect(withPhoto).toBe(10);
 
   const scrollX = await page.evaluate(() => { window.scrollTo(400, 0); return window.scrollX; });
   expect(scrollX).toBe(0);
@@ -30,11 +32,11 @@ test("nav 'PRODUKTY' opens the wall and a plate opens the product page", async (
   await page.waitForTimeout(1200);
   if (isMobile) {
     await page.locator(".nav__burger").click();
-    await page.locator(".mobile-menu a", { hasText: "PRODUKTY" }).click();
+    await page.locator(".mobile-menu a", { hasText: "OFERTA" }).click();
   } else {
-    await page.locator(".nav__menu a", { hasText: "PRODUKTY" }).click();
+    await page.locator(".nav__menu a", { hasText: "OFERTA" }).click();
   }
-  await expect(page).toHaveURL(/\/produkty$/);
+  await expect(page).toHaveURL(/\/oferta$/);
   await page.waitForSelector(".pp");
 
   await page.locator('a.pp[href="/produkty/stage-1"]').click();   // the plate itself — the footer links there too

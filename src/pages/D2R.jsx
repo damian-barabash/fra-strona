@@ -34,7 +34,6 @@ export default function D2R({ p }) {
   const gains = lines(L(p, "learn")).map(split);          // SZYBKOŚĆ / REAKCJA / TECHNIKA
   const includes = lines(L(p, "includes"));               // what the package holds
   const fleet = lines(L(p, "packages")).map(split);       // race cars
-  const tracks = lines(L(p, "places"));
   const gallery = Array.isArray(p.photos) ? p.photos : [];
   const buy = () => { window.scrollTo({ top: 0 }); nav(`/zakup?produkt=${p.slug}`); };
 
@@ -148,46 +147,6 @@ export default function D2R({ p }) {
                   </div>
                 ))}
               </div>
-              <div className="d2-fleet__band">
-                <div className="d2-fleet__aside reveal-left">
-                  <img className="d2-fleet__logo" src="/assets/d2r/logo-red.webp" alt="" />
-                  <span className="d2-fleet__cap">{t("d2r.fleetCap")}</span>
-                  <span className="d2-fleet__bar" />
-                  <button className="btn btn--red" onClick={buy}>{t("d2r.buy")} <span className="btn__arrow">›</span></button>
-                </div>
-                <figure className="d2-fleet__photo reveal-scale zoomable" onClick={() => openLightbox(["/assets/d2r/fleet.webp"])}>
-                  <img src="/assets/d2r/fleet.webp" alt="" loading="lazy" />
-                  <span className="d2-fleet__zoom">⤢</span>
-                </figure>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ---------------- TRACKS (marquee) ---------------- */}
-        {!!tracks.length && (
-          <section className="section section--dark d2-tracks">
-            <div className="container d2-tracks__head">
-              <EText id="d2r.trackEyebrow" as="span" className="eyebrow reveal-up" />
-              <EText id="d2r.trackTitle" as="h2" className="h-section reveal-up rv-d1" />
-            </div>
-            <div className="d2-marquee">
-              <div className="d2-marquee__row">
-                {[...tracks, ...tracks].map((tr, i) => (
-                  <span key={i} className="d2-marquee__i">{tr}<i>●</i></span>
-                ))}
-              </div>
-            </div>
-            <div className="container d2-tracks__grid">
-              <ul className="d2-tracks__list">
-                {tracks.map((tr, i) => (
-                  <li key={i} className={`reveal-up rv-d${(i % 5) + 1}`}><i /> {tr}</li>
-                ))}
-              </ul>
-              <figure className="d2-tracks__photo reveal-scale zoomable" onClick={() => openLightbox(["/assets/d2r/tracks.webp"])}>
-                <img src="/assets/d2r/tracks.webp" alt="" loading="lazy" />
-                <span className="d2-fleet__zoom">⤢</span>
-              </figure>
             </div>
           </section>
         )}
@@ -305,8 +264,10 @@ function Telemetry({ t }) {
   );
 }
 
-/* a circuit outline with a car that laps it as the page scrolls */
-const TRACK_D = "M60,150 C60,80 120,40 200,40 L520,40 C610,40 660,80 660,140 C660,190 620,214 560,214 L420,214 C370,214 340,236 340,268 C340,300 312,320 262,320 L150,320 C90,320 60,286 60,236 Z";
+/* A proper circuit map — kerbs on the corners, sector colours, start/finish gantry, a DRS zone
+   and turn numbers — with a car that laps it as the page scrolls. */
+const TRACK_D = "M120,232 L120,120 C120,76 150,54 196,54 L470,54 C520,54 548,76 560,112 L586,190 C598,226 632,238 660,224 C692,208 700,176 684,150 L668,124 C654,102 668,78 700,78 L780,78 C830,78 852,108 852,150 L852,232 C852,282 818,306 770,306 L636,306 C604,306 590,286 582,258 L572,222 C566,200 548,188 526,188 L406,188 C376,188 360,206 356,232 L344,300 C338,330 316,346 286,346 L172,346 C136,346 120,322 120,290 Z";
+const TURNS = [[120, 120, "1"], [560, 112, "2"], [684, 150, "3"], [700, 78, "4"], [852, 150, "5"], [770, 306, "6"], [582, 258, "7"], [406, 188, "8"], [356, 232, "9"], [286, 346, "10"], [120, 290, "11"]];
 function TrackMap() {
   const wrap = useRef(null);
   const path = useRef(null);
@@ -338,14 +299,42 @@ function TrackMap() {
 
   return (
     <div className="d2-track" ref={wrap} aria-hidden="true">
-      <svg viewBox="0 0 720 360" preserveAspectRatio="xMidYMid meet">
-        <path ref={path} className="d2-track__base" d={TRACK_D} pathLength="1" />
-        <path className="d2-track__run" d={TRACK_D} pathLength="1" />
+      <svg viewBox="40 20 880 360" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <pattern id="d2kerb" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="7" height="14" fill="#e30613" /><rect x="7" width="7" height="14" fill="#fff" />
+          </pattern>
+        </defs>
+        {/* run-off + kerbs + asphalt */}
+        <path className="d2-track__runoff" d={TRACK_D} />
+        <path className="d2-track__kerb" d={TRACK_D} style={{ stroke: "url(#d2kerb)" }} />
+        <path className="d2-track__asphalt" d={TRACK_D} />
+        <path className="d2-track__centre" d={TRACK_D} />
+        {/* sectors */}
+        <path className="d2-track__s1" d={TRACK_D} pathLength="1" />
+        <path className="d2-track__s2" d={TRACK_D} pathLength="1" />
+        <path className="d2-track__s3" d={TRACK_D} pathLength="1" />
+        <path ref={path} className="d2-track__run" d={TRACK_D} pathLength="1" />
+        {/* DRS zone on the back straight */}
+        <line className="d2-track__drs" x1="640" y1="326" x2="760" y2="326" />
+        <text className="d2-track__lbl" x="700" y="340" textAnchor="middle">DRS</text>
         {/* start/finish */}
-        <rect className="d2-track__sf" x="52" y="140" width="16" height="6" />
+        <rect className="d2-track__sf" x="112" y="196" width="16" height="4" transform="rotate(90 120 198)" />
+        <rect x="102" y="192" width="36" height="12" fill="url(#d2kerb)" opacity=".9" />
+        <text className="d2-track__lbl" x="98" y="212" textAnchor="end">START / META</text>
+        {/* turn numbers */}
+        {TURNS.map(([x, y, n]) => (
+          <g key={n} className="d2-track__turn" transform={`translate(${x} ${y})`}>
+            <circle r="9" /><text y="3.5" textAnchor="middle">{n}</text>
+          </g>
+        ))}
+        <text className="d2-track__lbl d2-track__lbl--sec" x="330" y="46">S1</text>
+        <text className="d2-track__lbl d2-track__lbl--sec" x="760" y="70">S2</text>
+        <text className="d2-track__lbl d2-track__lbl--sec" x="480" y="176">S3</text>
         <g ref={car} className="d2-track__car">
-          <rect x="-9" y="-4.5" width="18" height="9" rx="2" />
-          <rect className="d2-track__wing" x="-11" y="-5.5" width="3" height="11" rx="1" />
+          <rect x="-11" y="-5" width="22" height="10" rx="2" />
+          <rect className="d2-track__wing" x="-13" y="-6.5" width="3" height="13" rx="1" />
+          <rect x="4" y="-3" width="4" height="6" fill="#fff" opacity=".8" />
         </g>
       </svg>
     </div>

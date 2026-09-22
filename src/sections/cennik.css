@@ -27,7 +27,7 @@
 
 /* the board itself — a timing sheet */
 .cn-table { position: relative; z-index: 1; background: #fff; border: 1px solid var(--line); overflow-x: auto; }
-.cn-row { display: grid; grid-template-columns: minmax(220px, 1.6fr) repeat(5, minmax(96px, 1fr)); align-items: stretch; border-bottom: 1px solid var(--line); }
+.cn-row { display: grid; grid-template-columns: minmax(220px, 1.6fr) repeat(3, minmax(110px, 1fr)); align-items: stretch; border-bottom: 1px solid var(--line); }
 .cn-row:last-child { border-bottom: none; }
 .cn-row--head { background: var(--ink); color: #fff; border-bottom: none; position: sticky; top: 0; z-index: 2; }
 .cn-row--head .cn-cell--car { color: rgba(255,255,255,.5); font: 700 10px/1 var(--font-display); letter-spacing: .18em; text-transform: uppercase; }
@@ -105,3 +105,10 @@
   .cn-cell__go { display: none; }
   .cn-cta__inner { grid-template-columns: 1fr; }
 }
+
+/* net-price labelling (every price on the board is netto) */
+.cn-net { display: inline-block; font: 600 9px/1 var(--font-body); color: var(--red); letter-spacing: .04em; text-transform: lowercase; margin-left: 2px; }
+.cn-cell--price:not(.is-off):hover .cn-net { color: rgba(255,255,255,.85); }
+.cn-list b .cn-net { font-size: 9px; }
+.cn-board__right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cn-netto { font: 800 10px/1 var(--font-display); letter-spacing: .2em; color: var(--red); padding: 8px 10px; border: 1px solid rgba(227,6,19,.35); }

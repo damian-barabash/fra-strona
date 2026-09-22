@@ -69,41 +69,42 @@
 .kal-special__go { flex: 0 0 auto; font: 800 10px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: #fff; }
 
 /* ---------- board ---------- */
-.kal-board { position: relative; background: var(--ink); color: #fff; padding: 12px; overflow: hidden; }
+/* white pit-board: paper cells on a white sheet, red top rail, soft shadow */
+.kal-board { position: relative; background: #fff; color: var(--text); padding: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0,0,0,.08); }
 .kal-board::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: url(/assets/ui/menu_back.webp) no-repeat right -4% bottom -20%;
-  background-size: 340px auto; opacity: .07;
+  background-size: 340px auto; opacity: .35; mix-blend-mode: multiply;
 }
-.kal-board::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--red), transparent 62%); }
-.kal-board__wd { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 10px 0 12px; }
-.kal-board__wd span { font: 700 10px/1 var(--font-display); letter-spacing: .18em; color: rgba(255,255,255,.42); padding-left: 8px; }
+.kal-board::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--red), var(--red) 40%, transparent 100%); }
+.kal-board__wd { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 12px 0 10px; }
+.kal-board__wd span { font: 800 10px/1 var(--font-display); letter-spacing: .18em; color: var(--muted); padding-left: 8px; }
 .kal-board__grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 
 .kal-cell {
   position: relative; display: flex; flex-direction: column;
   min-height: clamp(78px, 7vw, 104px); padding: 7px 8px;
-  background: #171717; border: 1px solid rgba(255,255,255,.06); overflow: hidden;
+  background: var(--paper); border: 1px solid var(--line); overflow: hidden;
   transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
   animation: kalCellIn .5s both cubic-bezier(.16,.8,.3,1);
   animation-delay: calc(var(--i, 0) * 22ms);
 }
-@keyframes kalCellIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
-.kal-cell.is-out { opacity: .26; }
+@keyframes kalCellIn { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+.kal-cell.is-out { opacity: .32; background: #fff; }
 .kal-cell.is-past:not(.is-out) {
-  opacity: .5;
-  background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255,255,255,.045) 6px 7px);
+  opacity: .55;
+  background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(0,0,0,.05) 6px 7px);
 }
-.kal-cell.has { cursor: pointer; background: #1c1c1c; }
-.kal-cell.has:hover { background: #232323; transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.35); }
-.kal-cell.is-sel { background: #262626; box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+.kal-cell.has { cursor: pointer; background: #fff; border-color: rgba(0,0,0,.14); }
+.kal-cell.has:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(0,0,0,.12); }
+.kal-cell.is-sel { background: #fff; box-shadow: inset 0 0 0 2px var(--ink); }
 .kal-cell.is-today { box-shadow: inset 0 0 0 2px var(--red); }
 .kal-cell.is-today.is-sel { box-shadow: inset 0 0 0 2px var(--red); }
 
 /* a day covered by a Laponia season / a trip: soft tint + a coloured band across the top,
    so consecutive days read as one multi-day range */
-.kal-cell.in-band { background: color-mix(in srgb, var(--sc) 13%, #171717); border-color: color-mix(in srgb, var(--sc) 34%, rgba(255,255,255,.06)); padding-top: 26px; cursor: pointer; }
-.kal-cell.in-band:hover { background: color-mix(in srgb, var(--sc) 20%, #171717); transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.35); }
+.kal-cell.in-band { background: color-mix(in srgb, var(--sc) 10%, #fff); border-color: color-mix(in srgb, var(--sc) 40%, var(--line)); padding-top: 26px; cursor: pointer; }
+.kal-cell.in-band:hover { background: color-mix(in srgb, var(--sc) 18%, #fff); transform: translateY(-2px); box-shadow: 0 12px 26px rgba(0,0,0,.12); }
 .kal-cell__band {
   position: absolute; left: -1px; right: -1px; top: -1px; height: 20px; z-index: 1;
   background: color-mix(in srgb, var(--sc) 92%, #000);
@@ -116,8 +117,8 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 7px;
 }
 
-.kal-cell__n { font: 800 15px/1 var(--font-display); color: rgba(255,255,255,.5); }
-.kal-cell.has .kal-cell__n { color: #fff; }
+.kal-cell__n { font: 800 15px/1 var(--font-display); color: var(--muted-2); }
+.kal-cell.has .kal-cell__n { color: var(--text); }
 .kal-cell__today {
   position: absolute; top: 8px; right: 8px;
   font: 800 9px/1 var(--font-display); letter-spacing: .14em; color: var(--red);
@@ -126,28 +127,27 @@
 
 .kal-pill {
   display: grid; gap: 1px; text-align: left; width: 100%;
-  padding: 5px 7px; border-left: 3px solid var(--tc); background: rgba(255,255,255,.07);
+  padding: 5px 7px; border-left: 3px solid var(--tc); background: color-mix(in srgb, var(--tc) 9%, #fff);
   transition: background .18s ease, transform .18s ease;
 }
 .kal-pill:hover, .kal-pill.on { background: var(--tc); transform: translateX(2px); }
 .kal-pill__time { font: 800 10px/1.2 var(--font-display); letter-spacing: .05em; color: var(--tc); }
 .kal-pill:hover .kal-pill__time, .kal-pill.on .kal-pill__time { color: #fff; }
 .kal-pill__ttl {
-  font: 700 10px/1.2 var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: #fff;
+  font: 700 10px/1.2 var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: var(--text);
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
-.kal-pill__short { display: none; font: 800 8.5px/1.2 var(--font-display); letter-spacing: .04em; color: #fff; }
-.kal-pill__loc { font: 500 9.5px/1.2 var(--font-body); color: rgba(255,255,255,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kal-pill__short { display: none; font: 800 8.5px/1.2 var(--font-display); letter-spacing: .04em; color: var(--text); }
+.kal-pill:hover .kal-pill__ttl, .kal-pill.on .kal-pill__ttl, .kal-pill:hover .kal-pill__short, .kal-pill.on .kal-pill__short { color: #fff; }
+.kal-pill__loc { font: 500 9.5px/1.2 var(--font-body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kal-pill:hover .kal-pill__loc, .kal-pill.on .kal-pill__loc { color: rgba(255,255,255,.85); }
 
 .kal-board__empty {
   position: relative; z-index: 1; margin-top: 10px; padding: 26px 18px;
   display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap;
-  background: #171717; border: 1px dashed rgba(255,255,255,.16);
-  font: 500 14px/1.5 var(--font-body); color: rgba(255,255,255,.6); text-align: center;
+  background: var(--paper); border: 1px dashed rgba(0,0,0,.2);
+  font: 500 14px/1.5 var(--font-body); color: var(--muted); text-align: center;
 }
-.kal-board__empty .btn--ghost { color: #fff; border-color: rgba(255,255,255,.3); }
-.kal-board__empty .btn--ghost:hover { border-color: #fff; }
 
 /* ---------- side rail card ---------- */
 .kal-rail { min-width: 0; }
@@ -264,3 +264,7 @@
   .kal-cta__inner { grid-template-columns: 1fr; }
   .kal-chip { padding: 9px 10px; font-size: 10px; letter-spacing: .08em; }
 }
+
+/* address line under the circuit in the rail card + upcoming rows */
+.kal-card__facts dd small { display: block; margin-top: 3px; font: 500 11px/1.3 var(--font-body); color: var(--muted); }
+.kal-row__addr { display: block; font-size: 11.5px; color: rgba(255,255,255,.4); margin-top: 2px; }

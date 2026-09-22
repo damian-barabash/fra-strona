@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+// the cookie bar is answered up-front so it never sits over a button under test
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("Monaco sits in the premium group near the top of the wall", async ({ page }) => {
   await page.goto("/produkty");
@@ -6,7 +8,7 @@ test("Monaco sits in the premium group near the top of the wall", async ({ page 
   const titles = await page.locator(".pp__title").allInnerTexts();
   const idx = titles.findIndex((tx) => tx.includes("MONACO"));
   expect(idx).toBeGreaterThanOrEqual(2);   // after Heels + Driver2Racer
-  expect(idx).toBeLessThanOrEqual(3);       // still ahead of the Stage trainings
+  expect(idx).toBeLessThanOrEqual(4);       // still ahead of the Stage trainings (Andaluzja sits next to it)
 });
 
 test("the trip page renders in the product's accent colour, with attractions, map and schedule", async ({ page }) => {
@@ -76,7 +78,7 @@ test("the footer product columns come from the CMS", async ({ page }) => {
   await page.waitForSelector(".fnav__item");
 
   const items = page.locator(".fnav__item");
-  expect(await items.count()).toBe(9);                                  // one per product
+  expect(await items.count()).toBe(10);                                 // one per product
   await expect(items.nth(0)).toHaveAttribute("href", "https://heelsonthetrack.pl/");   // external (Heels)
   // Monaco is generated from the CMS like every other product (its exact slot follows the CMS order)
   const monaco = items.filter({ hasText: "MONACO" });

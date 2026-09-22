@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
@@ -10,14 +10,25 @@ import { useRevealOnScroll } from "../lib/hooks";
 import "../sections/produkty.css";
 
 const pad2 = (n) => String(n).padStart(2, "0");
+const isTrip = (p) => p.theme === "wyprawa";
 
-/* /produkty — the offer wall. Every product is a big "plate": photo + code + title.
-   Products with an external_url (Heels) leave the site instead of opening a subpage. */
+/* /oferta — the offer: a compact sticky menu on the left (filter SZKOLENIA / WYPRAWY + jump list),
+   the big product plates on the right. Products with an external_url (Heels) leave the site. */
 export default function Produkty() {
   const { products, L, t, cmsMode, isAdmin } = useStore();
+  const { hash } = useLocation();
   const editing = cmsMode && isAdmin;
-  useRevealOnScroll([products.length]);
+  const [filter, setFilter] = useState("all");   // all | training | trips
+  const shown = useMemo(() => products.filter((p) => filter === "all" ? true : filter === "trips" ? isTrip(p) : !isTrip(p)), [products, filter]);
+  useRevealOnScroll([shown.length, filter]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
+  useEffect(() => { if (hash) document.querySelector(hash)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [hash, products.length]);
+
+  const jump = (p) => (e) => {
+    e.preventDefault();
+    if (filter !== "all" && (filter === "trips") !== isTrip(p)) setFilter("all");
+    setTimeout(() => document.getElementById(`p-${p.slug}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+  };
 
   return (
     <div className={editing ? "cms-on pr" : "pr"}>
@@ -42,8 +53,29 @@ export default function Produkty() {
 
         <section className="section section--paper pr-wall">
           <div className="tex" />
-          <div className="container">
-            {products.map((p, i) => <Plate key={p.id} p={p} i={i} L={L} t={t} editing={editing} />)}
+          <div className="container pr-layout">
+            {/* compact side menu */}
+            <aside className="pr-menu reveal-left">
+              <span className="pr-menu__lbl">{t("prod.menuLabel")}</span>
+              <div className="pr-menu__filters">
+                {[["all", "prod.filterAll"], ["training", "prod.filterTraining"], ["trips", "prod.filterTrips"]].map(([k, key]) => (
+                  <button key={k} className={`pr-menu__f ${filter === k ? "on" : ""}`} onClick={() => setFilter(k)}>{t(key)}</button>
+                ))}
+              </div>
+              <nav className="pr-menu__list">
+                {products.map((p, i) => (
+                  <a key={p.id} href={`#p-${p.slug}`} className={`pr-menu__i ${filter !== "all" && (filter === "trips") !== isTrip(p) ? "dim" : ""}`} style={{ ["--pc"]: p.color || "var(--red)" }} onClick={jump(p)}>
+                    <i>{pad2(i + 1)}</i>
+                    <span><b>{L(p, "title")}</b><small>{isTrip(p) ? t("prod.filterTrips") : (L(p, "tag") || p.code)}</small></span>
+                  </a>
+                ))}
+              </nav>
+              <span className="pr-menu__hint">{t("prod.menuHint")}</span>
+            </aside>
+
+            <div className="pr-plates">
+              {shown.map((p, i) => <Plate key={p.id} p={p} i={products.indexOf(p)} L={L} t={t} editing={editing} />)}
+            </div>
           </div>
         </section>
 
@@ -58,12 +90,8 @@ export default function Produkty() {
               <EText id="prod.ctaSub" as="p" className="lead pr-cta__sub reveal-up rv-d2" multiline />
             </div>
             <div className="pr-cta__btns reveal-up rv-d3">
-              <Link to="/rezerwacja" className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>
-                {t("prod.ctaBook")} <span className="btn__arrow">›</span>
-              </Link>
-              <Link to="/kalendarz" className="btn btn--ghost pr-cta__ghost" onClick={() => window.scrollTo({ top: 0 })}>
-                {t("prod.ctaCal")}
-              </Link>
+              <Link to="/rezerwacja" className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>{t("prod.ctaBook")} <span className="btn__arrow">›</span></Link>
+              <Link to="/kalendarz" className="btn btn--ghost pr-cta__ghost" onClick={() => window.scrollTo({ top: 0 })}>{t("prod.ctaCal")}</Link>
             </div>
           </div>
         </section>
@@ -74,12 +102,11 @@ export default function Produkty() {
   );
 }
 
-/* one product plate — photo tilts under the cursor, colour washes in on hover */
+/* one product plate — photo tilts under the cursor, colour washes in on hover (the boss likes these — kept as they are) */
 function Plate({ p, i, L, t, editing }) {
   const ref = useRef(null);
   const ext = !!p.external_url;
 
-  // eased mouse parallax on the photo (desktop only)
   useEffect(() => {
     const el = ref.current;
     if (!el || window.matchMedia("(hover: none)").matches) return;
@@ -112,40 +139,22 @@ function Plate({ p, i, L, t, editing }) {
         <span className="pp__wash" />
         <span className="pp__grid" />
         <span className="pp__streaks">{[0, 1, 2].map((k) => <i key={k} style={{ ["--i"]: k }} />)}</span>
-        {/* a product with its own brand (Heels) shows its logo instead of the code plate */}
         {p.logo
           ? <span className={`pp__logo ${p.theme === "ice" ? "pp__logo--ice" : ""}`}><img src={p.logo} alt={L(p, "title")} /></span>
           : <span className="pp__code">{p.code}</span>}
         {ext && <span className="pp__ext">↗</span>}
       </div>
-
       <div className="pp__body">
         <span className="pp__idx">{pad2(i + 1)}</span>
-        <span className="pp__tag">{L(p, "tag")}</span>
+        <span className="pp__tag">{L(p, "tag")}{isTrip(p) && p.trip_dates_pl ? ` · ${L(p, "trip_dates")}` : ""}</span>
         <h2 className="pp__title">{L(p, "title")}</h2>
         <p className="pp__exc">{L(p, "excerpt")}</p>
-        <span className="pp__go">
-          {ext ? t("prod.goExt") : t("prod.go")} <i>›</i>
-        </span>
+        <span className="pp__go">{ext ? t("prod.goExt") : t("prod.go")} <i>›</i></span>
       </div>
     </>
   );
-
   const cls = `pp reveal-up rv-d${(i % 3) + 1} ${i % 2 ? "pp--flip" : ""} ${ext ? "pp--ext" : ""}`;
   const style = { ["--pc"]: p.color || "var(--red)" };
-
-  if (ext) {
-    return (
-      <a ref={ref} className={cls} style={style} href={p.external_url} target="_blank" rel="noreferrer"
-        onClick={(e) => editing && e.preventDefault()}>
-        {inner}
-      </a>
-    );
-  }
-  return (
-    <Link ref={ref} className={cls} style={style} to={`/produkty/${p.slug}`}
-      onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
-      {inner}
-    </Link>
-  );
+  if (ext) return <a id={`p-${p.slug}`} ref={ref} className={cls} style={style} href={p.external_url} target="_blank" rel="noreferrer" onClick={(e) => editing && e.preventDefault()}>{inner}</a>;
+  return <Link id={`p-${p.slug}`} ref={ref} className={cls} style={style} to={`/produkty/${p.slug}`} onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>{inner}</Link>;
 }

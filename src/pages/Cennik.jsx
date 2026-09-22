@@ -61,13 +61,16 @@ export default function Cennik() {
                 <EText id="cen.boardTitle" as="h2" className="h-section cn-board__title reveal-up rv-d1" />
               </div>
               {/* track switch — the whole board re-prices itself */}
-              <div className="cn-switch reveal-up rv-d2" role="tablist">
+              <div className="cn-board__right reveal-up rv-d2">
+              <span className="cn-netto">{lang === "en" ? "ALL PRICES NET" : "WSZYSTKIE CENY NETTO"}</span>
+              <div className="cn-switch" role="tablist">
                 {[{ k: "lodz", l: t("cen.lodz") }, { k: "poznan", l: t("cen.poznan") }].map((x) => (
                   <button key={x.k} role="tab" aria-selected={track === x.k}
                     className={`cn-switch__b ${track === x.k ? "on" : ""}`} onClick={() => setTrack(x.k)}>
                     {x.l}
                   </button>
                 ))}
+              </div>
               </div>
             </div>
 
@@ -102,7 +105,7 @@ export default function Cennik() {
                             disabled={!price} onClick={() => book(c, p.n)}
                             title={`${c.name} · ${p.n} ${lang === "en" ? "sessions" : "sesji"}`}>
                             <span className="cn-cell__lbl">{p.n}×</span>
-                            {price ? fmtZl(price) : "—"}
+                            {price ? <>{fmtZl(price)} <small className="cn-net">{t("card.net")}</small></> : "—"}
                             <span className="cn-cell__go">{t("cen.book")} ›</span>
                           </button>
                         );
@@ -126,7 +129,7 @@ export default function Cennik() {
                           disabled={!price}
                           onClick={() => { window.scrollTo({ top: 0 }); nav(`/rezerwacja?custom=1&sessions=${p.n}`); }}>
                           <span className="cn-cell__lbl">{p.n}×</span>
-                          {price ? fmtZl(price) : "—"}
+                          {price ? <>{fmtZl(price)} <small className="cn-net">{t("card.net")}</small></> : "—"}
                           <span className="cn-cell__go">{t("cen.book")} ›</span>
                         </button>
                       );
@@ -156,7 +159,7 @@ export default function Cennik() {
                   {icePackages.map((pk) => (
                     <li key={pk.id}>
                       <span>{L(pk, "name")} <i>{L(pk, "sessions")}</i></span>
-                      <b>{fmtEur(pk.price, pk.currency)}</b>
+                      <b>{fmtEur(pk.price, pk.currency)} <small className="cn-net">{t("card.net")}</small></b>
                     </li>
                   ))}
                 </ul>
@@ -177,7 +180,7 @@ export default function Cennik() {
                     return (
                       <li key={i}>
                         <span>{parts[0]} <i>{parts.slice(1).join(" — ")}</i></span>
-                        <b>{price}</b>
+                        <b>{price} {price && <small className="cn-net">{t("card.net")}</small>}</b>
                       </li>
                     );
                   })}
