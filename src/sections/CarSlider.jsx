@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
@@ -126,7 +127,7 @@ export default function CarSlider({ onChoose, onCurrent, jumpTo, onJumped, hideH
                 </AnimatePresence>
               )}
             </div>
-            <button className="fl-stage__more" onClick={() => go(1)}><EText id="flota.more" /></button>
+            <Link className="fl-stage__more" to={`/flota/${car.slug}`} onClick={() => window.scrollTo({ top: 0 })}><EText id="flota.more" /></Link>
           </div>
 
           <div className="fl-slider__side fl-slider__side--next">

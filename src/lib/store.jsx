@@ -12,7 +12,7 @@ const LS_TOKEN = "fra_admin_token";
 export function StoreProvider({ children }) {
   const [lang, setLang] = useState(() => localStorage.getItem(LS_LANG) || "pl");
   const [content, setContent] = useState({}); // key -> {pl,en,kind}
-  const [cars, setCars] = useState([]);
+  const [allCars, setCars] = useState([]);   // every car (sport + race) — the admin edits this list
   const [instructors, setInstructors] = useState([]);
   const [events, setEvents] = useState([]);
   const [programs, setPrograms] = useState([]);
@@ -121,8 +121,13 @@ export function StoreProvider({ children }) {
     return r;
   };
 
+  // configurators, price board and the home slider only ever see the sport cars; the race cars
+  // (Mini Cup, GT3 Cup, Super Trofeo) are shown for reading on the Flota tab and their own pages
+  const cars = allCars.filter((c) => (c.category || "sport") === "sport");
+  const raceCars = allCars.filter((c) => c.category === "race");
+
   const setters = { cars: setCars, instructors: setInstructors, events: setEvents, programs: setPrograms, banners: setBanners, tracks: setTracks, media: setMediaList, terms: setTerms, products: setProducts, ice_packages: setIcePackages, ice_windows: setIceWindows, trip_packages: setTripPackages, trip_attractions: setTripAttractions, trip_points: setTripPoints };
-  const getters = { cars, instructors, events, programs, banners, tracks, media: mediaList, terms, products, ice_packages: icePackages, ice_windows: iceWindows, trip_packages: tripPackages, trip_attractions: tripAttractions, trip_points: tripPoints };
+  const getters = { cars: allCars, instructors, events, programs, banners, tracks, media: mediaList, terms, products, ice_packages: icePackages, ice_windows: iceWindows, trip_packages: tripPackages, trip_attractions: tripAttractions, trip_points: tripPoints };
 
   // public checkout: the edge function creates the pending booking + the Tpay transaction and
   // answers with payment_url; the browser only ever sends ids (prices are computed server-side)
@@ -157,7 +162,7 @@ export function StoreProvider({ children }) {
 
   const value = {
     lang, setLang, ready,
-    content, cars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints,
+    content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints,
     raw, t, media, L, reload: load,
     token, admin, isAdmin: !!admin,
     cmsMode, setCmsMode,

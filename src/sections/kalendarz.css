@@ -138,6 +138,8 @@
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
 .kal-pill__short { display: none; font: 800 8.5px/1.2 var(--font-display); letter-spacing: .04em; color: var(--text); }
+.kal-pill__start { display: none; font: 800 10px/1.2 var(--font-display); color: var(--tc); }
+.kal-pill:hover .kal-pill__start, .kal-pill.on .kal-pill__start { color: #fff; }
 .kal-pill:hover .kal-pill__ttl, .kal-pill.on .kal-pill__ttl, .kal-pill:hover .kal-pill__short, .kal-pill.on .kal-pill__short { color: #fff; }
 .kal-pill__loc { font: 500 9.5px/1.2 var(--font-body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kal-pill:hover .kal-pill__loc, .kal-pill.on .kal-pill__loc { color: rgba(255,255,255,.85); }
@@ -237,14 +239,16 @@
   .kal-board__wd { gap: 4px; padding: 6px 0 8px; }
   .kal-board__wd span { padding-left: 0; text-align: center; font-size: 9.5px; letter-spacing: .1em; }
   .kal-board__grid { flex: 1; gap: 4px; grid-auto-rows: minmax(0, 1fr); }
-  .kal-cell { min-height: 54px; padding: 5px 4px; overflow: hidden; }
+  .kal-cell { min-height: 64px; padding: 5px 3px; overflow: hidden; }
   .kal-cell__n { font-size: 13px; }
   .kal-cell__today { top: 3px; right: 3px; font-size: 7px; letter-spacing: .04em; }
   /* keep the pills (so a training is readable at a glance), just compact them */
   .kal-cell__events { margin-top: 5px; gap: 3px; }
-  .kal-pill { padding: 3px 4px; border-left-width: 2px; }
+  .kal-pill { padding: 4px 3px 4px 5px; border-left-width: 3px; gap: 2px; }
   .kal-pill:hover, .kal-pill.on { transform: none; }
-  .kal-pill__time { font-size: 8.5px; }
+  .kal-pill__time { display: none; }
+  .kal-pill__start { display: block; }
+  .kal-pill__short { font-size: 8px; letter-spacing: .06em; }
   .kal-pill__ttl, .kal-pill__loc { display: none; }
   .kal-pill__short { display: block; }
   .kal-bar { gap: 10px; }

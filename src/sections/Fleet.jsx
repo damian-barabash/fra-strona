@@ -91,7 +91,7 @@ export default function Fleet() {
               )}
 
               <div className="fleet__model" style={{ zIndex: 3 }}>{car.name}</div>
-              <a className="fleet__more" href="#"><EText id="fleet.more" /></a>
+              <Link className="fleet__more" to={`/flota/${car.slug}`} onClick={() => window.scrollTo({ top: 0 })}><EText id="fleet.more" /></Link>
             </div>
 
             <div className="fleet__ctrls">

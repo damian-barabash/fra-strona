@@ -220,6 +220,8 @@ export default function Kalendarz() {
                                   onClick={(ev) => { ev.stopPropagation(); pick(e, iso); }}
                                 >
                                   <span className="kal-pill__time">{e.time}</span>
+                                  {/* phones: just the start hour, so nothing gets cut */}
+                                  <span className="kal-pill__start">{String(e.time || "").split(/\s*[–-]\s*/)[0]}</span>
                                   <span className="kal-pill__ttl">{L(e, "title") || typeName(e, lang)}</span>
                                   {/* phones are too narrow for the full name — show the type instead */}
                                   <span className="kal-pill__short">{lang === "en" ? ty.short_en : ty.short_pl}</span>

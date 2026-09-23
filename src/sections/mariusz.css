@@ -88,7 +88,7 @@
   transform: translate(-50%, calc(-50% - var(--p) * 6vh)) scale(calc(1 - .64 * var(--p)));
   transform-origin: center; will-change: transform; }
 
-.mz-stage { position: relative; width: 100%; aspect-ratio: 1300 / 1207; --mx: 50%; --my: 34%; cursor: crosshair;
+.mz-stage { position: relative; width: 100%; aspect-ratio: 1300 / 1207; --mx: 50%; --my: 44%; cursor: crosshair;
   transform: translate3d(var(--px, 0px), var(--py, 0px), 0); will-change: transform; }
 .mz-face { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; }
 
@@ -97,8 +97,8 @@
 /* the mask box extends 22% above the stage so the raised helmet crown isn't clipped
    (content above the mask box would otherwise be masked out). JS maps stage-Y → box-Y. */
 .mz-kask { position: absolute; left: 0; right: 0; top: -22%; height: 122%; opacity: 1; transition: opacity .45s ease;
-  -webkit-mask-image: radial-gradient(circle 15vh at var(--mx) var(--my), #000 0 40%, transparent 72%);
-  mask-image: radial-gradient(circle 15vh at var(--mx) var(--my), #000 0 40%, transparent 72%); }
+  -webkit-mask-image: radial-gradient(circle 18vh at var(--mx) var(--my), #000 0 40%, transparent 72%);
+  mask-image: radial-gradient(circle 18vh at var(--mx) var(--my), #000 0 40%, transparent 72%); }
 .mz-kask img { position: absolute; width: var(--kw, 46%); left: var(--kl, 27%); top: var(--kt, 15%);
   filter: drop-shadow(0 12px 26px rgba(0,0,0,.4)); user-select: none; }
 .mz-stage--off .mz-kask { opacity: 0; }
@@ -261,3 +261,15 @@
   .m-xl, .m-wide { grid-column: span 2; }
   .m-xl { grid-row: span 2; }
 }
+
+/* ---- nine cups (one per title) rising onto a shelf when the bio scrolls in ---- */
+.mz-cups { margin-top: 26px; }
+.mz-cups__row { position: relative; display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; align-items: end; padding: 0 8px 10px; max-width: 560px; }
+.mz-cups__i { position: relative; display: block; opacity: 0; transform: translateY(26px) scale(.7); transform-origin: bottom center;
+  transition: opacity .55s cubic-bezier(.16,.8,.3,1), transform .7s cubic-bezier(.2,1.4,.4,1); transition-delay: calc(.1s + var(--i) * .11s); }
+.mz-cups.in .mz-cups__i { opacity: 1; transform: none; }
+.mz-cup { width: 100%; height: auto; display: block; filter: drop-shadow(0 8px 12px rgba(0,0,0,.22)); }
+.mz-cups__shelf { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: linear-gradient(90deg, #14161a, #34373d); box-shadow: 0 8px 18px rgba(0,0,0,.2); transform: scaleX(0); transform-origin: left; transition: transform .8s cubic-bezier(.16,.8,.3,1); }
+.mz-cups.in .mz-cups__shelf { transform: scaleX(1); }
+.mz-cups__lbl { display: block; margin-top: 10px; font: 800 10px/1.4 var(--font-display); letter-spacing: .2em; color: var(--red); }
+@media (max-width: 860px) { .mz-cups__row { max-width: none; } }

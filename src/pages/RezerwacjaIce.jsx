@@ -163,13 +163,13 @@ export default function RezerwacjaIce() {
                   <h3 className="lp-h">{t("flota.bk.dataTitle")}</h3>
                   <p className="ri-sub">{t("flota.bk.dataSub")}</p>
                   <div className="ri-form">
-                    <label className="ri-field"><span>{t("flota.bk.name")}</span>
+                    <label className="ri-field"><span className="req">{t("flota.bk.name")}</span>
                       <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></label>
-                    <label className="ri-field"><span>{t("flota.bk.phone")}</span>
+                    <label className="ri-field"><span className="req">{t("flota.bk.phone")}</span>
                       <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
-                    <label className="ri-field"><span>{t("flota.bk.email")}</span>
+                    <label className="ri-field"><span className="req">{t("flota.bk.email")}</span>
                       <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
-                    <label className="ri-field"><span>{t("ice.persons")}</span>
+                    <label className="ri-field"><span className="req">{t("ice.persons")}</span>
                       <input type="number" min="1" max="10" value={persons}
                         onChange={(e) => setPersons(Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)))} /></label>
                     <label className="ri-field ri-field--full"><span>{t("flota.bk.note")}</span>

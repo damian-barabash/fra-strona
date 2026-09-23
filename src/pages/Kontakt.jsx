@@ -133,7 +133,7 @@ export default function Kontakt() {
 
               <div className="kt-fields">
                 <label className="kt-field">
-                  <span>{t("kon.fName")}</span>
+                  <span className="req">{t("kon.fName")}</span>
                   <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
                 </label>
                 <label className="kt-field">
@@ -141,7 +141,7 @@ export default function Kontakt() {
                   <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
                 </label>
                 <label className="kt-field kt-field--full">
-                  <span>{t("kon.fEmail")}</span>
+                  <span className="req">{t("kon.fEmail")}</span>
                   <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
                 </label>
 
@@ -159,7 +159,7 @@ export default function Kontakt() {
                 </div>
 
                 <label className="kt-field kt-field--full">
-                  <span>{t("kon.fMsg")}</span>
+                  <span className="req">{t("kon.fMsg")}</span>
                   <textarea rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
                 </label>
               </div>

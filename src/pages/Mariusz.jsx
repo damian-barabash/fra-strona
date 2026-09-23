@@ -46,8 +46,8 @@ function HeroScene() {
   const idleT = useRef(null);
   const touch = useRef(false);
   const autoRef = useRef(false);            // roaming (idle / touch)
-  const target = useRef({ x: 50, y: 34 });  // where the spotlight wants to be (%)
-  const cur = useRef({ x: 50, y: 34 });     // where it is now (lags behind → delay)
+  const target = useRef({ x: 50, y: 44 });  // where the spotlight wants to be (%) — centred on the visor
+  const cur = useRef({ x: 50, y: 44 });     // where it is now (lags behind → delay)
   const trail = useRef([]);                 // recent positions → comet trail
   const par = useRef({ x: 0, y: 0 });       // eased counter-parallax offset (px)
 
@@ -96,7 +96,7 @@ function HeroScene() {
     const loop = (now) => {
       if (autoRef.current) {
         const t = (now - t0) / 1000; // roam a lazy figure-8 around the head
-        target.current = { x: 50 + 16 * Math.sin(t * 0.8), y: 36 + 13 * Math.sin(t * 1.23 + 1) };
+        target.current = { x: 50 + 16 * Math.sin(t * 0.8), y: 45 + 12 * Math.sin(t * 1.23 + 1) };
       }
       const c = cur.current, tg = target.current;
       c.x += (tg.x - c.x) * 0.072; // slower ease → more lag behind the cursor
@@ -109,7 +109,7 @@ function HeroScene() {
       const mask = pts
         .map((p, i) => {
           const a = i === 0 ? 1 : Math.max(0, 0.66 - i * 0.16);
-          const r = Math.max(6, 15 - i * 1.8);
+          const r = Math.max(7, 18 - i * 1.9);   // a touch bigger spotlight
           const yy = (p.y + 22) / 1.22; // stage-Y → mask-box-Y (box extends 22% above)
           return `radial-gradient(circle ${r}vh at ${p.x.toFixed(1)}% ${yy.toFixed(1)}%, rgba(0,0,0,${a}) 0 38%, rgba(0,0,0,0) 70%)`;
         })
@@ -225,12 +225,56 @@ function BioSection() {
         <div className={`reveal mz-bio__head ${inView ? "in" : ""}`}>
           <EText id="mz.bioEyebrow" as="span" className="eyebrow" />
           <EText id="mz.bioTitle" as="h2" className="h-section mz-bio__title" />
+          <Trophies inView={inView} />
         </div>
         <div className={`reveal mz-bio__body ${inView ? "in" : ""}`}>
           {BIO.map((k) => <EText key={k} id={k} as="p" className="mz-bio__p" multiline />)}
         </div>
       </div>
     </section>
+  );
+}
+
+/* nine gold cups — one per Polish champion title — rise onto the shelf as the bio scrolls in */
+function Trophy() {
+  return (
+    <svg viewBox="0 0 64 110" className="mz-cup" aria-hidden="true">
+      <defs>
+        <linearGradient id="mzGold" x1="0" x2="1"><stop offset="0" stopColor="#f6d77a" /><stop offset=".45" stopColor="#c99a2e" /><stop offset=".7" stopColor="#f3d06a" /><stop offset="1" stopColor="#9e7418" /></linearGradient>
+        <linearGradient id="mzGoldV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fbe7a1" /><stop offset="1" stopColor="#b8862a" /></linearGradient>
+        <pattern id="mzChk" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="2" height="2" fill="#7a5a12" /><rect x="2" y="2" width="2" height="2" fill="#7a5a12" /></pattern>
+      </defs>
+      {/* checkered flag wings */}
+      <path d="M12 4l8 6-2 18-10-8z" fill="url(#mzGold)" /><path d="M12 4l8 6-2 18-10-8z" fill="url(#mzChk)" opacity=".55" />
+      <path d="M52 4l-8 6 2 18 10-8z" fill="url(#mzGold)" /><path d="M52 4l-8 6 2 18 10-8z" fill="url(#mzChk)" opacity=".55" />
+      {/* steering wheel */}
+      <circle cx="32" cy="14" r="8" fill="none" stroke="url(#mzGold)" strokeWidth="3" /><circle cx="32" cy="14" r="2.2" fill="url(#mzGold)" />
+      <path d="M32 16v6M26 12h4M34 12h4" stroke="url(#mzGold)" strokeWidth="2" strokeLinecap="round" />
+      {/* laurel */}
+      <path d="M20 34c-4-6-4-12 0-16M44 34c4-6 4-12 0-16" fill="none" stroke="url(#mzGold)" strokeWidth="2.4" strokeLinecap="round" />
+      {/* cup */}
+      <path d="M18 24h28l-3 22c-1 7-6 11-11 11s-10-4-11-11z" fill="url(#mzGoldV)" />
+      <path d="M22 28h20l-2 14c-1 5-4 8-8 8s-7-3-8-8z" fill="none" stroke="#fff5cf" strokeWidth="1" opacity=".5" />
+      <path d="M18 27H12c0 8 4 13 10 15M46 27h6c0 8-4 13-10 15" fill="none" stroke="url(#mzGold)" strokeWidth="3" strokeLinecap="round" />
+      {/* stem + collar */}
+      <path d="M29 57h6v8h-6z" fill="url(#mzGoldV)" /><path d="M24 65h16l2 6H22z" fill="url(#mzGold)" />
+      <circle cx="32" cy="80" r="6" fill="url(#mzGoldV)" /><circle cx="32" cy="80" r="3.5" fill="none" stroke="#7a5a12" strokeWidth=".8" />
+      {/* marble base */}
+      <path d="M16 90h32v14H16z" fill="#e9e6df" /><path d="M16 90h32v3H16z" fill="#cfcac0" />
+      <rect x="20" y="96" width="24" height="5" fill="url(#mzGold)" />
+    </svg>
+  );
+}
+function Trophies({ inView }) {
+  const { t } = useStore();
+  return (
+    <div className={`mz-cups ${inView ? "in" : ""}`} aria-label={t("mz.cupsLabel")}>
+      <div className="mz-cups__row">
+        {Array.from({ length: 9 }, (_, i) => <span key={i} className="mz-cups__i" style={{ ["--i"]: i }}><Trophy /></span>)}
+        <span className="mz-cups__shelf" />
+      </div>
+      <EText id="mz.cupsLabel" as="span" className="mz-cups__lbl" />
+    </div>
   );
 }
 

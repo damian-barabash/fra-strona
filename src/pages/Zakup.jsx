@@ -90,11 +90,11 @@ export default function Zakup() {
                     <h2 className="zk-h">{t("flota.bk.dataTitle")}</h2>
                     <p className="zk-sub">{t("zak.sub")}</p>
                     <div className="zk-form">
-                      <label className="zk-field"><span>{t("flota.bk.name")}</span>
+                      <label className="zk-field"><span className="req">{t("flota.bk.name")}</span>
                         <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></label>
-                      <label className="zk-field"><span>{t("flota.bk.phone")}</span>
+                      <label className="zk-field"><span className="req">{t("flota.bk.phone")}</span>
                         <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
-                      <label className="zk-field zk-field--full"><span>{t("flota.bk.email")}</span>
+                      <label className="zk-field zk-field--full"><span className="req">{t("flota.bk.email")}</span>
                         <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
                       <label className="zk-field zk-field--full"><span>{t("flota.bk.note")}</span>
                         <textarea rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>

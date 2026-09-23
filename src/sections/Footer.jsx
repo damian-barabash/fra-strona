@@ -2,11 +2,7 @@ import { Link } from "react-router-dom";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
 
-const SOC = [
-  { k: "facebook", href: "https://facebook.com" },
-  { k: "instagram", href: "https://instagram.com" },
-  { k: "linkedin", href: "https://linkedin.com" },
-];
+import Social from "../components/Social";
 
 // site pages that always live in the footer next to the products
 const PAGES = [
@@ -56,13 +52,7 @@ export default function Footer() {
           <img className="footer__logo" src="/assets/ui/logo_dark.webp" alt="Fastline Racing Academy" />
           <EText id="footer.eyebrow" as="div" className="footer__eyebrow" />
           <EText id="footer.tagline" as="div" className="footer__tag" />
-          <div className="footer__socials">
-            {SOC.map((s) => (
-              <a key={s.k} href={s.href} target="_blank" rel="noreferrer">
-                <img src={`/assets/ui/${s.k}.webp`} alt={s.k} />
-              </a>
-            ))}
-          </div>
+          <Social className="footer__socials" />
         </div>
 
         {cols.map((col, i) => (

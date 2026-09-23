@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
@@ -39,6 +39,7 @@ export default function Flota() {
         <div ref={sliderRef} />
         <CarSlider onChoose={bookCar} jumpTo={jumpTo} onJumped={() => setJumpTo(null)} />
         <Grid onPick={focusCar} />
+        <RaceCars />
         <CustomCta onChoose={bookCustom} />
       </main>
       <Footer />
@@ -104,7 +105,7 @@ function Grid({ onPick }) {
         </div>
         <div className="fl-grid__cards">
           {cars.map((c, i) => (
-            <button key={c.id} className={`fl-card reveal-up rv-d${(i % 5) + 1}`} onClick={() => onPick(c.id)} style={{ ["--cc"]: c.color }}>
+            <div key={c.id} role="button" tabIndex={0} className={`fl-card reveal-up rv-d${(i % 5) + 1}`} onClick={() => onPick(c.id)} onKeyDown={(e) => e.key === "Enter" && onPick(c.id)} style={{ ["--cc"]: c.color }}>
               <div className="fl-card__media">
                 {(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}
                 <span className="fl-card__badge">{c.badge}</span>
@@ -113,7 +114,39 @@ function Grid({ onPick }) {
                 <span className="fl-card__name">{c.name}</span>
                 <span className="fl-card__from">{t("flota.from")} {fmtZl(carPrice(c, 3, "lodz"))}</span>
               </div>
-            </button>
+              <Link to={`/flota/${c.slug}`} className="fl-card__more" onClick={(e) => { e.stopPropagation(); window.scrollTo({ top: 0 }); }}>{t("flota.details")} ›</Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ================= RACE CARS (read-only, on request) ================= */
+function RaceCars() {
+  const { raceCars, t, L } = useStore();
+  if (!raceCars.length) return null;
+  return (
+    <section className="section section--dark fl-race" id="wyscigowe">
+      <div className="speedfx">{[0, 1, 2].map((i) => <span key={i} style={{ top: `${22 + i * 26}%`, left: "-30%", width: "48%", animationDelay: `${i * 1.05}s` }} />)}</div>
+      <div className="container">
+        <div className="fl-race__head">
+          <EText id="flota.raceEyebrow" as="span" className="eyebrow reveal-up" />
+          <EText id="flota.raceTitle" as="h2" className="h-section reveal-up rv-d1" />
+          <EText id="flota.raceSub" as="p" className="lead fl-race__sub reveal-up rv-d2" multiline />
+        </div>
+        <div className="fl-race__grid">
+          {raceCars.map((c, i) => (
+            <Link key={c.id} to={`/flota/${c.slug}`} className={`fl-racecard reveal-up rv-d${(i % 3) + 1}`} style={{ ["--cc"]: c.color }} onClick={() => window.scrollTo({ top: 0 })}>
+              <span className="fl-racecard__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}<span className="fl-racecard__badge">{c.badge}</span></span>
+              <span className="fl-racecard__body">
+                <b>{c.name}</b>
+                <span className="fl-racecard__spec">{[c.power, c.engine, c.weight].filter(Boolean).join(" · ")}</span>
+                <span className="fl-racecard__desc">{L(c, "description")}</span>
+                <span className="fl-racecard__go">{t("flota.details")} ›</span>
+              </span>
+            </Link>
           ))}
         </div>
       </div>

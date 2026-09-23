@@ -11,12 +11,14 @@ import { FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, carPrice, customPrice, fmtZl } from "../lib/flota";
 import { usePayRedirect } from "../lib/pay";
 import { useRevealOnScroll } from "../lib/hooks";
+import ProductCard from "../components/ProductCard";
+import "../sections/productcard.css";
 import "../sections/flota.css";
 import "../sections/rezerwacja.css";
 import "../sections/voucher.css";
 
 const OWN = { id: "__own__", own: true };
-const STEPS = ["auto", "pakiet", "gift", "dane", "platnosc"];
+const STEPS = ["auto", "pakiet", "gift", "produkt", "dane", "platnosc"];
 
 /* /voucher — gift voucher configurator: AUTO → PAKIET (+ circuit) → DEDYKACJA → DANE → PŁATNOŚĆ.
    The voucher code is issued by the server after Tpay confirms the payment. */
@@ -39,14 +41,14 @@ export default function Voucher() {
   const pkg = packageOf(sessions);
   const carName = car?.own ? t("vch.own") : car?.name;
 
-  const canNext = step === "auto" ? !!car : step === "pakiet" ? !!sessions : step === "gift" ? true
+  const canNext = step === "auto" ? !!car : step === "pakiet" ? !!sessions : step === "gift" || step === "produkt" ? true
     : step === "dane" ? (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim()) : true;
   const goNext = () => {
     if (!canNext) { setErr(step === "auto" ? "Wybierz auto." : step === "pakiet" ? "Wybierz pakiet." : "Uzupełnij poprawnie: imię i nazwisko, e-mail oraz telefon."); return; }
     setErr(""); setStepIdx((i) => Math.min(STEPS.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const goPrev = () => { setErr(""); if (stepIdx === 0) { nav(-1); return; } setStepIdx((i) => Math.max(0, i - 1)); };
-  const LBL = { auto: t("vch.sAuto"), pakiet: t("vch.sPkg"), gift: t("vch.sGift"), dane: t("vch.sData"), platnosc: t("vch.sPay") };
+  const LBL = { auto: t("vch.sAuto"), pakiet: t("vch.sPkg"), gift: t("vch.sGift"), produkt: t("card.step"), dane: t("vch.sData"), platnosc: t("vch.sPay") };
 
   return (
     <div className="rz vc">
@@ -80,12 +82,12 @@ export default function Voucher() {
                     <p className="fl-bk__sub">{t("flota.bk.autoSub")}</p>
                     <div className="rz-cars">
                       {cars.map((c, i) => (
-                        <button key={c.id} className={`rz-car reveal-up rv-d${(i % 5) + 1} ${car?.id === c.id ? "on" : ""}`} style={{ ["--cc"]: c.color }} onClick={() => setCar(c)}>
+                        <button key={c.id} className={`rz-car ${car?.id === c.id ? "on" : ""}`} style={{ ["--cc"]: c.color, animationDelay: `${i * 60}ms` }} onClick={() => setCar(c)}>
                           <span className="rz-car__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}<span className="rz-car__badge">{c.badge}</span></span>
                           <span className="rz-car__foot"><span className="rz-car__name">{c.name}</span><span className="rz-car__from">{t("flota.from")} {fmtZl(carPrice(c, 3, "lodz"))}</span></span>
                         </button>
                       ))}
-                      <button className={`rz-car rz-car--own reveal-up ${car?.own ? "on" : ""}`} onClick={() => setCar(OWN)}>
+                      <button className={`rz-car rz-car--own ${car?.own ? "on" : ""}`} style={{ animationDelay: `${cars.length * 60}ms` }} onClick={() => setCar(OWN)}>
                         <span className="rz-car__media"><span className="rz-car__badge">⌁</span></span>
                         <span className="rz-car__foot"><span className="rz-car__name">{t("vch.own")}</span><span className="rz-car__from">{t("flota.from")} {fmtZl(customPrice(raw, 3, "lodz"))}</span></span>
                       </button>
@@ -133,14 +135,33 @@ export default function Voucher() {
                   </div>
                 )}
 
+                {step === "produkt" && (
+                  <div className="fl-bk">
+                    <h4 className="fl-bk__h">{t("card.title")}</h4>
+                    <ProductCard
+                      title={`${t("vch.title")} · ${carName}`} subtitle={car?.own ? t("flota.customDesc").replace(/<[^>]+>/g, "") : (car ? L(car, "description") : "")}
+                      code={car?.own ? "OWN" : car?.badge} color={car?.own ? "var(--red)" : (car?.color || "var(--red)")}
+                      photo={car?.own ? "/assets/covers/mariusz.webp" : (car?.png || car?.photos?.[0])} photos={car?.own ? [] : (car?.photos || [])}
+                      price={total} currency="PLN" onOrder={goNext}
+                      lines={[[t("vch.sPkg"), pkg ? `${sessions} × · ${lang === "en" ? pkg.en : pkg.pl}` : "—"], [t("kal.fTrack"), track === "poznan" ? "Tor Poznań" : "Tor Łódź"], [t("vch.for"), gift.voucher_for || "—"]]}
+                      includes={[
+                        lang === "en" ? "Gift voucher valid 12 months" : "Voucher prezentowy ważny 12 miesięcy",
+                        lang === "en" ? "30-minute sport-driving theory lecture" : "30-minutowy wykład z teorii jazdy sportowej",
+                        lang === "en" ? `${sessions} track sessions 1:1 with an instructor` : `${sessions} sesji na torze 1:1 z instruktorem`,
+                        lang === "en" ? "Fastline Racing Academy certificate signed by Mariusz Miękoś" : "Certyfikat Fastline Racing Academy z podpisem Mariusza Miękosia",
+                      ]}
+                    />
+                  </div>
+                )}
+
                 {step === "dane" && (
                   <div className="fl-bk">
                     <h4 className="fl-bk__h">{t("flota.bk.dataTitle")}</h4>
                     <p className="fl-bk__sub">{t("flota.bk.dataSub")}</p>
                     <div className="fl-form">
-                      <label className="fl-field"><span>{t("flota.bk.name")}</span><input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} autoComplete="name" /></label>
-                      <label className="fl-field"><span>{t("flota.bk.phone")}</span><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" /></label>
-                      <label className="fl-field fl-field--full"><span>{t("flota.bk.email")}</span><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" /></label>
+                      <label className="fl-field"><span className="req">{t("flota.bk.name")}</span><input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} autoComplete="name" /></label>
+                      <label className="fl-field"><span className="req">{t("flota.bk.phone")}</span><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" /></label>
+                      <label className="fl-field fl-field--full"><span className="req">{t("flota.bk.email")}</span><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" /></label>
                       <label className="fl-field fl-field--full"><span>{t("flota.bk.note")}</span><textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                     </div>
                   </div>
@@ -155,7 +176,14 @@ export default function Voucher() {
                 )}
               </div>
 
-              {step !== "platnosc" && (
+              {step === "produkt" && (
+                <div className="rz-foot">
+                  <button className="btn btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
+                  <div className="rz-foot__sum"><span>{carName}</span><b>{fmtZl(total)}</b></div>
+                  <button className="btn btn--red" onClick={goNext}>{t("card.order")} ›</button>
+                </div>
+              )}
+              {step !== "platnosc" && step !== "produkt" && (
                 <>
                   {err && <div className="rz-err">{err}</div>}
                   <div className="rz-foot">

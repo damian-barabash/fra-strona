@@ -4,11 +4,7 @@ import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
 import { MENU, MENU_A, MENU_B, MENU_CTA, MENU_HREF, hrefKey, ABOUT_ITEMS } from "../lib/menu";
 
-const SOC = [
-  { k: "facebook", href: "https://facebook.com" },
-  { k: "instagram", href: "https://instagram.com" },
-  { k: "linkedin", href: "https://linkedin.com" },
-];
+import Social from "../components/Social";
 
 export default function Nav() {
   const { lang, setLang, t, cmsMode, isAdmin } = useStore();
@@ -60,13 +56,7 @@ export default function Nav() {
 
           <div className="nav__right">
             <span className="nav__div nav__div--r" />
-            <div className="nav__socials">
-              {SOC.map((s) => (
-                <a key={s.k} href={s.href} target="_blank" rel="noreferrer">
-                  <img src={`/assets/ui/${s.k}.webp`} alt={s.k} />
-                </a>
-              ))}
-            </div>
+            <Social className="nav__socials" />
             <div className="lang lang--dark">
               <button className={lang === "pl" ? "on" : ""} onClick={() => setLang("pl")}>PL</button>
               <span>/</span>

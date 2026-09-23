@@ -199,14 +199,14 @@ export default function Rezerwacja() {
                   <p className="fl-bk__sub">{t("flota.bk.dataSub")}</p>
                   <div className="fl-form">
                     {custom && (
-                      <label className="fl-field fl-field--full"><span>{t("flota.bk.carLabel")}</span>
+                      <label className="fl-field fl-field--full"><span className="req">{t("flota.bk.carLabel")}</span>
                         <input value={carName} onChange={(e) => setCarName(e.target.value)} placeholder={t("flota.bk.carPh")} /></label>
                     )}
-                    <label className="fl-field"><span>{t("flota.bk.name")}</span>
+                    <label className="fl-field"><span className="req">{t("flota.bk.name")}</span>
                       <input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} autoComplete="name" /></label>
-                    <label className="fl-field"><span>{t("flota.bk.phone")}</span>
+                    <label className="fl-field"><span className="req">{t("flota.bk.phone")}</span>
                       <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} autoComplete="tel" /></label>
-                    <label className="fl-field fl-field--full"><span>{t("flota.bk.email")}</span>
+                    <label className="fl-field fl-field--full"><span className="req">{t("flota.bk.email")}</span>
                       <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" /></label>
                     <label className="fl-field fl-field--full"><span>{t("flota.bk.note")}</span>
                       <textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>

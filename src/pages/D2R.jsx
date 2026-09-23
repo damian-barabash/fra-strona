@@ -110,7 +110,7 @@ export default function D2R({ p }) {
                   ? <span key={i} className="d2-coach__sign reveal-up rv-d3">{par}</span>
                   : <p key={i} className={`lead reveal-up rv-d${i + 2}`}>{par}</p>
               ))}
-              <img className="d2-coach__signature reveal-up rv-d4" src="/assets/mariusz/signature-red.webp" alt="" />
+              <img className="d2-coach__signature reveal-up rv-d4" src="/assets/mariusz/signature-black.webp" alt="" />
             </div>
           </div>
         </section>

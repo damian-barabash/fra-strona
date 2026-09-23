@@ -116,11 +116,11 @@ export const DEFAULTS = {
   "mz.hint": { pl: "NAJEDŹ, ABY ZAŁOŻYĆ KASK", en: "HOVER TO PUT THE HELMET ON", kind: "text" },
   "mz.face": { pl: "/assets/mariusz/face.webp", en: null, kind: "image" },
   "mz.kask": { pl: "/assets/mariusz/kask.webp", en: null, kind: "image" },
-  "mz.sign": { pl: "/assets/mariusz/signature-red.webp", en: null, kind: "image" },
+  "mz.sign": { pl: "/assets/mariusz/signature-black.webp", en: null, kind: "image" },
 
   "mz.bioEyebrow": { pl: "FASTLINE RACING ACADEMY", en: "FASTLINE RACING ACADEMY", kind: "text" },
-  "mz.bioTitle": { pl: "OŚMIOKROTNY MISTRZ POLSKI", en: "EIGHT-TIME POLISH CHAMPION", kind: "text" },
-  "mz.bio1": { pl: "W barwach Fastline Racing w latach 2020, 2019, 2018 i 2017 za kierownicą Lamborghini Huracán Supertrofeo i Porsche 911 GT3 Cup zdobył osiem tytułów Wyścigowego Mistrza Polski.", en: "", kind: "html" },
+  "mz.bioTitle": { pl: "DZIEWIĘCIOKROTNY MISTRZ POLSKI", en: "NINE-TIME POLISH CHAMPION", kind: "text" },
+  "mz.bio1": { pl: "W barwach Fastline Racing od 2017 roku za kierownicą Lamborghini Huracán Super Trofeo EVO II i Porsche 911 GT3 Cup zdobył dziewięć tytułów Wyścigowego Mistrza Polski. W 2023 roku stanął na podium prestiżowego wyścigu Hankook 12h Spa-Francorchamps.", en: "In Fastline Racing colours, since 2017, behind the wheel of the Lamborghini Huracán Super Trofeo EVO II and Porsche 911 GT3 Cup he has won nine Polish Racing Champion titles. In 2023 he stood on the podium of the prestigious Hankook 12h Spa-Francorchamps.", kind: "html" },
   "mz.bio2": { pl: "Na swoim koncie ma również starty w prestiżowym 24-godzinnym wyścigu w Dubaju, dwukrotnie ukończonym na podium, liczne tytuły wicemistrzowskie w czempionacie narodowym WSMP, DSMP i w europejskiej serii Porsche GT3 Cup Central Europe.", en: "", kind: "html" },
   "mz.bio3": { pl: "Zawodnik Automobilklubu Wielkopolskiego. Kierowca zespołu Fastline Racing, GT3 Poland, wcześniej zespołów Forch Racing, Lukas Motorsport, Seat Sport Polska, Fiat Auto Poland.", en: "", kind: "html" },
   "mz.bio4": { pl: "Założyciel Fastline Racing Academy — dzięki sukcesom za kierownicą wyścigówek stara się wykorzystać doświadczenie z torów i rozwijać programy treningowe jazdy sportowej i wyścigowej.", en: "", kind: "html" },
@@ -132,6 +132,9 @@ export const DEFAULTS = {
   "mz.resultsTitle": { pl: "KARIERA TOROWA I WYNIKI", en: "TRACK CAREER & RESULTS", kind: "text" },
   "mz.results": {
     pl: [
+      "2023 · 2. miejsce na podium Hankook 12h Spa-Francorchamps — Lamborghini Huracán Super Trofeo EVO II — Fastline Racing Academy / GT3 Poland",
+      "2023 · Zwycięzca Długodystansowych Wyścigowych Mistrzostw Polski +3500 — Lamborghini Huracán Super Trofeo EVO II — Fastline Racing Academy / GT3 Poland",
+      "2022 · Zwycięzca Długodystansowych Wyścigowych Mistrzostw Polski +3500 — Lamborghini Huracán Super Trofeo EVO II — Fastline Racing Academy / GT3 Poland",
       "2020 · Mistrz Polski WSMP +3500 — Lamborghini Huracán Supertrofeo / Porsche GT3 Cup 991 — Fastline Racing Academy / GT3 Poland",
       "2019 · Mistrz Polski DSMP Hour Race — klasyfikacja indywidualna — Fastline Racing Academy / GT3 Poland",
       "2019 · Mistrz Polski DSMP Hour Race — klasyfikacja zespołowa (z Arturem Janoszem) — Fastline Racing Academy / GT3 Poland",
@@ -748,4 +751,33 @@ export const DEFAULTS = {
 
   // --- floating WhatsApp button (number without spaces, with country code) ---
   "wa.number": { pl: "48732098423", en: null, kind: "url" },
+
+  // --- social links (kind url — editable in the panel → Menu; empty = icon hidden) ---
+  "soc.facebook": { pl: "https://www.facebook.com/fastlineracingacademy/", en: null, kind: "url" },
+  "soc.instagram": { pl: "https://www.instagram.com/fastline_racing_academy/", en: null, kind: "url" },
+  "soc.linkedin": { pl: "https://www.linkedin.com/showcase/fastline-racing-academy/", en: null, kind: "url" },
+  "soc.youtube": { pl: "", en: null, kind: "url" },
+  "soc.tiktok": { pl: "", en: null, kind: "url" },
+
+  // --- car pages (/flota/<slug>) ---
+  "auto.eyebrow": { pl: "STAJNIA FASTLINE RACING ACADEMY", en: "THE FASTLINE RACING ACADEMY STABLE", kind: "text" },
+  "auto.specs": { pl: "DANE TECHNICZNE", en: "TECHNICAL DATA", kind: "text" },
+  "auto.about": { pl: "O SAMOCHODZIE", en: "ABOUT THE CAR", kind: "text" },
+  "auto.gallery": { pl: "GALERIA", en: "GALLERY", kind: "text" },
+  "auto.book": { pl: "ZAREZERWUJ SZKOLENIE", en: "BOOK A TRAINING", kind: "text" },
+  "auto.voucher": { pl: "KUP VOUCHER", en: "BUY A VOUCHER", kind: "text" },
+  "auto.from": { pl: "od", en: "from", kind: "text" },
+  "auto.raceTag": { pl: "SAMOCHÓD WYŚCIGOWY", en: "RACE CAR", kind: "text" },
+  "auto.raceNote": { pl: "Fabryczna wyścigówka torowa — dostępna wyłącznie na zamówienie (treningi wyścigowe, race taxi, eventy). Skontaktuj się z nami, a dobierzemy program.", en: "A factory race car — available only on request (race training, race taxi, events). Contact us and we will tailor a programme.", kind: "html" },
+  "auto.contact": { pl: "ZAPYTAJ O TERMIN", en: "ASK FOR A DATE", kind: "text" },
+  "auto.back": { pl: "CAŁA FLOTA", en: "THE WHOLE FLEET", kind: "text" },
+  "auto.other": { pl: "INNE AUTA W STAJNI", en: "OTHER CARS IN THE STABLE", kind: "text" },
+  "auto.l_accel": { pl: "0–100 KM/H", en: "0–100 KM/H", kind: "text" },
+  "auto.l_weight": { pl: "WAGA", en: "WEIGHT", kind: "text" },
+  "auto.l_drive": { pl: "NAPĘD", en: "DRIVE", kind: "text" },
+  "flota.raceEyebrow": { pl: "TYLKO NA ZAMÓWIENIE", en: "ON REQUEST ONLY", kind: "text" },
+  "flota.raceTitle": { pl: "SAMOCHODY WYŚCIGOWE", en: "RACE CARS", kind: "text" },
+  "flota.raceSub": { pl: "Fabryczne wyścigówki torowe naszego zespołu — bez homologacji, bez kompromisów. Treningi wyścigowe i race taxi ustalamy indywidualnie.", en: "Our team's factory race cars — no homologation, no compromise. Race training and race taxi are arranged individually.", kind: "html" },
+  "flota.details": { pl: "WIĘCEJ O MODELU", en: "MORE ABOUT THE MODEL", kind: "text" },
+  "mz.cupsLabel": { pl: "DZIEWIĘĆ TYTUŁÓW WYŚCIGOWEGO MISTRZA POLSKI", en: "NINE POLISH RACING CHAMPION TITLES", kind: "text" },
 };

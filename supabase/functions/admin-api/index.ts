@@ -60,7 +60,7 @@ async function autoTranslate(row: Record<string, unknown>, plFields: string[]) {
   return out;
 }
 const PL_FIELDS: Record<string, string[]> = {
-  cars: ["description_pl"],
+  cars: ["description_pl", "intro_pl"],
   instructors: ["label_pl", "subtitle_pl", "description_pl"],
   events: ["title_pl", "stage_pl", "location_pl", "weekday_pl", "month_pl", "description_pl"],
   programs: ["tag_pl", "title_pl", "desc_pl"],

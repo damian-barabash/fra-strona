@@ -86,6 +86,14 @@ export default function Tracks() {
                 <span className="tracks__maintxt" style={{ fontSize: nameFs }}>{main}</span>
               </span>
             </div>
+            {/* phones: both arrows in one row under the name (the column controls are hidden there) */}
+            <div className="tracks__mctrl">
+              <button className="tracks__arrow" onClick={() => go(-1)} aria-label="prev">«</button>
+              <span className="tracks__neighbor">/// {prev.name}</span>
+              <span className="tracks__mctrl__sp" />
+              <span className="tracks__neighbor">{next.name} ///</span>
+              <button className="tracks__arrow" onClick={() => go(1)} aria-label="next">»</button>
+            </div>
             <div className="tracks__mapbox">
               <AnimatePresence custom={dir} mode="wait">
                 <motion.img key={tr.id} className="tracks__map" src={tr.map} alt={main}

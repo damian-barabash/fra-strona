@@ -35,15 +35,26 @@ const RATES = {
   goals: { integracja: { pl: "Integracja pracowników", en: "Team integration" }, b2b: { pl: "Event B2B dla klientów", en: "B2B client event" }, szkolenie: { pl: "Szkolenie + team building", en: "Training + team building" }, vip: { pl: "Impreza VIP", en: "VIP event" } },
   tracks: ["Tor Łódź", "Tor Modlin", "Inny tor", "Doradźcie mi"],
 };
+/* line icons for the offer tiles (one style, red accent) */
+const OICON = {
+  shield: <svg viewBox="0 0 64 64"><path d="M32 6l20 7v16c0 13-8.6 24-20 29C20.6 53 12 42 12 29V13z" /><path className="a" d="M22 32l7 7 13-14" /></svg>,
+  wheel: <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="24" /><circle cx="32" cy="32" r="7" /><path d="M32 8v17M12 40l13-5M52 40l-13-5" /><path className="a" d="M8 32h8M48 32h8" /></svg>,
+  conf: <svg viewBox="0 0 64 64"><rect x="10" y="12" width="44" height="28" rx="2" /><path d="M32 40v10M20 52h24" /><path className="a" d="M18 34l8-10 6 6 8-11 6 8" /></svg>,
+  timer: <svg viewBox="0 0 64 64"><circle cx="34" cy="36" r="20" /><path d="M28 8h12M34 8v8M50 18l4-4" /><path className="a" d="M34 24v12l8 6" /><path d="M6 30h10M4 38h12M8 46h8" /></svg>,
+  cater: <svg viewBox="0 0 64 64"><path d="M8 44h48" /><path d="M12 44a20 20 0 0 1 40 0" /><path className="a" d="M32 20v-6M28 12h8" /><path d="M6 52h52" /></svg>,
+  cup: <svg viewBox="0 0 64 64"><path d="M20 10h24v12a12 12 0 0 1-24 0z" /><path d="M20 14h-8v4a8 8 0 0 0 8 8M44 14h8v4a8 8 0 0 1-8 8" /><path d="M32 34v8M22 54h20M26 42h12v12H26z" /><path className="a" d="M28 20l3 3 6-6" /></svg>,
+  taxi: <svg viewBox="0 0 64 64"><path d="M10 40l4-12a4 4 0 0 1 4-3h28a4 4 0 0 1 4 3l4 12v10H10z" /><circle cx="19" cy="48" r="4" /><circle cx="45" cy="48" r="4" /><path className="a" d="M6 40h52M24 16h16v9" /></svg>,
+  heli: <svg viewBox="0 0 64 64"><path d="M8 14h48M32 14v10" /><path d="M22 34a10 10 0 0 1 10-10h6a12 12 0 0 1 12 12v4H26a4 4 0 0 1-4-4z" /><path d="M22 34H8l-4-8" /><path className="a" d="M26 48h20M32 40v8M44 40v8" /><circle cx="42" cy="30" r="3" /></svg>,
+};
 const OFFER = [
-  { i: "i-bezp", pl: ["Bezpieczeństwo", "Pełnowymiarowe szkolenie z bezpiecznej jazdy — reakcje w sytuacjach awaryjnych, hamowanie, test łosia, opanowanie poślizgu."], en: ["Safety", "A full safe-driving course — emergency reactions, braking, the moose test, skid control."] },
-  { i: "i-sport", pl: ["Światowy poziom Sport Driving", "Trening 1:1 z instruktorem–zawodnikiem, linia wyścigowa i jazda na limicie samochodu."], en: ["World-class Sport Driving", "1:1 training with a competitor-instructor, the racing line and driving at the car's limit."] },
-  { i: "i-konf", pl: ["Zaplecze konferencyjne", "Ogrzewane budynki, sale z ekranami LED — miejsce na prezentacje, lunch i rozmowy między sesjami."], en: ["Conference facilities", "Heated buildings and rooms with LED screens — for presentations, lunch and talks between sessions."] },
-  { i: "i-gp", pl: ["Twoje Grand Prix", "Pomiar czasów, rywalizacja grup i wyniki na żywo na ekranach. Emocje jak w prawdziwych wyścigach."], en: ["Your Grand Prix", "Lap timing, team competition and live results on screens. Emotions like a real race."] },
-  { i: "i-catering", pl: ["Catering", "Całodniowa przerwa kawowa z przekąskami i ciepły lunch — obsługa na najwyższym poziomie."], en: ["Catering", "All-day coffee break with snacks and a hot lunch — top-level service."] },
-  { i: "i-nagrody", pl: ["Nagrody dla uczestników", "Vouchery, gadżety i firmowy branding — pamiątka, która przypomina o wydarzeniu przez długi czas."], en: ["Prizes for participants", "Vouchers, gadgets and corporate branding — a keepsake that recalls the day for a long time."] },
-  { i: "p5", pl: ["Race Taxi z Mistrzem Polski", "Przejazd z Mariuszem Miękosiem — 9-krotnym Wyścigowym Mistrzem Polski. Realny limit auta na torze."], en: ["Race Taxi with the champion", "A lap with Mariusz Miękoś — 9-time Polish racing champion. The real limit of the car on track."] },
-  { i: "i-atrakcje", pl: ["Atrakcje towarzyszące", "Symulatory, przeloty helikopterem, off-road, jachty — dla tych, których łączy pasja prędkości."], en: ["Extra attractions", "Simulators, helicopter flights, off-road, yachts — for those who share a passion for speed."] },
+  { ic: "shield", pl: ["Bezpieczeństwo", "Pełnowymiarowe szkolenie z bezpiecznej jazdy — reakcje w sytuacjach awaryjnych, hamowanie, test łosia, opanowanie poślizgu."], en: ["Safety", "A full safe-driving course — emergency reactions, braking, the moose test, skid control."] },
+  { ic: "wheel", pl: ["Światowy poziom Sport Driving", "Trening 1:1 z instruktorem–zawodnikiem, linia wyścigowa i jazda na limicie samochodu."], en: ["World-class Sport Driving", "1:1 training with a competitor-instructor, the racing line and driving at the car's limit."] },
+  { ic: "conf", pl: ["Zaplecze konferencyjne", "Ogrzewane budynki, sale z ekranami LED — miejsce na prezentacje, lunch i rozmowy między sesjami."], en: ["Conference facilities", "Heated buildings and rooms with LED screens — for presentations, lunch and talks between sessions."] },
+  { ic: "timer", pl: ["Twoje Grand Prix", "Pomiar czasów, rywalizacja grup i wyniki na żywo na ekranach. Emocje jak w prawdziwych wyścigach."], en: ["Your Grand Prix", "Lap timing, team competition and live results on screens. Emotions like a real race."] },
+  { ic: "cater", pl: ["Catering", "Całodniowa przerwa kawowa z przekąskami i ciepły lunch — obsługa na najwyższym poziomie."], en: ["Catering", "All-day coffee break with snacks and a hot lunch — top-level service."] },
+  { ic: "cup", pl: ["Nagrody dla uczestników", "Vouchery, gadżety i firmowy branding — pamiątka, która przypomina o wydarzeniu przez długi czas."], en: ["Prizes for participants", "Vouchers, gadgets and corporate branding — a keepsake that recalls the day for a long time."] },
+  { ic: "taxi", pl: ["Race Taxi z Mistrzem Polski", "Przejazd z Mariuszem Miękosiem — 9-krotnym Wyścigowym Mistrzem Polski. Realny limit auta na torze."], en: ["Race Taxi with the champion", "A lap with Mariusz Miękoś — 9-time Polish racing champion. The real limit of the car on track."] },
+  { ic: "heli", pl: ["Atrakcje towarzyszące", "Symulatory, przeloty helikopterem, off-road, jachty — dla tych, których łączy pasja prędkości."], en: ["Extra attractions", "Simulators, helicopter flights, off-road, yachts — for those who share a passion for speed."] },
 ];
 const DAY = [
   { pl: ["Część teoretyczna", "Wykład instruktorów–zawodników o technikach jazdy bezpiecznej i sportowej — fundament pod praktykę na torze."], en: ["Theory", "A lecture by competitor-instructors on safe and sport driving techniques — the base for the track."] },
@@ -123,7 +134,7 @@ export default function DlaFirm() {
             <div className="fr-offer__grid">
               {OFFER.map((o, i) => (
                 <article key={i} className={`fr-tile reveal-up rv-d${(i % 4) + 1}`}>
-                  <div className="fr-tile__img"><img src={`/assets/firmy/${o.i}.webp`} alt="" loading="lazy" /></div>
+                  <div className="fr-tile__ic">{OICON[o.ic]}</div>
                   <span className="fr-tile__n">0{i + 1}</span>
                   <h3>{L(o)[0]}</h3><p>{L(o)[1]}</p>
                 </article>
@@ -303,10 +314,10 @@ function Configurator({ t, lang }) {
             <Group label={t("fir.cfgExtras")}>{Object.entries(RATES.extras).map(([k, v]) => <Chip key={k} on={s.extras.includes(k)} onClick={() => toggle(k)}>{L(v)}</Chip>)}</Group>
             <Group label={t("fir.cfgDate")}><input className="fr-in" type="text" placeholder="np. czerwiec 2027" value={s.date} onChange={(e) => setS({ ...s, date: e.target.value })} /></Group>
             <div className="fr-cfg__contact">
-              <label><span>{t("fir.cfgCompany")}</span><input className="fr-in" value={c.company} onChange={(e) => setC({ ...c, company: e.target.value })} /></label>
-              <label><span>{t("fir.cfgPerson")}</span><input className="fr-in" value={c.full_name} onChange={(e) => setC({ ...c, full_name: e.target.value })} /></label>
-              <label><span>E-mail</span><input className="fr-in" type="email" value={c.email} onChange={(e) => setC({ ...c, email: e.target.value })} /></label>
-              <label><span>{t("flota.bk.phone")}</span><input className="fr-in" value={c.phone} onChange={(e) => setC({ ...c, phone: e.target.value })} /></label>
+              <label><span className="req">{t("fir.cfgCompany")}</span><input className="fr-in" value={c.company} onChange={(e) => setC({ ...c, company: e.target.value })} /></label>
+              <label><span className="req">{t("fir.cfgPerson")}</span><input className="fr-in" value={c.full_name} onChange={(e) => setC({ ...c, full_name: e.target.value })} /></label>
+              <label><span className="req">E-mail</span><input className="fr-in" type="email" value={c.email} onChange={(e) => setC({ ...c, email: e.target.value })} /></label>
+              <label><span className="req">{t("flota.bk.phone")}</span><input className="fr-in" value={c.phone} onChange={(e) => setC({ ...c, phone: e.target.value })} /></label>
               <label className="fr-cfg__full"><span>{t("fir.cfgMsg")}</span><textarea className="fr-in" rows={3} value={c.message} onChange={(e) => setC({ ...c, message: e.target.value })} /></label>
             </div>
             {err && <div className="fr-err">{err}</div>}

@@ -6,6 +6,7 @@ import Mariusz from "./pages/Mariusz";
 import MediaPage from "./pages/MediaPage";
 import Szkola from "./pages/Szkola";
 import Flota from "./pages/Flota";
+import Auto from "./pages/Auto";
 import Rezerwacja from "./pages/Rezerwacja";
 import Kalendarz from "./pages/Kalendarz";
 import Produkty from "./pages/Produkty";
@@ -60,6 +61,7 @@ function AnimatedRoutes() {
         <Route path="/media-o-nas" element={<MediaPage />} />
         <Route path="/o-szkole" element={<Szkola />} />
         <Route path="/flota" element={<Flota />} />
+        <Route path="/flota/:slug" element={<Auto />} />
         <Route path="/kalendarz" element={<Kalendarz />} />
         <Route path="/cennik" element={<Cennik />} />
         <Route path="/kontakt" element={<Kontakt />} />

@@ -71,7 +71,7 @@ export default function ProductCard({
               <article><span className="pcard-x__n">02</span><h4><EText id="card.practice" /></h4><EText id="card.practiceBody" as="p" multiline /></article>
             </div>
             <div className="pcard-x__parts pcard-x__parts--dark">
-              <article><h4><EText id="card.cert" /></h4><EText id="card.certBody" as="p" multiline /><img src="/assets/mariusz/signature-red.webp" alt="" className="pcard-x__sig" /></article>
+              <article><h4><EText id="card.cert" /></h4><EText id="card.certBody" as="p" multiline /><img src="/assets/mariusz/signature-black.webp" alt="" className="pcard-x__sig" /></article>
               <article><h4><EText id="card.instr" /></h4><EText id="card.instrBody" as="p" multiline /></article>
             </div>
           </>

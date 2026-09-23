@@ -1,6 +1,6 @@
 // Resend mailer + branded HTML templates for Fastline Racing Academy.
 // The key lives in the edge secrets (RESEND_KEY) with an app_config fallback (resend_key).
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.110.5";
 
 export const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 

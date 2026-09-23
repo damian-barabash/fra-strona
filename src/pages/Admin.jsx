@@ -42,6 +42,8 @@ const CFG = {
     label: "Samochody", icon: "car",
     fields: [
       { k: "name", t: "text", l: "Nazwa (pełna)" },
+      { k: "slug", t: "text", l: "Adres podstrony (np. toyota-gr-supra → /flota/toyota-gr-supra)" },
+      { k: "category", t: "select", l: "Kategoria", options: [{ value: "sport", label: "Samochód sportowy (konfigurator, cennik, voucher)" }, { value: "race", label: "Samochód wyścigowy (tylko zakładka Flota — bez cen, na zamówienie)" }] },
       { k: "badge", t: "text", l: "Numer / bejd (np. 911)" },
       { k: "color", t: "color", l: "Kolor tła / akcent" },
       { k: "png", t: "image", l: "PNG wycięty (opcjonalnie)" },
@@ -49,7 +51,11 @@ const CFG = {
       { k: "power", t: "text", l: "Moc (np. 530 KM)" },
       { k: "torque", t: "text", l: "Moment (np. 650 NM)" },
       { k: "top_speed", t: "text", l: "Prędkość maks. (np. 330 KM/H)" },
-      { k: "description_pl", t: "textarea", l: "Opis (PL — EN tłumaczy się samo)" },
+      { k: "accel", t: "text", l: "0–100 km/h (np. 3.3 s)" },
+      { k: "weight", t: "text", l: "Waga (np. 1595 kg)" },
+      { k: "drive", t: "text", l: "Napęd (np. Na 4 koła)" },
+      { k: "description_pl", t: "textarea", l: "Opis krótki — slider i karta (PL — EN tłumaczy się samo)" },
+      { k: "intro_pl", t: "textarea", l: "Opis rozszerzony — podstrona auta /flota/<adres>" },
       { k: "photos", t: "images", l: "Zdjęcia (mini-slider)" },
       { k: "price_3", t: "number", l: "💰 3 sesje / Experience — Łódź (zł netto)" },
       { k: "price_6", t: "number", l: "💰 6 sesji / Sport — Łódź (zł netto)" },
@@ -58,7 +64,7 @@ const CFG = {
       { k: "price_6_poznan", t: "number", l: "🟠 6 sesji — Poznań (zł netto)" },
       { k: "price_9_poznan", t: "number", l: "🟠 9 sesji — Poznań (zł netto)" },
     ],
-    note: "Ceny NETTO za pakiety 3 / 6 / 9 sesji. Termin na torze Poznań używa cen „Poznań”, wszystkie inne tory — cen „Łódź”. Voucher prezentowy liczy się z tych samych cen.",
+    note: "Każde auto ma swoją podstronę /flota/<adres> („Więcej o modelu”). Ceny NETTO za pakiety 3 / 6 / 9 sesji — Poznań używa cen „Poznań”, inne tory — „Łódź”. Samochody WYŚCIGOWE (kategoria) pokazują się tylko w zakładce Flota, bez cen i bez rezerwacji online.",
     title: (r) => r.name,
   },
   terms: {
@@ -594,6 +600,8 @@ function MenuTab() {
       <div className="adm-head"><div><h2>Menu <span className="adm-count">{MENU.length}</span></h2>
         <p className="adm-sub">Pozycje górnej nawigacji. Pierwsza pozycja („KUP SZKOLENIE”) jest czerwonym przyciskiem. „Etykieta” to tekst PL (EN tłumaczy się automatycznie), „Adres” — dokąd prowadzi link.</p></div></div>
       <div className="adm-menu">{MENU.map((id) => <MenuRow key={id} id={id} raw={raw} saveContent={saveContent} />)}</div>
+      <div className="adm-head" style={{ marginTop: 30 }}><div><h2>Social media</h2><p className="adm-sub">Linki do profili (ikony w nagłówku i stopce). Pusty adres = ikona znika.</p></div></div>
+      <div className="adm-menu">{["facebook", "instagram", "linkedin", "youtube", "tiktok"].map((k) => <SocialRow key={k} k={k} raw={raw} saveContent={saveContent} />)}</div>
     </div>
   );
 }
@@ -606,6 +614,16 @@ function MenuRow({ id, raw, saveContent }) {
     <div className="adm-menu__row">
       <label className="adm-f adm-menu__f"><span>Etykieta (PL)</span><input value={label} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} /></label>
       <label className="adm-f adm-menu__f"><span>Adres (link)</span><input value={href} onChange={(e) => setHref(e.target.value)} onBlur={commitHref} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} placeholder="/oferta lub https://…" /></label>
+    </div>
+  );
+}
+
+function SocialRow({ k, raw, saveContent }) {
+  const [href, setHref] = useState(raw(`soc.${k}`).pl || "");
+  const commit = () => { const v = href.trim(); if (v !== (raw(`soc.${k}`).pl || "")) saveContent(`soc.${k}`, v || " ", "url"); };
+  return (
+    <div className="adm-menu__row">
+      <label className="adm-f adm-menu__f"><span>{k}</span><input value={href} onChange={(e) => setHref(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} placeholder="https://…" /></label>
     </div>
   );
 }

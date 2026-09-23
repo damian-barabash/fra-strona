@@ -77,6 +77,10 @@
 .fl-slider__from { font: 600 12px/1 var(--font-body); color: var(--muted); }
 .fl-slider__choose { white-space: nowrap; }
 @media (max-width: 860px) {
+  /* "więcej o modelu" goes under the stage, never over the car */
+  .fl-stage { overflow: visible; clip-path: inset(0 0 -54px 0); margin-bottom: 54px; }
+  .fl-stage__inner { overflow: hidden; }
+  .fl-stage__more { left: 0; right: 0; bottom: -46px; text-align: center; padding: 14px; }
   .fl-slider__main { grid-template-columns: 1fr; }
   .fl-slider__side { flex-direction: row; justify-content: space-between; width: 100%; }
   .fl-slider__side--prev, .fl-slider__side--next { order: 3; }
@@ -114,7 +118,7 @@
 .fl-grid__head { max-width: 720px; margin-bottom: clamp(26px,3.5vw,44px); }
 .fl-grid__head h2 { margin: 12px 0 12px; }
 .fl-grid__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.fl-card { position: relative; text-align: left; background: #fff; border: 1px solid var(--line); overflow: hidden; transition: transform .3s cubic-bezier(.16,.8,.3,1), box-shadow .3s; }
+.fl-card { position: relative; text-align: left; cursor: pointer; background: #fff; border: 1px solid var(--line); overflow: hidden; transition: transform .3s cubic-bezier(.16,.8,.3,1), box-shadow .3s; }
 .fl-card:hover { transform: translateY(-6px); box-shadow: 0 24px 50px rgba(0,0,0,.14); }
 .fl-card__media { position: relative; aspect-ratio: 16/10; background: radial-gradient(120% 90% at 50% 20%, color-mix(in srgb, var(--cc, #333) 70%, #fff) 0%, var(--cc, #333) 55%, rgba(0,0,0,.35) 100%); display: grid; place-items: center; overflow: hidden; }
 /* the whole car stays visible — contain, not cover — with a floor shadow under it */
@@ -231,3 +235,24 @@
 .fl-pay__receipt > div:nth-child(2) span { color: var(--muted); font-size: 12px; }
 .fl-pay__demo { color: var(--muted-2) !important; font-size: 11px !important; border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 8px !important; }
 @media (prefers-reduced-motion: reduce) { .fl-tank__nozzle, .fl-pay__status { animation: none; } }
+
+/* ---------------- race cars (Flota tab only, no prices) ---------------- */
+.fl-card { display: flex; flex-direction: column; }
+.fl-card__more { display: block; padding: 0 16px 14px; font: 700 10.5px/1 var(--font-display); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+.fl-card__more:hover { color: var(--red); }
+.fl-race__head { position: relative; z-index: 1; max-width: 760px; margin-bottom: clamp(26px, 3.5vw, 44px); }
+.fl-race__head .h-section { margin: 12px 0 12px; }
+.fl-race__sub { color: rgba(255,255,255,.62); }
+.fl-race__grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.fl-racecard { display: flex; flex-direction: column; background: #171717; border: 1px solid rgba(255,255,255,.07); color: #fff; overflow: hidden; transition: transform .3s, border-color .3s; }
+.fl-racecard:hover { transform: translateY(-5px); border-color: var(--cc); }
+.fl-racecard__media { position: relative; aspect-ratio: 16/10; overflow: hidden; background: #0d0d0d; }
+.fl-racecard__media img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s; }
+.fl-racecard:hover .fl-racecard__media img { transform: scale(1.06); }
+.fl-racecard__badge { position: absolute; left: 0; bottom: 0; background: var(--cc); color: #0d0d0d; font: 900 12px/1 var(--font-display); letter-spacing: .14em; padding: 9px 12px; }
+.fl-racecard__body { display: flex; flex-direction: column; gap: 8px; padding: 18px; }
+.fl-racecard__body b { font: 800 15px/1.2 var(--font-display); text-transform: uppercase; }
+.fl-racecard__spec { font: 700 11px/1.3 var(--font-display); letter-spacing: .08em; color: var(--cc); }
+.fl-racecard__desc { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,.62); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.fl-racecard__go { margin-top: 6px; font: 700 10.5px/1 var(--font-display); letter-spacing: .14em; color: #fff; }
+@media (max-width: 900px) { .fl-race__grid { grid-template-columns: 1fr; } }

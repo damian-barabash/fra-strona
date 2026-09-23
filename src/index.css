@@ -242,3 +242,6 @@ p { margin: 0; }
 /* keep the cookie card clear of the WhatsApp button on phones */
 @media (max-width: 560px) { .ckb { bottom: 78px; } }
 @media (prefers-reduced-motion: reduce) { .wa-fab__pulse { animation: none; } }
+
+/* ---------- forms: required-field marker ---------- */
+.req::after { content: " *"; color: var(--red); font-weight: 700; }

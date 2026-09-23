@@ -44,7 +44,7 @@ export default function Events() {
         to: `/produkty/${s.slug}`, badge: s.kind === "ice" ? "ICE" : t("kal.trip"),
       });
     });
-    return list.sort((a, b) => a.sort.localeCompare(b.sort)).slice(0, 8);
+    return list.sort((a, b) => a.sort.localeCompare(b.sort)).slice(0, 5);   // the five nearest only
   }, [terms, products, iceWindows, cars, lang, L, t]);
 
   const ev = items[Math.min(sel, Math.max(0, items.length - 1))];

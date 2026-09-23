@@ -11,7 +11,7 @@ export default function Instructors() {
   const [ref] = useReveal();
   const [active, setActive] = useState(0);
   const n = instructors.length;
-  const go = (d) => setActive((a) => Math.max(0, Math.min(n - 1, a + d)));
+  const go = (d) => setActive((a) => (n ? ((a + d) % n + n) % n : 0));   // wraps around — the slider loops
 
   const act = instructors[active];
   const bio = (act && L(act, "description")) || t("instructors.body");
@@ -34,8 +34,8 @@ export default function Instructors() {
               </AnimatePresence>
             </div>
             <div className="instructors__nav">
-              <button className="navbtn" onClick={() => go(-1)} disabled={active === 0} aria-label="prev">‹</button>
-              <button className="navbtn navbtn--red" onClick={() => go(1)} disabled={active === n - 1} aria-label="next">›</button>
+              <button className="navbtn" onClick={() => go(-1)} aria-label="prev">‹</button>
+              <button className="navbtn navbtn--red" onClick={() => go(1)} aria-label="next">›</button>
             </div>
           </div>
 
