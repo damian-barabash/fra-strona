@@ -129,7 +129,8 @@
   transition: color .35s ease;
 }
 .pp:hover .pp__idx { color: color-mix(in srgb, var(--pc) 24%, var(--paper-2)); }
-.pp__tag { font: 700 10.5px/1 var(--font-display); letter-spacing: .18em; text-transform: uppercase; color: var(--pc); }
+/* keep the tag clear of the big index number in the corner */
+.pp__tag { font: 700 10.5px/1.45 var(--font-display); letter-spacing: .18em; text-transform: uppercase; color: var(--pc); padding-right: clamp(70px, 7vw, 110px); }
 .pp__title {
   margin: 10px 0 6px; max-width: 15ch;
   font: 800 clamp(22px, 2.4vw, 38px)/1.03 var(--font-display); text-transform: uppercase; letter-spacing: -.01em;
