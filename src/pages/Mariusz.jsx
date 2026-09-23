@@ -180,6 +180,14 @@ function HeroScene() {
         <div className="mz-plate">
           <img className="mz-sign" src={media("mz.sign")} alt={t("mz.name")} />
           <EText id="mz.role" as="span" className="mz-role" />
+          {/* nine cups — one per Polish title — each one rises onto the shelf a little further into the scroll */}
+          <div className="mz-hcups" aria-label={t("mz.cupsLabel")}>
+            <div className="mz-hcups__row">
+              {Array.from({ length: 9 }, (_, i) => <span key={i} className="mz-hcups__i" style={{ ["--i"]: i }}><Trophy /></span>)}
+              <span className="mz-hcups__shelf" />
+            </div>
+            <EText id="mz.cupsLabel" as="span" className="mz-hcups__lbl" />
+          </div>
         </div>
 
         <a href="#mz-bio" className="mz-scroll"><span>{t("mz.scrollHint")}</span><i /></a>
@@ -225,7 +233,6 @@ function BioSection() {
         <div className={`reveal mz-bio__head ${inView ? "in" : ""}`}>
           <EText id="mz.bioEyebrow" as="span" className="eyebrow" />
           <EText id="mz.bioTitle" as="h2" className="h-section mz-bio__title" />
-          <Trophies inView={inView} />
         </div>
         <div className={`reveal mz-bio__body ${inView ? "in" : ""}`}>
           {BIO.map((k) => <EText key={k} id={k} as="p" className="mz-bio__p" multiline />)}
@@ -265,19 +272,6 @@ function Trophy() {
     </svg>
   );
 }
-function Trophies({ inView }) {
-  const { t } = useStore();
-  return (
-    <div className={`mz-cups ${inView ? "in" : ""}`} aria-label={t("mz.cupsLabel")}>
-      <div className="mz-cups__row">
-        {Array.from({ length: 9 }, (_, i) => <span key={i} className="mz-cups__i" style={{ ["--i"]: i }}><Trophy /></span>)}
-        <span className="mz-cups__shelf" />
-      </div>
-      <EText id="mz.cupsLabel" as="span" className="mz-cups__lbl" />
-    </div>
-  );
-}
-
 /* ============ PHOTO BLOCK (contained image + text) ============ */
 function GalleryBand({ which, alt }) {
   const [ref, inView] = useReveal();

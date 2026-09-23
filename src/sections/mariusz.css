@@ -115,7 +115,7 @@
 .mz-hint { font-family: var(--font-body); font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
 
 /* signature drawn on scroll + role (arrives with the gray) */
-.mz-plate { position: absolute; left: 50%; top: calc(50% - var(--p) * 6vh);
+.mz-plate { position: absolute; left: 50%; top: calc(50% - var(--p) * 6vh); width: min(620px, 92vw);
   transform: translate(-50%, 16vh); display: flex; flex-direction: column; align-items: center; gap: 12px;
   opacity: var(--sp); pointer-events: none; }
 .mz-sign { width: min(230px, 52vw); height: auto; clip-path: inset(0 calc((1 - var(--sp)) * 100%) 0 0); }
@@ -273,3 +273,13 @@
 .mz-cups.in .mz-cups__shelf { transform: scaleX(1); }
 .mz-cups__lbl { display: block; margin-top: 10px; font: 800 10px/1.4 var(--font-display); letter-spacing: .2em; color: var(--red); }
 @media (max-width: 860px) { .mz-cups__row { max-width: none; } }
+
+/* ---- cups in the hero: each rises as --sp (signature progress 0→1) passes its own threshold ---- */
+.mz-hcups { margin-top: 22px; width: 100%; }
+.mz-hcups__row { position: relative; display: grid; grid-template-columns: repeat(9, 1fr); gap: 6px; align-items: end; padding: 0 10px 10px; }
+.mz-hcups__i { display: block; transform-origin: bottom center;
+  --t: clamp(0, calc((var(--sp) - 0.18 - var(--i) * 0.075) * 6), 1);   /* 0 → 1 over a short slice of the scroll, staggered */
+  opacity: var(--t); transform: translateY(calc((1 - var(--t)) * 28px)) scale(calc(0.7 + var(--t) * 0.3)); }
+.mz-hcups__shelf { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: linear-gradient(90deg, #14161a, #34373d); box-shadow: 0 8px 18px rgba(0,0,0,.25); transform: scaleX(var(--sp)); transform-origin: left; }
+.mz-hcups__lbl { display: block; margin-top: 10px; text-align: center; font: 800 10px/1.4 var(--font-display); letter-spacing: .2em; color: var(--red); opacity: clamp(0, calc((var(--sp) - 0.8) * 5), 1); }
+@media (max-width: 640px) { .mz-hcups__row { gap: 3px; padding: 0 4px 8px; } .mz-hcups { margin-top: 14px; } }
