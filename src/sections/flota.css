@@ -256,3 +256,26 @@
 .fl-racecard__desc { font-size: 13px; line-height: 1.6; color: rgba(255,255,255,.62); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .fl-racecard__go { margin-top: 6px; font: 700 10.5px/1 var(--font-display); letter-spacing: .14em; color: #fff; }
 @media (max-width: 900px) { .fl-race__grid { grid-template-columns: 1fr; } }
+
+/* ---------------- SPEEDOMETER (progress dial) ---------------- */
+.spd { width: 96px; }
+.spd--big { width: min(260px, 60vw); }
+.spd__svg { width: 100%; height: auto; overflow: visible; display: block; }
+.spd__track { fill: none; stroke: rgba(0,0,0,.12); stroke-width: 9; stroke-linecap: butt; }
+.spd__redzone { fill: none; stroke: rgba(227,6,19,.35); stroke-width: 9; }
+.spd__fill { fill: none; stroke: var(--red); stroke-width: 9; stroke-linecap: butt; }
+.spd__tick { stroke: rgba(0,0,0,.3); stroke-width: 1.4; }
+.spd__tick--major { stroke: rgba(0,0,0,.6); stroke-width: 2.4; }
+.spd__tick--red { stroke: var(--red); }
+.spd__num { fill: #14161a; font: 800 9px var(--font-display); text-anchor: middle; }
+.spd__needle { stroke: var(--red); stroke-width: 3.4; stroke-linecap: round; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+.spd__hub { fill: #14161a; } .spd__hub2 { fill: #fff; }
+.spd__kmh { fill: #14161a; font: 900 22px var(--font-display); text-anchor: middle; }
+.spd__unit { fill: var(--red); font: 800 8px var(--font-display); letter-spacing: .2em; text-anchor: middle; }
+/* on dark backgrounds (booking header, custom-car CTA) */
+.fl-custom .spd__track, .rz--dark .spd__track { stroke: rgba(255,255,255,.16); }
+.fl-custom .spd__tick, .rz--dark .spd__tick { stroke: rgba(255,255,255,.35); }
+.fl-custom .spd__tick--major, .rz--dark .spd__tick--major { stroke: rgba(255,255,255,.7); }
+.fl-custom .spd__tick--red, .rz--dark .spd__tick--red { stroke: var(--red); }
+.fl-custom .spd__num, .rz--dark .spd__num, .fl-custom .spd__kmh, .rz--dark .spd__kmh { fill: #fff; }
+.fl-custom .spd__hub, .rz--dark .spd__hub { fill: #fff; } .fl-custom .spd__hub2, .rz--dark .spd__hub2 { fill: var(--red); }

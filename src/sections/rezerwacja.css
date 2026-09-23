@@ -19,11 +19,12 @@
   background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); padding: 9px 13px; }
 .rz-chip b { font: 700 10px/1 var(--font-display); letter-spacing: .12em; color: var(--red); text-transform: uppercase; }
 .rz-head__gauge { position: relative; z-index: 1; }
-@media (max-width: 720px) { .rz-head { grid-template-columns: 1fr; } .rz-head__gauge { justify-self: center; } }
+/* phones: the dial shrinks into the corner so the car choice is visible right away */
+@media (max-width: 720px) { .rz-head { grid-template-columns: minmax(0, 1fr) 104px; gap: 12px; align-items: start; } .rz-head__gauge { justify-self: end; } }
 /* the gauge is a decorative dial — never let it push out of the dark header on a phone */
 .rz-head { overflow: hidden; }
-.rz-head__gauge .fuel--big { width: min(240px, 56vw); }
-@media (max-width: 560px) { .rz-head__gauge .fuel--big { width: min(190px, 52vw); } }
+.rz-head__gauge .spd--big { width: min(240px, 56vw); }
+@media (max-width: 720px) { .rz-head__gauge .spd--big { width: 104px; } .rz-head { padding: 20px 18px 18px; } .rz-head__title { font-size: 22px; } }
 
 /* steps bar (reuses .fl-steps) sits under the header */
 .rz-steps { padding: 18px clamp(24px, 3.4vw, 48px); background: #fff; border: 1px solid var(--line); border-top: none; }

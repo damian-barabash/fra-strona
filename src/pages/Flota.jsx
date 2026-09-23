@@ -9,7 +9,7 @@ import CarSlider from "../sections/CarSlider";
 import { EText, EMedia } from "../components/Editable";
 import { useReveal, useRevealOnScroll } from "../lib/hooks";
 import { carPrice, fmtZl } from "../lib/flota";
-import { FuelGauge } from "../components/Fuel";
+import { Speedo } from "../components/Fuel";
 import "../sections/flota.css";
 
 export default function Flota() {
@@ -167,7 +167,7 @@ function CustomCta({ onChoose }) {
           <EText id="flota.customDesc" as="p" className="lead fl-custom__desc reveal-up rv-d2" multiline />
           <button className="btn btn--red reveal-up rv-d3" onClick={onChoose}>{t("flota.customBtn")} <span className="btn__arrow">›</span></button>
         </div>
-        <div className="fl-custom__gauge reveal-scale rv-d2"><FuelGauge value={0.4} big /></div>
+        <div className="fl-custom__gauge reveal-scale rv-d2"><Speedo value={0.62} big /></div>
       </div>
     </section>
   );

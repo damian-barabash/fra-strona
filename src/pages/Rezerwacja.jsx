@@ -7,7 +7,7 @@ import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import CarSlider from "../sections/CarSlider";
 import ProductCard from "../components/ProductCard";
-import { FuelGauge, FuelTank } from "../components/Fuel";
+import { Speedo, FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, trackLabel, carPrice, customPrice, fmtZl, isPoznan } from "../lib/flota";
 import { usePayRedirect } from "../lib/pay";
 import "../sections/flota.css";
@@ -120,7 +120,7 @@ export default function Rezerwacja() {
                   {sessions && <span className="rz-chip"><b>{t("flota.bk.total")}</b>{fmtZl(total)} {t("card.net")}</span>}
                 </div>
               </div>
-              <div className="rz-head__gauge"><FuelGauge value={step === "platnosc" ? 1 : gauge} big /></div>
+              <div className="rz-head__gauge"><Speedo value={step === "platnosc" ? 1 : gauge} big /></div>
             </div>
 
             <div className="fl-steps rz-steps">
