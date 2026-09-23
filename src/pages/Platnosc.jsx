@@ -7,6 +7,7 @@ import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import { fmtZl } from "../lib/flota";
 import "../sections/platnosc.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const POLL_MS = 1800, GIVE_UP_MS = 90_000;
 
@@ -15,6 +16,7 @@ const POLL_MS = 1800, GIVE_UP_MS = 90_000;
 export default function Platnosc() {
   const [sp] = useSearchParams();
   const { t, orderStatus } = useStore();
+  useSeo({ title: "Płatność", path: "/platnosc", noindex: true });
   const id = sp.get("order") || "";
   const isError = sp.get("error") === "1";
   const [phase, setPhase] = useState(id ? "wait" : "empty");   // wait | paid | slow | failed | empty

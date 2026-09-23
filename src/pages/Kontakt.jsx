@@ -10,12 +10,14 @@ import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
 import { useRevealOnScroll } from "../lib/hooks";
 import "../sections/kontakt.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* /kontakt — parsed from the old site (e-mail + Łukasz + Mariusz), rebuilt with a racing feel:
    pit-board contact cards and a form whose submit runs the F1 start-light sequence.
    The message is stored and e-mailed by the `contact` edge function (Resend). */
 export default function Kontakt() {
   const { t, tracks, cmsMode, isAdmin } = useStore();
+  useSeo({ title: "Kontakt", path: "/kontakt", description: "Skontaktuj się z Fastline Racing Academy: szkolenia indywidualne, vouchery i eventy firmowe. Tel. +48 603 102 665, racingacademy@fastline.pl. Tory: Łódź, Poznań, Modlin.", jsonld: [{ "@type": "ContactPage", "@id": `${SITE}/kontakt#contact`, url: `${SITE}/kontakt`, name: "Kontakt — Fastline Racing Academy" }, breadcrumbs([{ name: "Kontakt", path: "/kontakt" }])] });
   const editing = cmsMode && isAdmin;
 
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", subject: "", message: "" });

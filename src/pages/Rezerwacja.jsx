@@ -13,6 +13,7 @@ import { usePayRedirect } from "../lib/pay";
 import "../sections/flota.css";
 import "../sections/rezerwacja.css";
 import "../sections/productcard.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 // "no date" pseudo-term — books without a specific date (arranged individually), base (Łódź) pricing
 const NO_DATE = { id: "__nodate__", noDate: true, track: "lodz", location_pl: null };
@@ -29,6 +30,7 @@ export default function Rezerwacja() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const { cars, terms, t, raw, lang, L, createBooking } = useStore();
+  useSeo({ title: "Kup szkolenie — konfigurator jazdy na torze", path: "/rezerwacja", description: "Wybierz auto, termin i pakiet 3, 6 lub 9 sesji na torze Łódź lub Poznań. Szkolenie 1:1 z instruktorem, płatność online.", jsonld: breadcrumbs([{ name: "Rezerwacja", path: "/rezerwacja" }]) });
 
   const carId = sp.get("car");
   const custom = sp.get("custom") === "1";

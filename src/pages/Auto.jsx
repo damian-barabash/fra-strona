@@ -11,6 +11,7 @@ import { useLightbox } from "../components/Lightbox";
 import { carPrice, fmtZl } from "../lib/flota";
 import { tint, isLight } from "../lib/util";
 import "../sections/auto.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* /flota/:slug — one car. Fully CMS-driven (panel → Samochody): sport cars link to the configurator
    and the voucher, race cars (category "race") are read-only — no prices, contact instead. */
@@ -20,6 +21,18 @@ export default function Auto() {
   const openLightbox = useLightbox();
   const editing = cmsMode && isAdmin;
   const car = allCars.find((c) => c.slug === slug);
+  useSeo({
+    title: car ? `${car.name} — jazda po torze` : "Flota",
+    path: `/flota/${slug}`,
+    description: car ? `${car.name}: ${car.category === "race" ? "samochód wyścigowy Fastline Racing" : `szkolenie na torze od ${car.price_3} zł netto za 3 sesje`}. ${car.description_pl || car.intro_pl || ""}` : "",
+    image: car ? (Array.isArray(car.photos) && car.photos[0]) || car.png : undefined,
+    type: "product",
+    jsonld: car ? [
+      { "@type": "Product", "@id": `${SITE}/flota/${car.slug}#product`, name: `${car.name} — szkolenie jazdy na torze`, description: clip(car.description_pl || car.intro_pl, 300), image: (Array.isArray(car.photos) ? car.photos : [car.png]).filter(Boolean).map((u) => `${SITE}${u}`), brand: { "@type": "Brand", name: car.name.split(" ")[0] }, category: car.category === "race" ? "Samochód wyścigowy" : "Szkolenie jazdy sportowej",
+        ...(car.category !== "race" && car.price_3 ? { offers: { "@type": "AggregateOffer", priceCurrency: "PLN", lowPrice: car.price_3, highPrice: car.price_9 || car.price_3, offerCount: 3, availability: "https://schema.org/InStock", url: `${SITE}/rezerwacja`, seller: { "@id": `${SITE}/#organization` } } } : {}) },
+      breadcrumbs([{ name: "Flota", path: "/flota" }, { name: car.name, path: `/flota/${car.slug}` }]),
+    ] : undefined,
+  });
   useRevealOnScroll([car?.id, allCars.length]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [slug]);
 

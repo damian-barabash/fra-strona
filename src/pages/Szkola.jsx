@@ -8,11 +8,13 @@ import ScrollProgress from "../sections/ScrollProgress";
 import { EText, EMedia } from "../components/Editable";
 import { useReveal, useRevealOnScroll, useCountUp } from "../lib/hooks";
 import "../sections/szkola.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export default function Szkola() {
   const { cmsMode, isAdmin } = useStore();
+  useSeo({ title: "O szkole jazdy sportowej i wyścigowej", path: "/o-szkole", description: "Fastline Racing Academy — jak uczymy jazdy po torze: instruktorzy będący czynnymi zawodnikami, treningi 1:1, telemetria, flota aut sportowych i wyścigowych.", jsonld: breadcrumbs([{ name: "O szkole", path: "/o-szkole" }]) });
   const editing = cmsMode && isAdmin;
   useRevealOnScroll([]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);

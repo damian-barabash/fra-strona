@@ -11,9 +11,19 @@ import { useReveal, useRevealOnScroll } from "../lib/hooks";
 import { carPrice, fmtZl } from "../lib/flota";
 import { Speedo } from "../components/Fuel";
 import "../sections/flota.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 export default function Flota() {
   const { cmsMode, isAdmin, cars } = useStore();
+  useSeo({
+    title: "Flota — samochody sportowe i wyścigowe na tor",
+    path: "/flota",
+    description: `Auta Fastline Racing Academy do szkoleń na torze: ${cars.map((c) => c.name).join(", ")}. Wybierz model i zarezerwuj sesje z instruktorem.`,
+    jsonld: [
+      { "@type": "ItemList", name: "Flota Fastline Racing Academy", itemListElement: cars.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, url: `${SITE}/flota/${c.slug}` })) },
+      breadcrumbs([{ name: "Flota", path: "/flota" }]),
+    ],
+  });
   const nav = useNavigate();
   const editing = cmsMode && isAdmin;
   const sliderRef = useRef(null);

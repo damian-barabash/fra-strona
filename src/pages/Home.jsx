@@ -13,9 +13,14 @@ import CtaBuy from "../sections/CtaBuy";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 export default function Home() {
   const { ready, cmsMode, isAdmin } = useStore();
+  useSeo({
+    path: "/",
+    description: "Szkoła jazdy sportowej i wyścigowej dziewięciokrotnego mistrza Polski Mariusza Miękosia. Szkolenia 1:1 na torach Łódź, Poznań i Modlin, Ice Driving w Laponii, wyprawy, vouchery i eventy firmowe.",
+  });
   return (
     <div className={cmsMode && isAdmin ? "cms-on" : ""}>
       <ScrollProgress />

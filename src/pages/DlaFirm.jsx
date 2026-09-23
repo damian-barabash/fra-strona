@@ -10,6 +10,7 @@ import ScrollProgress from "../sections/ScrollProgress";
 import { EText, EMedia, EBg } from "../components/Editable";
 import { useReveal, useRevealOnScroll, useCountUp } from "../lib/hooks";
 import "../sections/firmy.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* /dla-firm — corporate events. Content merged from the old eventy-firmowe page and the client's
    landing brief, rebuilt in the site's racing style. The configurator estimates a net budget live
@@ -75,6 +76,16 @@ const fmt = (n) => Math.round(n).toLocaleString("pl-PL");
 
 export default function DlaFirm() {
   const { t, lang, cars, cmsMode, isAdmin } = useStore();
+  useSeo({
+    title: "Eventy firmowe na torze wyścigowym",
+    path: "/dla-firm",
+    description: t("fir.sub"),
+    image: "/assets/firmy/hero.webp",
+    jsonld: [
+      { "@type": "Service", "@id": `${SITE}/dla-firm#service`, name: "Eventy firmowe na torze — Fastline Racing Academy", serviceType: "Organizacja eventów firmowych i integracji na torze wyścigowym", description: clip(t("fir.sub"), 300), provider: { "@id": `${SITE}/#organization` }, areaServed: ["PL", "EU"], url: `${SITE}/dla-firm` },
+      breadcrumbs([{ name: "Dla firm", path: "/dla-firm" }]),
+    ],
+  });
   const editing = cmsMode && isAdmin;
   const L = (o) => o[lang === "en" ? "en" : "pl"];
   useRevealOnScroll([cars.length]);

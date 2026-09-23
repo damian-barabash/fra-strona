@@ -10,6 +10,7 @@ import { usePayRedirect } from "../lib/pay";
 import { fmtZl } from "../lib/flota";
 import "../sections/rezerwacja.css";
 import "../sections/d2r.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
@@ -22,6 +23,7 @@ export default function Zakup() {
 
   const slug = sp.get("produkt") || "";
   const p = products.find((x) => x.slug === slug && x.buy_direct);
+  useSeo({ title: p ? `Zakup — ${p.title_pl}` : "Zakup", path: "/zakup", noindex: true });
 
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
   const [step, setStep] = useState("dane");     // dane | platnosc

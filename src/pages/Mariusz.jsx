@@ -6,12 +6,24 @@ import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText, EMedia } from "../components/Editable";
 import { useReveal, useRevealOnScroll } from "../lib/hooks";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const BIO = ["mz.bio1", "mz.bio2", "mz.bio3", "mz.bio4", "mz.bio5", "mz.bio6", "mz.bio7"];
 
 export default function Mariusz() {
-  const { cmsMode, isAdmin } = useStore();
+  const { cmsMode, isAdmin, t } = useStore();
+  useSeo({
+    title: "Mariusz Miękoś — dziewięciokrotny mistrz Polski",
+    path: "/mariusz-miekos-racing",
+    description: t("mz.bio1"),
+    image: "/assets/mariusz/face.webp",
+    type: "profile",
+    jsonld: [
+      { "@type": "Person", "@id": `${SITE}/mariusz-miekos-racing#person`, name: "Mariusz Miękoś", jobTitle: "Kierowca wyścigowy, założyciel Fastline Racing Academy", description: clip(t("mz.bio1"), 300), image: `${SITE}/assets/mariusz/face.webp`, url: `${SITE}/mariusz-miekos-racing`, worksFor: { "@id": `${SITE}/#organization` }, award: "9× Wyścigowy Mistrz Polski", nationality: "PL" },
+      breadcrumbs([{ name: "Mariusz Miękoś", path: "/mariusz-miekos-racing" }]),
+    ],
+  });
   const editing = cmsMode && isAdmin;
   useRevealOnScroll([]);
 

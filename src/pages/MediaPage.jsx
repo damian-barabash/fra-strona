@@ -5,6 +5,7 @@ import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
 import { useReveal, useRevealOnScroll } from "../lib/hooks";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 // asymmetric bento pattern → an "unusual" broken-grid press wall
 const SPAN = ["xl", "sm", "tall", "sm", "wide", "sm", "sm", "tall", "wide", "sm", "xl", "sm", "sm", "wide", "sm", "tall"];
@@ -12,6 +13,7 @@ const pad2 = (n) => String(n + 1).padStart(2, "0");
 
 export default function MediaPage() {
   const { mediaList, L, t, cmsMode, isAdmin } = useStore();
+  useSeo({ title: "Media o nas", path: "/media-o-nas", description: "Fastline Racing Academy w mediach — publikacje, relacje i materiały wideo o szkoleniach na torze i zespole Fastline Racing.", jsonld: breadcrumbs([{ name: "Media o nas", path: "/media-o-nas" }]) });
   const editing = cmsMode && isAdmin;
   const [ref, inView] = useReveal();
   useRevealOnScroll([mediaList.length]);

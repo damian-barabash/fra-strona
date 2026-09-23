@@ -11,6 +11,7 @@ import { usePayRedirect } from "../lib/pay";
 import { fmtZl } from "../lib/flota";
 import "../sections/laponia.css";
 import "../sections/productcard.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const lines = (x) => String(x || "").split("\n").map((v) => v.trim()).filter(Boolean);
 const WD = { pl: ["PN", "WT", "ŚR", "CZ", "PT", "SB", "ND"], en: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] };
@@ -21,6 +22,7 @@ export default function RezerwacjaIce() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const { icePackages, iceWindows, products, raw, t, L, lang, createIceBooking } = useStore();
+  useSeo({ title: "Rezerwacja Ice Driving Experience — Laponia", path: "/rezerwacja-ice", description: "Zarezerwuj Ice Driving Experience w Kuusamo: pakiet, termin w sezonie zimowym, jazda po zamarzniętych jeziorach na oponach z kolcami z instruktorem 1:1.", jsonld: breadcrumbs([{ name: "Rezerwacja Laponia", path: "/rezerwacja-ice" }]) });
 
   const preset = sp.get("pkg");
   const [pkg, setPkg] = useState(null);

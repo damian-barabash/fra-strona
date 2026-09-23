@@ -16,6 +16,7 @@ import "../sections/productcard.css";
 import "../sections/flota.css";
 import "../sections/rezerwacja.css";
 import "../sections/voucher.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const OWN = { id: "__own__", own: true };
 const STEPS = ["auto", "pakiet", "gift", "produkt", "dane", "platnosc"];
@@ -25,6 +26,7 @@ const STEPS = ["auto", "pakiet", "gift", "produkt", "dane", "platnosc"];
 export default function Voucher() {
   const nav = useNavigate();
   const { cars, raw, t, L, lang, createVoucherBooking } = useStore();
+  useSeo({ title: "Voucher prezentowy — jazda po torze", path: "/voucher", description: t("vch.sub"), jsonld: breadcrumbs([{ name: "Voucher", path: "/voucher" }]) });
   const [car, setCar] = useState(null);
   const [track, setTrack] = useState("lodz");
   const [sessions, setSessions] = useState(null);

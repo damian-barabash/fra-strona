@@ -15,11 +15,21 @@ import {
   specialEvents, coversDay, specialsInMonth,
 } from "../lib/kalendarz";
 import "../sections/kalendarz.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* The calendar runs on the CMS "Terminy" table: every term is one training day.
    Picking one jumps straight into the booking flow (car → sessions → details → payment). */
 export default function Kalendarz() {
   const { terms, cars, products, iceWindows, t, L, lang, cmsMode, isAdmin } = useStore();
+  useSeo({
+    title: "Kalendarz szkoleń i wydarzeń na torze",
+    path: "/kalendarz",
+    description: "Terminy szkoleń Sport Driving Experience na torach Łódź i Poznań, Heels on the Track, Ice Driving w Laponii i wypraw Fastline. Wybierz datę i zarezerwuj miejsce.",
+    jsonld: [
+      ...terms.filter((x) => x.date >= new Date().toISOString().slice(0, 10)).slice(0, 12).map((x) => ({ "@type": "Event", name: x.title_pl || "Sport Driving Experience", startDate: x.date, eventStatus: "https://schema.org/EventScheduled", eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode", location: { "@type": "Place", name: x.location_pl, address: x.address || x.location_pl }, organizer: { "@id": `${SITE}/#organization` }, url: `${SITE}/kalendarz`, image: `${SITE}/og.jpg`, description: `${x.title_pl || "Sport Driving Experience"} — ${x.location_pl}, ${x.time || ""}`.trim() })),
+      breadcrumbs([{ name: "Kalendarz", path: "/kalendarz" }]),
+    ],
+  });
   const nav = useNavigate();
   const editing = cmsMode && isAdmin;
 

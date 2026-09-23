@@ -7,6 +7,7 @@ import { MENU, MENU_HREF, hrefKey } from "../lib/menu";
 import { TRACKS, trackLabel, fmtZl } from "../lib/flota";
 import { TERM_TYPES } from "../lib/kalendarz";
 import "./admin.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* =====================================================================================
    PANEL FRA — light dashboard: sidebar with icons, KPI cards + charts on the home screen,
@@ -198,6 +199,7 @@ const money = (b) => (b.currency === "EUR" ? `${(Number(b.total) || 0).toLocaleS
 const when = (s) => (s ? new Date(s).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 
 export default function Admin() {
+  useSeo({ title: "Panel", path: "/admin", noindex: true });
   const { isAdmin } = useStore();
   if (!isAdmin) return <Login />;
   return <Shell />;

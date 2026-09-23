@@ -9,6 +9,7 @@ import { fmtEur } from "../lib/ice";
 import { usePayRedirect } from "../lib/pay";
 import "../sections/wyprawa.css";
 import "../sections/zakup-wyprawa.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
@@ -18,6 +19,7 @@ export default function ZakupWyprawa() {
   const [sp] = useSearchParams();
   const nav = useNavigate();
   const { products, tripPackages, ready, t, L, createTripBooking } = useStore();
+  useSeo({ title: "Zakup wyprawy", path: "/zakup-wyprawa", noindex: true });
 
   const pkg = tripPackages.find((x) => x.id === sp.get("pakiet"));
   const trip = pkg ? products.find((x) => x.slug === pkg.product_slug) : null;

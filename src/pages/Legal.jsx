@@ -8,6 +8,7 @@ import ScrollProgress from "../sections/ScrollProgress";
 import { useRevealOnScroll } from "../lib/hooks";
 import { LEGAL } from "../lib/legal";
 import "../sections/legal.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* Legal documents (privacy policy, payment terms) parsed from the old site.
    Served under the very same paths (/polityka-prywatnosci, /regulamin-platnosci) so the
@@ -17,6 +18,7 @@ export default function Legal({ slug: fixedSlug }) {
   const slug = fixedSlug || params.slug;
   const doc = LEGAL[slug];
   const { t, lang } = useStore();
+  useSeo({ title: slug === "regulamin-platnosci" ? "Regulamin płatności" : "Polityka prywatności", path: `/${slug}`, description: slug === "regulamin-platnosci" ? "Regulamin płatności i rezerwacji szkoleń Fastline Racing Academy." : "Polityka prywatności serwisu Fastline Racing Academy — dane osobowe, cookies, prawa użytkownika." });
   useRevealOnScroll([slug]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [slug]);
 

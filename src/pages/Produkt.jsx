@@ -11,6 +11,7 @@ import Laponia from "./Laponia";
 import D2R from "./D2R";
 import Wyprawa from "./Wyprawa";
 import "../sections/produkty.css";
+import { useSeo, breadcrumbs, SITE, clip, nice } from "../lib/seo";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
@@ -21,6 +22,19 @@ export default function Produkt() {
   const openLightbox = useLightbox();
   const editing = cmsMode && isAdmin;
   const p = products.find((x) => x.slug === slug);
+  useSeo({
+    title: p ? `${nice(p.title_pl)}${p.tag_pl ? ` — ${nice(p.tag_pl).toLowerCase()}` : ""}` : "Oferta",
+    path: `/produkty/${slug}`,
+    description: p ? `${p.excerpt_pl || ""} ${p.intro_pl || ""}` : "",
+    image: p?.photo,
+    type: "product",
+    jsonld: p ? [
+      { "@type": p.theme === "wyprawa" ? "TouristTrip" : "Course", "@id": `${SITE}/produkty/${p.slug}#product`, name: p.title_pl, description: clip(`${p.excerpt_pl || ""} ${p.intro_pl || ""}`, 300), image: p.photo ? `${SITE}${p.photo}` : `${SITE}/og.jpg`, url: `${SITE}/produkty/${p.slug}`, provider: { "@id": `${SITE}/#organization` },
+        ...(p.theme !== "wyprawa" ? { courseMode: "Onsite", hasCourseInstance: { "@type": "CourseInstance", courseMode: "Onsite", location: p.places_pl || "Tor Łódź / Tor Poznań" } } : {}),
+        ...(p.price ? { offers: { "@type": "Offer", price: p.price, priceCurrency: p.currency || "PLN", availability: "https://schema.org/InStock", url: `${SITE}/produkty/${p.slug}`, seller: { "@id": `${SITE}/#organization` } } } : {}) },
+      breadcrumbs([{ name: "Oferta", path: "/oferta" }, { name: p.title_pl, path: `/produkty/${p.slug}` }]),
+    ] : undefined,
+  });
 
   useRevealOnScroll([p?.id, products.length]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [slug]);

@@ -8,6 +8,7 @@ import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
 import { useRevealOnScroll } from "../lib/hooks";
 import "../sections/produkty.css";
+import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const pad2 = (n) => String(n).padStart(2, "0");
 const isTrip = (p) => p.theme === "wyprawa";
@@ -16,6 +17,15 @@ const isTrip = (p) => p.theme === "wyprawa";
    the big product plates on the right. Products with an external_url (Heels) leave the site. */
 export default function Produkty() {
   const { products, L, t, cmsMode, isAdmin } = useStore();
+  useSeo({
+    title: "Oferta — szkolenia jazdy sportowej, wyścigowej i wyprawy",
+    path: "/oferta",
+    description: "Programy Fastline Racing Academy: szkolenie jazdy sportowej od podstaw, zaawansowane, szkolenie wyścigowe, Driver 2 Racer, Ice Driving Laponia, wyprawy Monaco i Andaluzja, Heels on the Track, symulator.",
+    jsonld: [
+      { "@type": "ItemList", name: "Oferta Fastline Racing Academy", itemListElement: products.map((p, i) => ({ "@type": "ListItem", position: i + 1, name: p.title_pl, url: p.external_url || `${SITE}/produkty/${p.slug}` })) },
+      breadcrumbs([{ name: "Oferta", path: "/oferta" }]),
+    ],
+  });
   const { hash } = useLocation();
   const editing = cmsMode && isAdmin;
   const [filter, setFilter] = useState("all");   // all | training | trips
