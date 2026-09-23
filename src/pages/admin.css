@@ -250,3 +250,5 @@
   .adm-tr { grid-template-columns: 1fr 1fr; padding: 12px 14px; } .adm-tr--head { display: none; } .adm-tr > span { min-width: 0; }
   .adm-doc__grid { grid-template-columns: 1fr; } .adm-kpis { grid-template-columns: 1fr; } .adm-menu__row { grid-template-columns: 1fr; }
 }
+.adm-mini-row__r { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.adm-mini-row__r b { font: 800 14px var(--font-display); }

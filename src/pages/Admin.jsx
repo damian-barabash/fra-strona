@@ -293,7 +293,7 @@ function Dashboard({ go }) {
       <div className="adm-kpis">
         <Kpi label="Przychód w tym miesiącu" value={fmtZl(thisM.revenue)} sub={delta == null ? "brak danych z poprzedniego" : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta)}% vs poprzedni`} ring={Math.min(1, thisM.revenue / max)} color="#e30613" icon="cart" onClick={() => go("zamowienia")} />
         <Kpi label="Opłacone zamówienia (12 mies.)" value={s.paidCount ?? 0} sub={`${fmtZl(s.revenue || 0)} łącznie`} ring={Math.min(1, (s.paidCount || 0) / 50)} color="#21b573" icon="gift" onClick={() => go("zamowienia")} />
-        <Kpi label="Oczekujące płatności" value={s.pending ?? 0} sub="rozpoczęte, nieopłacone" ring={Math.min(1, (s.pending || 0) / 10)} color="#f0a500" icon="cog" onClick={() => go("zamowienia")} />
+        <Kpi label="Oczekujące płatności" value={s.pending ?? 0} sub={s.pending ? `${fmtZl(s.pendingSum || 0)} do zapłaty` : "rozpoczęte, nieopłacone"} ring={Math.min(1, (s.pending || 0) / 10)} color="#f0a500" icon="cog" onClick={() => go("zamowienia")} />
         <Kpi label="Nowe wiadomości" value={s.messages?.unread ?? 0} sub={`${s.messages?.firma ?? 0} zapytań firmowych`} ring={Math.min(1, (s.messages?.unread || 0) / 10)} color="#2f9fe0" icon="mail" onClick={() => go("wiadomosci")} />
       </div>
 
@@ -325,14 +325,14 @@ function Dashboard({ go }) {
 
       <div className="adm-grid2">
         <div className="adm-card">
-          <div className="adm-card__head"><b>Ostatnie opłacone</b><button className="adm-btn adm-btn--sm" onClick={() => go("zamowienia")}>Wszystkie</button></div>
+          <div className="adm-card__head"><b>Ostatnie zamówienia</b><button className="adm-btn adm-btn--sm" onClick={() => go("zamowienia")}>Wszystkie</button></div>
           {!(s.recent || []).length ? <div className="adm-empty adm-empty--sm">Brak zamówień.</div> : (
             <div className="adm-mini-list">
               {(s.recent || []).map((b) => (
                 <div key={b.id} className="adm-mini-row">
                   <span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span>
-                  <span className="adm-mini-row__t"><b>#{b.number} · {b.car_name}</b><small>{b.full_name} · {when(b.paid_at || b.created_at)}</small></span>
-                  <b>{fmtZl(b.amount_pln)}</b>
+                  <span className="adm-mini-row__t"><b>#{b.number} · {b.car_name || b.product_name}</b><small>{b.full_name} · {when(b.paid_at || b.created_at)}</small></span>
+                  <span className="adm-mini-row__r"><b>{fmtZl(b.amount_pln)}</b><i className={`adm-badge adm-badge--${STATUS[b.status]?.[1] || "off"}`}>{STATUS[b.status]?.[0] || b.status}</i></span>
                 </div>
               ))}
             </div>

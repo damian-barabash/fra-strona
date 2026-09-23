@@ -269,9 +269,12 @@ const CONFIG_KEYS = ["contact_to", "firma_to", "voucher_to", "order_to", "contac
 
 async function stats() {
   const since = new Date(); since.setMonth(since.getMonth() - 11); since.setDate(1);
-  const [{ data: paid }, { data: pending }, { data: msgs }, { data: terms }] = await Promise.all([
-    db.from("bookings").select("id, kind, amount_pln, total, currency, paid_at, created_at, car_name, full_name, number, status").eq("status", "paid").gte("created_at", since.toISOString()).order("created_at", { ascending: false }),
-    db.from("bookings").select("id", { count: "exact", head: true }).eq("status", "pending"),
+  const [{ data: paid }, { data: pendingRows }, { data: latest }, { data: msgs }, { data: terms }] = await Promise.all([
+    db.from("bookings").select("id, kind, amount_pln, total, currency, paid_at, created_at, car_name, product_name, full_name, number, status").eq("status", "paid").gte("created_at", since.toISOString()).order("created_at", { ascending: false }),
+    // pending = started at the gateway, not paid yet (count + how much is waiting)
+    db.from("bookings").select("id, amount_pln").eq("status", "pending"),
+    // the dashboard's "latest orders" list shows every status, not only paid ones
+    db.from("bookings").select("id, kind, amount_pln, paid_at, created_at, car_name, product_name, full_name, number, status").order("created_at", { ascending: false }).limit(6),
     db.from("messages").select("id, kind, is_read, created_at").order("created_at", { ascending: false }).limit(500),
     db.from("terms").select("id, date, type, track").gte("date", new Date().toISOString().slice(0, 10)).order("date"),
   ]);
@@ -286,8 +289,9 @@ async function stats() {
   return json({
     ok: true,
     months: Object.entries(months).map(([m, v]) => ({ month: m, ...v })),
-    byKind, recent: (paid ?? []).slice(0, 6),
-    pending: (pending as any)?.count ?? 0,
+    byKind, recent: latest ?? [],
+    pending: (pendingRows ?? []).length,
+    pendingSum: (pendingRows ?? []).reduce((s: number, b: any) => s + (Number(b.amount_pln) || 0), 0),
     paidCount: (paid ?? []).length,
     revenue: (paid ?? []).reduce((s: number, b: any) => s + (b.amount_pln || 0), 0),
     messages: { total: (msgs ?? []).length, unread: (msgs ?? []).filter((m: any) => !m.is_read).length, firma: (msgs ?? []).filter((m: any) => m.kind === "firma").length },

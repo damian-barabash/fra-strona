@@ -41,13 +41,16 @@ async function sb(table, query) {
   return r.json();
 }
 
-let products = [], cars = [], terms = [];
+let products = [], cars = [], terms = [], custom = {};
 try {
-  [products, cars, terms] = await Promise.all([
+  let content;
+  [products, cars, terms, content] = await Promise.all([
     sb("products", "select=slug,title_pl,tag_pl,excerpt_pl,external_url,theme,price,currency,date_from,date_to,place_pl&visible=eq.true&order=sort"),
     sb("cars", "select=slug,name,category,engine,power,price_3,price_6,price_9,price_3_poznan,price_6_poznan,price_9_poznan,description_pl&visible=eq.true&order=sort"),
     sb("terms", `select=date,time,title_pl,location_pl,address&visible=eq.true&date=gte.${TODAY}&order=date`),
+    sb("content", "select=key,pl&key=like.flota.custom.p*"),
   ]);
+  content.forEach((r) => { custom[r.key.replace("flota.custom.", "")] = Number(r.pl) || 0; });
   console.log(`[seo] supabase: ${products.length} products, ${cars.length} cars, ${terms.length} terms`);
 } catch (e) {
   console.warn(`[seo] supabase unavailable (${e.message}) — static routes only`);
@@ -90,7 +93,7 @@ ${products.map((p) => `- [${p.title_pl}](${p.external_url || `${SITE}/produkty/$
 
 ## Flota — auta sportowe do szkoleń (cena za pakiet 3 / 6 / 9 sesji, Łódź; Poznań w nawiasie)
 ${sport.map((c) => `- [${c.name}](${SITE}/flota/${c.slug}) — ${c.engine || ""}${c.power ? `, ${c.power} KM` : ""}: ${zl(c.price_3)} / ${zl(c.price_6)} / ${zl(c.price_9)}${c.price_3_poznan ? ` (Poznań: ${zl(c.price_3_poznan)} / ${zl(c.price_6_poznan)} / ${zl(c.price_9_poznan)})` : ""}`).join("\n")}
-- Własne auto: 1 450 / 2 350 / 3 350 zł netto
+${custom.p3 ? `- Własne auto (przyjazd swoim samochodem): ${zl(custom.p3)} / ${zl(custom.p6)} / ${zl(custom.p9)}${custom.p3_pozn ? ` (Poznań: ${zl(custom.p3_pozn)} / ${zl(custom.p6_pozn)} / ${zl(custom.p9_pozn)})` : ""}` : ""}
 
 ## Samochody wyścigowe (Fastline Racing — testy i szkolenie wyścigowe, wycena indywidualna)
 ${race.map((c) => `- [${c.name}](${SITE}/flota/${c.slug})`).join("\n")}

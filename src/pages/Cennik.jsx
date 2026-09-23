@@ -23,7 +23,7 @@ export default function Cennik() {
   useSeo({
     title: "Cennik szkoleń jazdy na torze",
     path: "/cennik",
-    description: `Ceny szkoleń Fastline Racing Academy (netto): pakiety 3, 6 i 9 sesji na torach Łódź i Poznań, od ${Math.min(...cars.map((c) => c.price_3 || Infinity).filter(Number.isFinite), 1450)} zł. Ice Driving Laponia, wyprawy i vouchery.`,
+    description: `Ceny szkoleń Fastline Racing Academy (netto): pakiety 3, 6 i 9 sesji na torach Łódź i Poznań, od ${Math.min(...cars.map((c) => c.price_3 || Infinity).filter(Number.isFinite), 1500)} zł. Ice Driving Laponia, wyprawy i vouchery.`,
     jsonld: [
       { "@type": "OfferCatalog", name: "Cennik Fastline Racing Academy", itemListElement: cars.filter((c) => c.price_3).map((c) => ({ "@type": "Offer", name: `${c.name} — 3 sesje na torze`, price: c.price_3, priceCurrency: "PLN", url: `${SITE}/flota/${c.slug}`, availability: "https://schema.org/InStock" })) },
       breadcrumbs([{ name: "Cennik", path: "/cennik" }]),
