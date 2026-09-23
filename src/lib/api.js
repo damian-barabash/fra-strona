@@ -22,9 +22,25 @@ export const adminCall = (token, action, payload) => post("admin-api", { action,
 // public contact form → stored + e-mailed via Resend (key lives server-side in app_config)
 export const sendContact = (payload) => post("contact", payload);
 
+/** Convert + upload with visible stages: "convert" (→ WebP in the browser), "upload", "done".
+ *  onStage({ stage, from, to, name }) fires on every change so the UI can show what is happening. */
+export async function processUpload(file, path, adminCall, onStage = () => {}) {
+  const isVideo = file.type.startsWith("video/");
+  const name = file.name;
+  onStage({ stage: "convert", from: file.size, name });
+  const dataUrl = isVideo ? await fileToDataUrl(file) : await fileToWebpDataUrl(file);
+  const bytesOut = Math.round((dataUrl.length - dataUrl.indexOf(",") - 1) * 3 / 4);
+  const ext = isVideo ? (file.type === "video/webm" ? "webm" : "mp4") : "webp";
+  onStage({ stage: "upload", from: file.size, to: bytesOut, name, webp: !isVideo });
+  const r = await adminCall("media.upload", { path: `${path}.${ext}`, dataUrl });
+  if (!r.ok) { onStage({ stage: "error", error: r.error, name }); return null; }
+  onStage({ stage: "done", from: file.size, to: bytesOut, name, webp: !isVideo, url: r.url });
+  return r.url;
+}
+export const fmtBytes = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+
 // convert an image File to a webp data URL via canvas (client-side, keeps uploads small)
 export async function fileToWebpDataUrl(file, maxW = 2000, quality = 0.85) {
-  if (file.type === "image/webp") return await fileToDataUrl(file);
   if (!file.type.startsWith("image/")) return await fileToDataUrl(file); // video / other: pass through
   const dataUrl = await fileToDataUrl(file);
   const img = new Image();

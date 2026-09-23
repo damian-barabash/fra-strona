@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
-import { fileToWebpDataUrl, fileToDataUrl } from "../lib/api";
+import { processUpload } from "../lib/api";
+import UploadStatus from "./UploadStatus";
 
 /* ---------- tiny HTML sanitiser for CMS rich text (b/i/u/span/color/size/align only) ---------- */
 const ALLOWED = /^(b|strong|i|em|u|s|span|br|font|mark|a|div|p)$/i;
@@ -74,16 +75,14 @@ export function EMedia({ id, kind = "image", className, style, videoProps = {}, 
   const url = media(id);
   const editing = cmsMode && isAdmin;
   const inputRef = useRef(null);
+  const [st, setSt] = useState(null);
 
   const onPick = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const isVideo = file.type.startsWith("video/");
-    const dataUrl = isVideo ? await fileToDataUrl(file) : await fileToWebpDataUrl(file);
-    const ext = isVideo ? (file.type === "video/webm" ? "webm" : "mp4") : "webp";
-    const path = `content/${id.replace(/\W+/g, "_")}-${Date.now()}.${ext}`;
-    const r = await adminCall("media.upload", { path, dataUrl });
-    if (r.ok) await saveContent(id, r.url, kind);
+    const url = await processUpload(file, `content/${id.replace(/\W+/g, "_")}-${Date.now()}`, adminCall, setSt);
+    if (url) await saveContent(id, url, kind);
+    setTimeout(() => setSt(null), 6000);
     e.target.value = "";
   };
 
@@ -101,6 +100,7 @@ export function EMedia({ id, kind = "image", className, style, videoProps = {}, 
         font: "700 11px/1 var(--font-display)", letterSpacing: ".1em", padding: "7px 10px", borderRadius: 2,
         textTransform: "uppercase", pointerEvents: "none",
       }}>{kind === "video" ? "▲ Wideo" : "▲ Zdjęcie"}</span>
+      {st && <span style={{ position: "absolute", left: 10, bottom: 10, zIndex: 6 }}><UploadStatus st={st} /></span>}
       <input ref={inputRef} type="file" accept={kind === "video" ? "video/*" : "image/*"} hidden onChange={onPick} />
     </span>
   );
@@ -112,11 +112,12 @@ export function EBg({ id, className, style, children }) {
   const url = media(id);
   const editing = cmsMode && isAdmin;
   const inputRef = useRef(null);
+  const [st, setSt] = useState(null);
   const onPick = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
-    const dataUrl = await fileToWebpDataUrl(file);
-    const r = await adminCall("media.upload", { path: `content/${id.replace(/\W+/g, "_")}-${Date.now()}.webp`, dataUrl });
-    if (r.ok) await saveContent(id, r.url, "image");
+    const url = await processUpload(file, `content/${id.replace(/\W+/g, "_")}-${Date.now()}`, adminCall, setSt);
+    if (url) await saveContent(id, url, "image");
+    setTimeout(() => setSt(null), 6000);
     e.target.value = "";
   };
   return (
@@ -126,6 +127,7 @@ export function EBg({ id, className, style, children }) {
       {editing && (
         <>
           <span style={{ position: "absolute", top: 10, right: 10, zIndex: 5, background: "var(--red)", color: "#fff", font: "700 11px/1 var(--font-display)", letterSpacing: ".1em", padding: "7px 10px", textTransform: "uppercase", pointerEvents: "none" }}>▲ Tło</span>
+          {st && <span style={{ position: "absolute", left: 10, bottom: 10, zIndex: 6 }}><UploadStatus st={st} /></span>}
           <input ref={inputRef} type="file" accept="image/*" hidden onChange={onPick} />
         </>
       )}

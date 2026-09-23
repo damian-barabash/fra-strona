@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../lib/store";
-import { fileToWebpDataUrl, fileToDataUrl } from "../lib/api";
+import { processUpload } from "../lib/api";
+import UploadStatus from "../components/UploadStatus";
 import { MENU, MENU_HREF, hrefKey } from "../lib/menu";
 import { TRACKS, trackLabel, fmtZl } from "../lib/flota";
 import { TERM_TYPES } from "../lib/kalendarz";
@@ -721,17 +722,15 @@ function TripEditor({ slug }) {
 /* ============ FIELD ============ */
 function Field({ f, value, onChange }) {
   const { adminCall } = useStore();
-  const [up, setUp] = useState(false);
+  const [st, setSt] = useState(null);     // upload status: convert → upload → done / error
+  const up = !!st && (st.stage === "convert" || st.stage === "upload");
+  // every picked image is re-encoded to WebP in the browser first; the chip shows each stage and the size win
   const upload = async (file) => {
-    setUp(true);
-    const isVideo = file.type.startsWith("video/");
-    const dataUrl = isVideo ? await fileToDataUrl(file) : await fileToWebpDataUrl(file);
-    const ext = isVideo ? (file.type === "video/webm" ? "webm" : "mp4") : "webp";
-    const r = await adminCall("media.upload", { path: `${f.k}/${Date.now()}-${Math.round(performance.now())}.${ext}`, dataUrl });
-    setUp(false);
-    return r.ok ? r.url : null;
+    const url = await processUpload(file, `${f.k}/${Date.now()}-${Math.round(performance.now())}`, adminCall, setSt);
+    setTimeout(() => setSt((x) => (x && (x.stage === "done" || x.stage === "error") ? null : x)), 6000);
+    return url;
   };
-  if (f.t === "video") return (<label className="adm-f"><span>{f.l}</span><div className="adm-img">{value && <video src={value} muted loop autoPlay playsInline style={{ maxWidth: 220 }} />}<input type="file" accept="video/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const url = await upload(file); if (url) onChange(url); }} />{up && <span className="adm-uploading">Wgrywam…</span>}{value && <button type="button" className="adm-mini adm-mini--del" onClick={() => onChange("")}>Usuń</button>}</div></label>);
+  if (f.t === "video") return (<label className="adm-f"><span>{f.l}</span><div className="adm-img">{value && <video src={value} muted loop autoPlay playsInline style={{ maxWidth: 220 }} />}<input type="file" accept="video/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const url = await upload(file); if (url) onChange(url); }} /><UploadStatus st={st} />{value && <button type="button" className="adm-mini adm-mini--del" onClick={() => onChange("")}>Usuń</button>}</div></label>);
   if (f.t === "text") return (<label className="adm-f"><span>{f.l}</span><input value={value || ""} onChange={(e) => onChange(e.target.value)} /></label>);
   if (f.t === "textarea") return (<label className="adm-f"><span>{f.l}</span><textarea rows={4} value={value || ""} onChange={(e) => onChange(e.target.value)} /></label>);
   if (f.t === "number") return (<label className="adm-f"><span>{f.l}</span><input type="number" min="0" value={value ?? ""} placeholder="0" onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))} /></label>);
@@ -739,11 +738,12 @@ function Field({ f, value, onChange }) {
   if (f.t === "date") return (<label className="adm-f"><span>{f.l}</span><input type="date" value={value || ""} onChange={(e) => onChange(e.target.value)} /></label>);
   if (f.t === "select") return (<label className="adm-f"><span>{f.l}</span><select className="adm-select" value={value || f.options?.[0]?.value || ""} onChange={(e) => onChange(e.target.value)}>{(f.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>);
   if (f.t === "color") return (<label className="adm-f"><span>{f.l}</span><div className="adm-color"><input type="color" value={value || "#2b2b2b"} onChange={(e) => onChange(e.target.value)} /><input value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="#RRGGBB" /></div></label>);
-  if (f.t === "image") return (<label className="adm-f"><span>{f.l}</span><div className="adm-img">{value && <img src={value} alt="" />}<input type="file" accept="image/*,video/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const url = await upload(file); if (url) onChange(url); }} />{up && <span className="adm-uploading">Wgrywam…</span>}{value && <button type="button" className="adm-mini adm-mini--del" onClick={() => onChange("")}>Usuń</button>}</div></label>);
+  if (f.t === "image") return (<label className="adm-f"><span>{f.l}</span><div className="adm-img">{value && <img src={value} alt="" />}<input type="file" accept="image/*,video/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const url = await upload(file); if (url) onChange(url); }} /><UploadStatus st={st} />{value && <button type="button" className="adm-mini adm-mini--del" onClick={() => onChange("")}>Usuń</button>}</div></label>);
   if (f.t === "images") {
     const arr = Array.isArray(value) ? value : [];
     return (<label className="adm-f"><span>{f.l}</span><div className="adm-imgs">{arr.map((u, i) => <div className="adm-imgs__item" key={i}><img src={u} alt="" /><button type="button" onClick={() => onChange(arr.filter((_, j) => j !== i))}>×</button></div>)}
-      <label className="adm-imgs__add">{up ? "…" : "+"}<input type="file" accept="image/*" hidden multiple onChange={async (e) => { const files = [...(e.target.files || [])]; const urls = []; for (const file of files) { const u = await upload(file); if (u) urls.push(u); } onChange([...arr, ...urls]); }} /></label></div></label>);
+      <label className="adm-imgs__add">{up ? "…" : "+"}<input type="file" accept="image/*" hidden multiple onChange={async (e) => { const files = [...(e.target.files || [])]; const urls = []; for (const file of files) { const u = await upload(file); if (u) urls.push(u); } onChange([...arr, ...urls]); }} /></label>
+      <UploadStatus st={st} /></div></label>);
   }
   return null;
 }
