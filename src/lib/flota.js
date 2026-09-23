@@ -6,6 +6,7 @@
 export const TRACKS = [
   { slug: "lodz", pl: "Tor Łódź", en: "Łódź Circuit" },
   { slug: "poznan", pl: "Tor Poznań", en: "Poznań Circuit" },
+  { slug: "krzywa", pl: "Tor Krzywa", en: "Krzywa Circuit" },
   { slug: "kielce", pl: "Tor Kielce", en: "Kielce Circuit" },
   { slug: "silesia", pl: "Silesia Ring", en: "Silesia Ring" },
   { slug: "modlin", pl: "Tor Modlin", en: "Modlin Circuit" },
