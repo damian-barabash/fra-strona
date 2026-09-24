@@ -1,0 +1,35 @@
+{
+  "version": "5",
+  "remote": {
+    "https://deno.land/std@0.224.0/assert/assert.ts": "09d30564c09de846855b7b071e62b5974b001bb72a4b797958fe0660e7849834",
+    "https://deno.land/std@0.224.0/assert/assertion_error.ts": "ba8752bd27ebc51f723702fac2f54d3e94447598f54264a6653d6413738a8917",
+    "https://deno.land/std@0.224.0/crypto/_wasm/lib/deno_std_wasm_crypto.generated.mjs": "7cd490ae1553c97459bd02de4c3f0a552768a85621949b2366003f3cf84b99d7",
+    "https://deno.land/std@0.224.0/crypto/_wasm/mod.ts": "e89fbbc3c4722602ff975dd85f18273c7741ec766a9b68f6de4fd1d9876409f8",
+    "https://deno.land/std@0.224.0/crypto/crypto.ts": "e58d78f3db111a499261dbab037ec78cc89da0516a50e1f0205665980a3417e3",
+    "https://deno.land/std@0.224.0/crypto/mod.ts": "9148fb70ca3d64977e9487b2002d3b1026e8ad8a2078774b807586ba3c77e3bb",
+    "https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts": "bc3622b5aec05e2d8b735bf60633425c34333c06cfb6c4a9f102e4a0f3931ced",
+    "https://deno.land/std@0.224.0/crypto/unstable_keystack.ts": "c2a6f6ed67a4e78745e3c9b490ebb7c12f6066f5c2fe0c69d353961909dc82dd",
+    "https://deno.land/std@0.224.0/encoding/_util.ts": "beacef316c1255da9bc8e95afb1fa56ed69baef919c88dc06ae6cb7a6103d376",
+    "https://deno.land/std@0.224.0/encoding/base64.ts": "dd59695391584c8ffc5a296ba82bcdba6dd8a84d41a6a539fbee8e5075286eaf",
+    "https://deno.land/std@0.224.0/encoding/base64url.ts": "ef40e0f18315ab539f17cebcc32839779e018d86dea9df39d94d302f342a1713",
+    "https://esm.sh/@peculiar/x509@1.12.3": "804bfe64eeedc573b6ada987d83ef206e43bee1d174832c38006f7a6ecacc23f",
+    "https://esm.sh/@supabase/supabase-js@2.110.5": "55f04f5b27e7700a581c9e506ff5761fd66bb00545a44f3a2f155d4f30597e6c"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@fontsource/dancing-script@^5.2.8",
+        "npm:@fontsource/montserrat@^5.0.18",
+        "npm:@fontsource/poppins@^5.0.14",
+        "npm:@playwright/test@^1.47.2",
+        "npm:@supabase/supabase-js@^2.45.4",
+        "npm:@vitejs/plugin-react@^4.3.1",
+        "npm:framer-motion@^11.5.4",
+        "npm:react-dom@^18.3.1",
+        "npm:react-router-dom@^6.26.2",
+        "npm:react@^18.3.1",
+        "npm:vite@^5.4.8"
+      ]
+    }
+  }
+}

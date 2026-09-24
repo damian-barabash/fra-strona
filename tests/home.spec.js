@@ -43,7 +43,7 @@ test("PL/EN language toggle switches static UI", async ({ page }) => {
   await expect(page.locator("text=OUR FLEET")).toBeVisible();
 });
 
-test("admin login works", async ({ page }) => {
+test("admin login works", async ({ page, isMobile }) => {
   await page.goto("/admin");
   await page.waitForTimeout(600);
   await page.fill('input[placeholder="Login"]', "admin");
@@ -51,4 +51,15 @@ test("admin login works", async ({ page }) => {
   await page.locator(".adm-login__box .adm-btn--red").click();
   await expect(page.locator(".adm-side")).toBeVisible({ timeout: 8000 });
   await expect(page.locator(".adm-kpi").first()).toBeVisible();   // dashboard KPI cards
+  // the owner (moderator) gets the administration group: accounts + the audit log
+  await expect(page.locator(".adm-me small")).toHaveText(/Właściciel|Moderator/);   // job title, falling back to the role
+  const side = async (label) => { if (isMobile) await page.locator(".adm-burger").click(); await page.locator(".adm-nav", { hasText: label }).click(); };
+  await side("Administratorzy");
+  await expect(page.locator(".adm-admin").first()).toContainText("admin");
+  await expect(page.locator(".adm-admin").first()).toContainText(/pełne uprawnienia/i);
+  await page.locator(".adm-btn--red", { hasText: "Dodaj administratora" }).click();
+  await expect(page.locator(".adm-perms__row")).toHaveCount(10);   // one checkbox per permission
+  await page.locator(".adm-form .adm-btn", { hasText: "Anuluj" }).click();
+  await side("Dziennik zdarzeń");
+  await expect(page.locator(".adm-log").nth(1)).toContainText(/logowanie do panelu/i);   // this very login is already logged
 });

@@ -79,13 +79,55 @@ const PL_FIELDS: Record<string, string[]> = {
 const TABLES = Object.keys(PL_FIELDS);
 
 /* ---------------- auth ---------------- */
-async function auth(req: Request) {
+type Admin = { id: string; login: string; name: string | null; role: string; perms: Record<string, boolean> | null; position?: string | null };
+async function auth(req: Request): Promise<Admin | null> {
   const tok = (req.headers.get("x-admin-token") ?? "").trim();
   if (!tok) return null;
   const { data } = await db.from("admin_sessions").select("admin_id, expires_at").eq("token", tok).maybeSingle();
   if (!data || new Date(data.expires_at) < new Date()) return null;
-  return data.admin_id;
+  const { data: a } = await db.from("admins").select("id, login, name, role, perms, position").eq("id", data.admin_id).maybeSingle();
+  return (a as Admin) ?? null;
 }
+
+/* ---------------- permissions ----------------
+   'owner' (the moderator) can do everything; an 'admin' only what its perms jsonb allows.
+   PERM_KEYS is the catalogue the panel shows as checkboxes. */
+const PERM_KEYS = ["orders", "messages", "settings", "content", "products", "cars", "terms", "tracks", "instructors", "admins"];
+const isOwner = (a: Admin) => a.role === "owner";
+const can = (a: Admin, perm: string) => isOwner(a) || !!a.perms?.[perm];
+// which permission a table's CRUD needs
+const TABLE_PERM: Record<string, string> = {
+  cars: "cars", instructors: "instructors", tracks: "tracks", terms: "terms",
+  events: "content", programs: "content", banners: "content", media: "content",
+  products: "products", ice_packages: "products", ice_windows: "products", trip_packages: "products", trip_attractions: "products", trip_points: "products",
+};
+// which permission a named action needs (prefix match); actions missing here are open to every admin (reads)
+const ACTION_PERM: [RegExp, string][] = [
+  [/^config\./, "settings"], [/^bookings\./, "orders"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
+];
+const UPLOAD_PERMS = ["content", "products", "cars", "terms", "tracks", "instructors"];
+function allowed(a: Admin, action: string, table: string): boolean {
+  if (isOwner(a)) return true;
+  if (action === "stats") return true;
+  if (action === "media.upload") return UPLOAD_PERMS.some((p) => can(a, p));
+  if (action === "logs.list") return false;
+  const named = ACTION_PERM.find(([re]) => re.test(action));
+  if (named) return can(a, named[1]);
+  if (TABLE_PERM[table]) return can(a, TABLE_PERM[table]);
+  return true;
+}
+
+/* ---------------- audit log ---------------- */
+const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|cancel|read|create|update)$/;
+async function audit(req: Request, a: Admin, action: string, target: string | null, details: unknown) {
+  try {
+    const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
+    await db.from("audit_log").insert({ admin_id: a.id, admin_login: a.login, admin_name: a.name, action, target, details: details ?? null, ip });
+  } catch (_) { /* logging must never break the action */ }
+}
+// a short human label of a row for the log: title / name / label / login / key
+const rowLabel = (r: any) => String(r?.title_pl ?? r?.name ?? r?.name_pl ?? r?.label_pl ?? r?.label ?? r?.login ?? r?.key ?? r?.slug ?? r?.id ?? "").slice(0, 120);
+const ADMIN_SELECT = "id, login, name, role, perms, position, created_at";
 
 /* ---------------- helpers ---------------- */
 const num = (v: unknown) => { const n = parseInt(String(v ?? "").replace(/[^0-9]/g, ""), 10); return Number.isFinite(n) ? n : 0; };
@@ -327,11 +369,113 @@ Deno.serve(async (req) => {
     if (action === "booking.status") return await orderStatus(payload ?? {});
 
     // ---- ADMIN ----
-    const adminId = await auth(req);
-    if (!adminId) return json({ ok: false, error: "unauthorized" }, 401);
+    const me = await auth(req);
+    if (!me) return json({ ok: false, error: "unauthorized" }, 401);
     const [table, op] = String(action ?? "").split(".");
+    if (!allowed(me, String(action ?? ""), table)) return json({ ok: false, error: "forbidden", perm: true }, 403);
+    if (action === "me") return json({ ok: true, admin: me });
+
+    // every mutating action leaves a trace (the log itself is read by the owner only)
+    const res = await handle(req, me, String(action ?? ""), payload ?? {}, table, op);
+    if (MUTATING.test(String(action ?? "")) && res.status < 400) {
+      const d = describe(String(action ?? ""), payload ?? {}, table);
+      await audit(req, me, String(action ?? ""), d.target, d.details);
+    }
+    return res;
+  } catch (e) {
+    return json({ ok: false, error: String(e) }, 500);
+  }
+});
+
+/* what goes into the log for an action (never passwords / file bodies) */
+function describe(action: string, p: any, table: string): { target: string | null; details: unknown } {
+  if (action === "content.save") { const keys = (p.items ?? []).map((i: any) => i.key); return { target: keys.slice(0, 5).join(", "), details: { keys: keys.slice(0, 40), count: keys.length } }; }
+  if (action === "media.upload") return { target: String(p.path ?? ""), details: null };
+  if (action === "config.set") return { target: String(p.key ?? ""), details: { value: String(p.value ?? "").slice(0, 200) } };
+  if (action.startsWith("bookings.")) return { target: String(p.number ? `#${p.number}` : p.id ?? ""), details: null };
+  if (action.startsWith("messages.")) return { target: String(p.id ?? ""), details: null };
+  if (action.startsWith("admins.")) return { target: String(p.login ?? p.id ?? ""), details: { role: p.role, perms: p.perms, name: p.name, position: p.position } };
+  if (table) {
+    if (action.endsWith(".reorder")) return { target: table, details: { ids: (p.ids ?? []).length } };
+    return { target: `${table}: ${rowLabel(p)}`, details: { table, id: p.id ?? null, visible: p.visible } };
+  }
+  return { target: null, details: null };
+}
+
+async function handle(req: Request, me: Admin, action: string, payload: any, table: string, op: string): Promise<Response> {
+  {
 
     if (action === "stats") return await stats();
+
+    // ---- admins (accounts + permissions) ----
+    if (action === "admins.list") {
+      const { data } = await db.from("admins").select(ADMIN_SELECT).order("created_at");
+      return json({ ok: true, rows: data ?? [], me: me.id, perms: PERM_KEYS });
+    }
+    if (action === "admins.create" || action === "admins.update") {
+      const login = str(payload.login, 60).toLowerCase(), name = str(payload.name, 80), password = String(payload.password ?? ""), position = str(payload.position, 80) || null;
+      const role = payload.role === "owner" ? "owner" : "admin";
+      const perms: Record<string, boolean> = {};
+      PERM_KEYS.forEach((k) => { if (payload.perms?.[k]) perms[k] = true; });
+      // an admin may only hand out what it holds itself, and never touch owners
+      if (!isOwner(me)) {
+        if (role === "owner") return json({ ok: false, error: "Tylko moderator może nadać rolę moderatora" }, 403);
+        for (const k of Object.keys(perms)) if (!can(me, k)) return json({ ok: false, error: `Nie możesz nadać uprawnienia „${k}”, którego sam nie masz` }, 403);
+      }
+      if (action === "admins.create") {
+        if (!/^[a-z0-9._-]{3,}$/.test(login)) return json({ ok: false, error: "Login: min. 3 znaki, litery/cyfry/kropka/myślnik" }, 400);
+        if (password.length < 8) return json({ ok: false, error: "Hasło: min. 8 znaków" }, 400);
+        const { data, error } = await db.rpc("admin_create", { p_login: login, p_name: name || login, p_password: password, p_role: role, p_perms: perms, p_position: position });
+        if (error) return json({ ok: false, error: /duplicate|unique/i.test(error.message) ? "Taki login już istnieje" : error.message }, 400);
+        return json({ ok: true, row: data });
+      }
+      const id = String(payload.id ?? "");
+      const { data: target } = await db.from("admins").select(ADMIN_SELECT).eq("id", id).maybeSingle();
+      if (!target) return json({ ok: false, error: "not found" }, 404);
+      if (!isOwner(me) && target.role === "owner") return json({ ok: false, error: "Konta moderatora nie może zmieniać administrator" }, 403);
+      if (target.id === me.id && !isOwner(me) && role !== target.role) return json({ ok: false, error: "Nie możesz zmienić własnej roli" }, 403);
+      // the last owner can never be demoted
+      if (target.role === "owner" && role !== "owner") {
+        const { count } = await db.from("admins").select("id", { count: "exact", head: true }).eq("role", "owner");
+        if ((count ?? 0) <= 1) return json({ ok: false, error: "Musi zostać co najmniej jeden moderator" }, 400);
+      }
+      const patch: any = { name: name || target.name, role, perms, position };
+      const { data, error } = await db.from("admins").update(patch).eq("id", id).select(ADMIN_SELECT).single();
+      if (error) return json({ ok: false, error: error.message }, 500);
+      if (password) {
+        if (password.length < 8) return json({ ok: false, error: "Hasło: min. 8 znaków" }, 400);
+        const { error: pe } = await db.rpc("admin_set_password", { p_id: id, p_password: password });
+        if (pe) return json({ ok: false, error: pe.message }, 500);
+        if (id !== me.id) await db.from("admin_sessions").delete().eq("admin_id", id);   // new password = old sessions out
+      }
+      return json({ ok: true, row: data });
+    }
+    if (action === "admins.delete") {
+      const id = String(payload.id ?? "");
+      if (id === me.id) return json({ ok: false, error: "Nie możesz usunąć własnego konta" }, 400);
+      const { data: target } = await db.from("admins").select(ADMIN_SELECT).eq("id", id).maybeSingle();
+      if (!target) return json({ ok: false, error: "not found" }, 404);
+      if (!isOwner(me) && target.role === "owner") return json({ ok: false, error: "Konta moderatora nie może usunąć administrator" }, 403);
+      if (target.role === "owner") {
+        const { count } = await db.from("admins").select("id", { count: "exact", head: true }).eq("role", "owner");
+        if ((count ?? 0) <= 1) return json({ ok: false, error: "Musi zostać co najmniej jeden moderator" }, 400);
+      }
+      const { error } = await db.from("admins").delete().eq("id", id);   // sessions cascade
+      return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
+    }
+
+    // ---- audit log (owner only — gated in allowed()) ----
+    if (action === "logs.list") {
+      let q = db.from("audit_log").select("*").order("at", { ascending: false }).limit(Math.min(500, Number(payload.limit) || 200));
+      if (payload.admin_id) q = q.eq("admin_id", String(payload.admin_id));
+      if (payload.before) q = q.lt("at", String(payload.before));
+      if (payload.action) q = q.ilike("action", `${String(payload.action)}%`);
+      const { data, error } = await q;
+      if (error) return json({ ok: false, error: error.message }, 500);
+      const { data: admins } = await db.from("admins").select("id, login, name, role, position");
+      return json({ ok: true, rows: data ?? [], admins: admins ?? [] });
+    }
+
     if (action === "config.get") {
       const { data } = await db.from("app_config").select("key, value").in("key", CONFIG_KEYS);
       return json({ ok: true, rows: data ?? [] });
@@ -424,9 +568,7 @@ Deno.serve(async (req) => {
       }
     }
     return json({ ok: false, error: "unknown action" }, 400);
-  } catch (e) {
-    return json({ ok: false, error: String(e) }, 500);
   }
-});
+}
 // keep unused imports referenced for bundlers
 void [listOf, sendMail, shell, table, row, chip, esc, zl];

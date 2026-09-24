@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
         .from("admin_sessions").select("admin_id, expires_at").eq("token", tok).maybeSingle();
       if (!s || new Date(s.expires_at) < new Date()) return json({ ok: false }, 401);
       const { data: a } = await admin
-        .from("admins").select("id, login, name, role, perms").eq("id", s.admin_id).maybeSingle();
+        .from("admins").select("id, login, name, role, perms, position").eq("id", s.admin_id).maybeSingle();
       if (!a) return json({ ok: false }, 401);
       return json({ ok: true, admin: a });
     }
@@ -43,7 +43,10 @@ Deno.serve(async (req) => {
     const a = match; // {id, login, name, role, perms}
     const t = token();
     await admin.from("admin_sessions").insert({ token: t, admin_id: a.id });
-    return json({ ok: true, token: t, admin: { id: a.id, login: a.login, name: a.name, role: a.role, perms: a.perms } });
+    // the audit log (read by the owner in the panel) starts with the login itself
+    const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
+    await admin.from("audit_log").insert({ admin_id: a.id, admin_login: a.login, admin_name: a.name, action: "login", target: null, details: null, ip }).then(() => {}, () => {});
+    return json({ ok: true, token: t, admin: { id: a.id, login: a.login, name: a.name, role: a.role, perms: a.perms, position: a.position ?? null } });
   } catch (e) {
     return json({ ok: false, error: String(e) }, 500);
   }

@@ -16,6 +16,8 @@ import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* ---- icons (inline, 18px) ---- */
 const I = {
+  users: <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><circle cx="17" cy="9" r="2.6" /><path d="M15.5 14.2A5 5 0 0 1 22 19" /></svg>,
+  log: <svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z" /><path d="M15 3v4h4M8 12h8M8 16h8M8 8h3" /></svg>,
   home: <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z" /></svg>,
   cart: <svg viewBox="0 0 24 24"><path d="M3 4h2l2.6 12.4a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.5L22 8H6.2" /><circle cx="10" cy="21" r="1.4" /><circle cx="18" cy="21" r="1.4" /></svg>,
   gift: <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="5" /><path d="M5 13v8h14v-8M12 8v13M12 8c-2-4-7-4-6 0M12 8c2-4 7-4 6 0" /></svg>,
@@ -184,13 +186,29 @@ const CFG = {
 const GROUPS = [
   { id: "pulpit", label: "Pulpit", tabs: [{ t: "dashboard", l: "Pulpit", i: "home" }] },
   { id: "sprzedaz", label: "Sprzedaż", tabs: [
-    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart" }, { t: "vouchery", l: "Vouchery", i: "gift" },
-    { t: "wiadomosci", l: "Wiadomości", i: "mail" }, { t: "firmy", l: "Zapytania firmowe", i: "biz" }, { t: "ustawienia", l: "Ustawienia", i: "cog" },
+    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart", p: "orders" }, { t: "vouchery", l: "Vouchery", i: "gift", p: "orders" },
+    { t: "wiadomosci", l: "Wiadomości", i: "mail", p: "messages" }, { t: "firmy", l: "Zapytania firmowe", i: "biz", p: "messages" }, { t: "ustawienia", l: "Ustawienia", i: "cog", p: "settings" },
   ] },
-  { id: "oferta", label: "Oferta", tabs: [{ t: "products", l: "Produkty", i: "box" }, { t: "ice_packages", l: "Laponia — pakiety", i: "snow" }, { t: "ice_windows", l: "Laponia — sezon", i: "snow" }, { t: "programs", l: "Kafelki na głównej", i: "grid" }] },
-  { id: "strona", label: "Strona", tabs: [{ t: "inline", l: "Edycja wizualna", i: "edit", link: "/" }, { t: "menu", l: "Menu (nawigacja)", i: "menu" }, { t: "banners", l: "Banery", i: "image" }, { t: "media", l: "Media o nas", i: "news" }] },
-  { id: "tor", label: "Tor i zespół", tabs: [{ t: "cars", l: "Samochody i ceny", i: "car" }, { t: "terms", l: "Terminy (kalendarz)", i: "cal" }, { t: "tracks", l: "Tory", i: "track" }, { t: "instructors", l: "Instruktorzy", i: "user" }] },
+  { id: "oferta", label: "Oferta", tabs: [{ t: "products", l: "Produkty", i: "box", p: "products" }, { t: "ice_packages", l: "Laponia — pakiety", i: "snow", p: "products" }, { t: "ice_windows", l: "Laponia — sezon", i: "snow", p: "products" }, { t: "programs", l: "Kafelki na głównej", i: "grid", p: "content" }] },
+  { id: "strona", label: "Strona", tabs: [{ t: "inline", l: "Edycja wizualna", i: "edit", link: "/", p: "content" }, { t: "menu", l: "Menu (nawigacja)", i: "menu", p: "content" }, { t: "banners", l: "Banery", i: "image", p: "content" }, { t: "media", l: "Media o nas", i: "news", p: "content" }] },
+  { id: "tor", label: "Tor i zespół", tabs: [{ t: "cars", l: "Samochody i ceny", i: "car", p: "cars" }, { t: "terms", l: "Terminy (kalendarz)", i: "cal", p: "terms" }, { t: "tracks", l: "Tory", i: "track", p: "tracks" }, { t: "instructors", l: "Instruktorzy", i: "user", p: "instructors" }] },
+  { id: "adm", label: "Administracja", tabs: [{ t: "admins", l: "Administratorzy", i: "users", p: "admins" }, { t: "logs", l: "Dziennik zdarzeń", i: "log", owner: true }] },
 ];
+/* permission catalogue — what a checkbox in the admin form means (keys mirror admin-api PERM_KEYS) */
+const PERMS = [
+  { k: "orders", l: "Zamówienia i płatności", d: "Podgląd zamówień i vouchery, dokumenty Tpay, oznaczanie jako opłacone, anulowanie, wysyłka maili" },
+  { k: "messages", l: "Wiadomości i zapytania firmowe", d: "Skrzynka z formularza kontaktowego i briefy od firm" },
+  { k: "settings", l: "Ustawienia", d: "Adresy e-mail powiadomień, nadawca, kurs EUR" },
+  { k: "content", l: "Edycja strony", d: "Edycja wizualna tekstów i zdjęć, menu, banery, media o nas, kafelki na głównej" },
+  { k: "products", l: "Produkty i oferta", d: "Dodawanie i zmiana produktów, pakiety i sezon Laponii, wyprawy" },
+  { k: "cars", l: "Samochody i ceny", d: "Flota i ceny pakietów" },
+  { k: "terms", l: "Terminy (kalendarz)", d: "Daty szkoleń na torach" },
+  { k: "tracks", l: "Tory", d: "Lista torów na stronie" },
+  { k: "instructors", l: "Instruktorzy", d: "Zespół instruktorów" },
+  { k: "admins", l: "Administratorzy", d: "Dodawanie i edycja kont administratorów i ich uprawnień (nie może ruszać konta moderatora ani nadać więcej niż sam ma)" },
+];
+const ROLE = { owner: ["Moderator", "ok"], admin: ["Administrator", "off"] };
+const POSITIONS = ["Właściciel", "Szef instruktorów", "Instruktor", "Księgowość", "Marketing", "Biuro / obsługa klienta", "Sprzedaż", "Administrator techniczny"];
 const TAB_LABEL = (t) => GROUPS.flatMap((g) => g.tabs).find((x) => x.t === t)?.l || CFG[t]?.label || t;
 
 const KIND = { track: ["Szkolenie", "#e30613"], ice: ["Laponia", "#2f9fe0"], product: ["Program", "#8b5cf6"], trip: ["Wyprawa", "#f0a500"], voucher: ["Voucher", "#21b573"] };
@@ -227,8 +245,11 @@ function Login() {
 
 /* ============ SHELL ============ */
 function Shell() {
-  const { admin, logout, setCmsMode } = useStore();
+  const { admin, logout, setCmsMode, can, isOwner } = useStore();
   const [tab, setTab] = useState("dashboard");
+  // only the tabs this account may use; a tab without permission (e.g. an old bookmark) shows a notice
+  const groups = GROUPS.map((g) => ({ ...g, tabs: g.tabs.filter((x) => (x.owner ? isOwner : !x.p || can(x.p))) })).filter((g) => g.tabs.length);
+  const tabOk = tab === "dashboard" || groups.some((g) => g.tabs.some((x) => x.t === tab));
   const [navOpen, setNavOpen] = useState(false);
   const pick = (t) => { setTab(t); setNavOpen(false); window.scrollTo({ top: 0 }); };
   const initials = (admin?.name || admin?.login || "A").slice(0, 2).toUpperCase();
@@ -238,7 +259,7 @@ function Shell() {
       <aside className={`adm-side ${navOpen ? "open" : ""}`}>
         <div className="adm-brand"><img src="/assets/ui/logo.webp" alt="" /><span>PANEL</span></div>
         <div className="adm-side__scroll">
-          {GROUPS.map((g) => (
+          {groups.map((g) => (
             <div className="adm-group" key={g.id}>
               <span className="adm-group__lbl">{g.label}</span>
               {g.tabs.map((x) => x.link
@@ -248,7 +269,7 @@ function Shell() {
           ))}
         </div>
         <div className="adm-side__foot">
-          <div className="adm-me"><span className="adm-me__av">{initials}</span><span><b>{admin?.name || admin?.login}</b><small>administrator</small></span></div>
+          <div className="adm-me"><span className="adm-me__av">{initials}</span><span><b>{admin?.name || admin?.login}</b><small>{admin?.position || ROLE[admin?.role]?.[0] || admin?.role}</small></span></div>
           <button className="adm-nav" onClick={logout}><i>{I.logout}</i>Wyloguj</button>
         </div>
       </aside>
@@ -258,7 +279,10 @@ function Shell() {
         <Link to="/" className="adm-top__site">Zobacz stronę {I.ext}</Link>
       </div>
       <main className="adm-main">
-        {tab === "dashboard" ? <Dashboard go={pick} />
+        {!tabOk ? <div className="adm-empty">Brak uprawnień do tej sekcji. Poproś moderatora o dostęp.</div>
+          : tab === "dashboard" ? <Dashboard go={pick} />
+          : tab === "admins" ? <AdminsTab />
+          : tab === "logs" ? <LogsTab />
           : tab === "zamowienia" ? <OrdersTab />
           : tab === "vouchery" ? <OrdersTab only="voucher" />
           : tab === "wiadomosci" ? <MessagesTab kind="contact" />
@@ -273,7 +297,7 @@ function Shell() {
 
 /* ============ DASHBOARD ============ */
 function Dashboard({ go }) {
-  const { adminCall, terms } = useStore();
+  const { adminCall, terms, can } = useStore();
   const [s, setS] = useState(null);
   useEffect(() => { adminCall("stats").then((r) => setS(r.ok ? r : {})); /* eslint-disable-next-line */ }, []);
   if (!s) return <div className="adm-empty">Ładowanie pulpitu…</div>;
@@ -290,14 +314,15 @@ function Dashboard({ go }) {
     <div>
       <div className="adm-head"><div><h2>Pulpit</h2><p className="adm-sub">Sprzedaż, płatności Tpay, skrzynka i kalendarz — w jednym miejscu.</p></div></div>
 
+      {!can("orders") && <div className="adm-note" style={{ marginBottom: 16 }}>Sprzedaż i płatności są ukryte — to konto nie ma uprawnienia „Zamówienia i płatności”.</div>}
       <div className="adm-kpis">
-        <Kpi label="Przychód w tym miesiącu" value={fmtZl(thisM.revenue)} sub={delta == null ? "brak danych z poprzedniego" : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta)}% vs poprzedni`} ring={Math.min(1, thisM.revenue / max)} color="#e30613" icon="cart" onClick={() => go("zamowienia")} />
-        <Kpi label="Opłacone zamówienia (12 mies.)" value={s.paidCount ?? 0} sub={`${fmtZl(s.revenue || 0)} łącznie`} ring={Math.min(1, (s.paidCount || 0) / 50)} color="#21b573" icon="gift" onClick={() => go("zamowienia")} />
-        <Kpi label="Oczekujące płatności" value={s.pending ?? 0} sub={s.pending ? `${fmtZl(s.pendingSum || 0)} do zapłaty` : "rozpoczęte, nieopłacone"} ring={Math.min(1, (s.pending || 0) / 10)} color="#f0a500" icon="cog" onClick={() => go("zamowienia")} />
-        <Kpi label="Nowe wiadomości" value={s.messages?.unread ?? 0} sub={`${s.messages?.firma ?? 0} zapytań firmowych`} ring={Math.min(1, (s.messages?.unread || 0) / 10)} color="#2f9fe0" icon="mail" onClick={() => go("wiadomosci")} />
+        {can("orders") && <Kpi label="Przychód w tym miesiącu" value={fmtZl(thisM.revenue)} sub={delta == null ? "brak danych z poprzedniego" : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta)}% vs poprzedni`} ring={Math.min(1, thisM.revenue / max)} color="#e30613" icon="cart" onClick={() => go("zamowienia")} />}
+        {can("orders") && <Kpi label="Opłacone zamówienia (12 mies.)" value={s.paidCount ?? 0} sub={`${fmtZl(s.revenue || 0)} łącznie`} ring={Math.min(1, (s.paidCount || 0) / 50)} color="#21b573" icon="gift" onClick={() => go("zamowienia")} />}
+        {can("orders") && <Kpi label="Oczekujące płatności" value={s.pending ?? 0} sub={s.pending ? `${fmtZl(s.pendingSum || 0)} do zapłaty` : "rozpoczęte, nieopłacone"} ring={Math.min(1, (s.pending || 0) / 10)} color="#f0a500" icon="cog" onClick={() => go("zamowienia")} />}
+        {can("messages") && <Kpi label="Nowe wiadomości" value={s.messages?.unread ?? 0} sub={`${s.messages?.firma ?? 0} zapytań firmowych`} ring={Math.min(1, (s.messages?.unread || 0) / 10)} color="#2f9fe0" icon="mail" onClick={() => go("wiadomosci")} />}
       </div>
 
-      <div className="adm-grid2">
+      {can("orders") && <div className="adm-grid2">
         <div className="adm-card">
           <div className="adm-card__head"><b>Przychód miesięcznie</b><span>ostatnie 12 miesięcy · PLN netto</span></div>
           <div className="adm-chart">
@@ -321,10 +346,10 @@ function Dashboard({ go }) {
             </ul>
           </div>
         </div>
-      </div>
+      </div>}
 
       <div className="adm-grid2">
-        <div className="adm-card">
+        {can("orders") && <div className="adm-card">
           <div className="adm-card__head"><b>Ostatnie zamówienia</b><button className="adm-btn adm-btn--sm" onClick={() => go("zamowienia")}>Wszystkie</button></div>
           {!(s.recent || []).length ? <div className="adm-empty adm-empty--sm">Brak zamówień.</div> : (
             <div className="adm-mini-list">
@@ -337,7 +362,7 @@ function Dashboard({ go }) {
               ))}
             </div>
           )}
-        </div>
+        </div>}
         <div className="adm-card">
           <div className="adm-card__head"><b>Kalendarz</b><button className="adm-btn adm-btn--sm" onClick={() => go("terms")}>Terminy</button></div>
           <div className="adm-calstats">
@@ -748,4 +773,195 @@ function Field({ f, value, onChange }) {
       <UploadStatus st={st} /></div></label>);
   }
   return null;
+}
+
+
+/* ============ ADMINS TAB ============ */
+function AdminsTab() {
+  const { adminCall, admin: me, isOwner, can } = useStore();
+  const [rows, setRows] = useState(null);
+  const [editing, setEditing] = useState(null);   // {id?, login, name, role, perms, password}
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const load = () => adminCall("admins.list").then((r) => setRows(r.ok ? r.rows : []));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const blank = () => setEditing({ login: "", name: "", position: "", role: "admin", perms: {}, password: "" });
+  const edit = (a) => setEditing({ id: a.id, login: a.login, name: a.name || "", position: a.position || "", role: a.role, perms: { ...(a.perms || {}) }, password: "" });
+  const toggle = (k) => setEditing((e) => ({ ...e, perms: { ...e.perms, [k]: !e.perms[k] } }));
+  const all = () => setEditing((e) => { const on = !PERMS.every((p) => e.perms[p.k]); const perms = {}; PERMS.forEach((p) => { if (on && (isOwner || can(p.k))) perms[p.k] = true; }); return { ...e, perms }; });
+  const save = async () => {
+    setBusy(true); setErr("");
+    const r = await adminCall(editing.id ? "admins.update" : "admins.create", editing);
+    setBusy(false);
+    if (!r.ok) { setErr(r.error || "Błąd zapisu"); return; }
+    setEditing(null); load();
+  };
+  const remove = async (a) => {
+    if (!window.confirm(`Usunąć konto „${a.login}”? Ta osoba od razu straci dostęp do panelu.`)) return;
+    const r = await adminCall("admins.delete", { id: a.id, login: a.login });
+    if (!r.ok) window.alert(r.error || "Nie udało się usunąć"); else load();
+  };
+  const lockedRole = (a) => a.role === "owner" && !isOwner;   // admins never touch the moderator
+
+  return (
+    <div>
+      <div className="adm-head">
+        <div><h2>Administratorzy <span className="adm-count">{rows?.length ?? ""}</span></h2>
+          <p className="adm-sub">Każde konto ma własny login i zestaw uprawnień. Moderator widzi wszystko i jako jedyny ma dziennik zdarzeń.</p></div>
+        <button className="adm-btn adm-btn--red" onClick={blank}>+ Dodaj administratora</button>
+      </div>
+      {!rows ? <div className="adm-empty">Ładowanie…</div> : (
+        <div className="adm-admins">
+          {rows.map((a) => {
+            const r = ROLE[a.role] || [a.role, "off"];
+            const granted = a.role === "owner" ? PERMS : PERMS.filter((p) => a.perms?.[p.k]);
+            return (
+              <div className={`adm-admin ${a.id === me?.id ? "is-me" : ""}`} key={a.id}>
+                <span className="adm-me__av adm-admin__av">{(a.name || a.login).slice(0, 2).toUpperCase()}</span>
+                <div className="adm-admin__main">
+                  <div className="adm-admin__top"><b>{a.name || a.login}</b>{a.position && <span className="adm-admin__pos">{a.position}</span>}<code>{a.login}</code><i className={`adm-badge adm-badge--${r[1]}`}>{r[0]}</i>{a.id === me?.id && <em className="adm-admin__you">to Ty</em>}</div>
+                  <div className="adm-admin__perms">
+                    {a.role === "owner" ? <span className="adm-admin__all">pełne uprawnienia</span>
+                      : granted.length ? granted.map((p) => <span key={p.k} className="adm-perm">{p.l}</span>) : <span className="adm-muted">brak uprawnień — konto tylko widzi pulpit</span>}
+                  </div>
+                  <small className="adm-admin__meta">konto od {when(a.created_at)}</small>
+                </div>
+                <div className="adm-admin__ops">
+                  <button className="adm-mini" disabled={lockedRole(a)} onClick={() => edit(a)}>Edytuj</button>
+                  <button className="adm-mini adm-mini--del" disabled={lockedRole(a) || a.id === me?.id} onClick={() => remove(a)}>Usuń</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {editing && (
+        <div className="adm-modal" onMouseDown={(e) => e.target === e.currentTarget && setEditing(null)}>
+          <div className="adm-form">
+            <div className="adm-form__head"><h3>{editing.id ? `Edytuj: ${editing.login}` : "Nowy administrator"}</h3><button className="adm-x" onClick={() => setEditing(null)}>×</button></div>
+            <div className="adm-form__body">
+              <div className="adm-admin__grid">
+                <label className="adm-f"><span>Login</span><input value={editing.login} disabled={!!editing.id} onChange={(e) => setEditing({ ...editing, login: e.target.value })} placeholder="np. anna" autoComplete="off" /></label>
+                <label className="adm-f"><span>Imię i nazwisko</span><input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="np. Anna Kowalska" /></label>
+                <label className="adm-f"><span>Stanowisko</span><input list="adm-positions" value={editing.position} onChange={(e) => setEditing({ ...editing, position: e.target.value })} placeholder="np. Szef instruktorów" /><datalist id="adm-positions">{POSITIONS.map((x) => <option key={x} value={x} />)}</datalist></label>
+                <label className="adm-f"><span>{editing.id ? "Nowe hasło (puste = bez zmian)" : "Hasło"}</span><input type="password" value={editing.password} onChange={(e) => setEditing({ ...editing, password: e.target.value })} placeholder="min. 8 znaków" autoComplete="new-password" /></label>
+                <label className="adm-f"><span>Rola</span>
+                  <select className="adm-select" value={editing.role} disabled={!isOwner || editing.id === me?.id} onChange={(e) => setEditing({ ...editing, role: e.target.value })}>
+                    <option value="admin">Administrator — tylko zaznaczone uprawnienia</option>
+                    <option value="owner">Moderator — wszystko + administratorzy + dziennik</option>
+                  </select>
+                </label>
+              </div>
+              {editing.role === "owner" ? (
+                <div className="adm-note">Moderator ma pełny dostęp do każdej funkcji panelu, zarządza administratorami i widzi dziennik zdarzeń.</div>
+              ) : (
+                <div className="adm-perms">
+                  <div className="adm-perms__head"><span>Uprawnienia</span><button type="button" className="adm-mini" onClick={all}>{PERMS.every((p) => editing.perms[p.k]) ? "Odznacz wszystko" : "Zaznacz wszystko"}</button></div>
+                  {PERMS.map((p) => {
+                    const grantable = isOwner || can(p.k);
+                    return (
+                      <label key={p.k} className={`adm-perms__row ${editing.perms[p.k] ? "on" : ""} ${grantable ? "" : "is-locked"}`}>
+                        <input type="checkbox" checked={!!editing.perms[p.k]} disabled={!grantable} onChange={() => toggle(p.k)} />
+                        <span><b>{p.l}</b><small>{p.d}{!grantable && " · nie masz tego uprawnienia, więc nie możesz go nadać"}</small></span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+              {err && <div className="adm-err">{err}</div>}
+            </div>
+            <div className="adm-form__foot">
+              <div style={{ flex: 1 }} />
+              <button className="adm-btn" onClick={() => setEditing(null)}>Anuluj</button>
+              <button className="adm-btn adm-btn--red" onClick={save} disabled={busy}>{busy ? "Zapisuję…" : editing.id ? "Zapisz zmiany" : "Utwórz konto"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ============ AUDIT LOG (owner only) ============ */
+const ACTION_LABEL = (a, tgt) => {
+  if (a === "login") return ["Logowanie do panelu", "ok"];
+  if (a === "content.save") return ["Edycja treści strony", "info"];
+  if (a === "media.upload") return ["Wgranie pliku", "info"];
+  if (a === "config.set") return ["Zmiana ustawienia", "warn"];
+  if (a === "bookings.markPaid") return ["Oznaczono zamówienie jako opłacone", "ok"];
+  if (a === "bookings.cancel") return ["Anulowano zamówienie", "warn"];
+  if (a === "bookings.delete") return ["Usunięto zamówienie", "bad"];
+  if (a === "bookings.resendMail") return ["Ponowna wysyłka maili zamówienia", "info"];
+  if (a === "messages.delete") return ["Usunięto wiadomość", "bad"];
+  if (a === "messages.read") return ["Odczytano wiadomość", "info"];
+  if (a === "admins.create") return ["Nowe konto administratora", "ok"];
+  if (a === "admins.update") return ["Zmiana konta administratora", "warn"];
+  if (a === "admins.delete") return ["Usunięto konto administratora", "bad"];
+  const [table, op] = a.split(".");
+  const tl = TAB_LABEL(table);
+  if (op === "upsert") return [`Zapis: ${tl}`, "info"];
+  if (op === "delete") return [`Usunięcie: ${tl}`, "bad"];
+  if (op === "reorder") return [`Zmiana kolejności: ${tl}`, "info"];
+  return [a, "off"];
+};
+const ACTION_FILTERS = [["", "Wszystkie"], ["login", "Logowania"], ["content", "Treść"], ["media", "Pliki"], ["config", "Ustawienia"], ["bookings", "Zamówienia"], ["messages", "Wiadomości"], ["products", "Produkty"], ["cars", "Samochody"], ["terms", "Terminy"], ["admins", "Administratorzy"]];
+function LogsTab() {
+  const { adminCall } = useStore();
+  const [rows, setRows] = useState(null);
+  const [admins, setAdmins] = useState([]);
+  const [who, setWho] = useState("");
+  const [kind, setKind] = useState("");
+  const [q, setQ] = useState("");
+  const [more, setMore] = useState(true);
+  const load = async (before) => {
+    const r = await adminCall("logs.list", { admin_id: who || undefined, action: kind || undefined, before, limit: 200 });
+    if (!r.ok) { setRows([]); return; }
+    setAdmins(r.admins || []);
+    setRows((cur) => (before ? [...(cur || []), ...r.rows] : r.rows));
+    setMore(r.rows.length === 200);
+  };
+  useEffect(() => { setRows(null); load(); /* eslint-disable-next-line */ }, [who, kind]);
+  const shown = (rows || []).filter((r) => !q || `${r.admin_login} ${r.admin_name} ${r.action} ${r.target} ${JSON.stringify(r.details || "")}`.toLowerCase().includes(q.toLowerCase()));
+  const detail = (r) => {
+    const d = r.details || {};
+    if (r.action === "content.save") return d.count > 5 ? `${d.count} kluczy` : "";
+    if (r.action === "config.set") return d.value ? `→ ${d.value}` : "";
+    if (r.action.startsWith("admins.") && d.perms) return `${d.position ? `${d.position} · ` : ""}${d.role === "owner" ? "moderator" : "admin"}: ${Object.keys(d.perms).filter((k) => d.perms[k]).map((k) => PERMS.find((p) => p.k === k)?.l || k).join(", ") || "bez uprawnień"}`;
+    if (d.visible === false) return "ukryte na stronie";
+    if (d.ids) return `${d.ids} pozycji`;
+    return "";
+  };
+  return (
+    <div>
+      <div className="adm-head">
+        <div><h2>Dziennik zdarzeń</h2><p className="adm-sub">Każde logowanie i każda zmiana zrobiona w panelu lub w edycji wizualnej — kto, kiedy i co. Widzi to tylko moderator.</p></div>
+        <button className="adm-btn" onClick={() => { setRows(null); load(); }}>Odśwież</button>
+      </div>
+      <div className="adm-toolbar">
+        <select className="adm-select" value={who} onChange={(e) => setWho(e.target.value)}>
+          <option value="">Wszyscy administratorzy</option>
+          {admins.map((a) => <option key={a.id} value={a.id}>{a.name || a.login} ({a.login})</option>)}
+        </select>
+        <div className="adm-chips">{ACTION_FILTERS.map(([v, l]) => <button key={v} className={`adm-chip ${kind === v ? "on" : ""}`} onClick={() => setKind(v)}>{l}</button>)}</div>
+        <input className="adm-search" placeholder="Szukaj: login, cel, szczegóły…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      {!rows ? <div className="adm-empty">Ładowanie…</div> : !shown.length ? <div className="adm-empty">Brak wpisów.</div> : (
+        <div className="adm-table adm-logs">
+          <div className="adm-tr adm-tr--head adm-log"><span>Kiedy</span><span>Kto</span><span>Zdarzenie</span><span>Czego dotyczy</span><span>IP</span></div>
+          {shown.map((r) => { const [lbl, tone] = ACTION_LABEL(r.action, r.target); return (
+            <div className="adm-tr adm-log" key={r.id}>
+              <span className="adm-log__when">{when(r.at)}</span>
+              <span className="adm-log__who"><b>{r.admin_name || r.admin_login}</b><small>{admins.find((a) => a.id === r.admin_id)?.position || r.admin_login}</small></span>
+              <span><i className={`adm-badge adm-badge--${tone}`}>{lbl}</i></span>
+              <span className="adm-log__what"><b>{r.target || "—"}</b>{detail(r) && <small>{detail(r)}</small>}</span>
+              <span className="adm-log__ip">{r.ip || "—"}</span>
+            </div>
+          ); })}
+          {more && !q && <div className="adm-logs__more"><button className="adm-btn" onClick={() => load(rows[rows.length - 1]?.at)}>Pokaż starsze</button></div>}
+        </div>
+      )}
+    </div>
+  );
 }

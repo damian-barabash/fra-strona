@@ -165,7 +165,10 @@ export function StoreProvider({ children }) {
     content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints,
     raw, t, media, L, reload: load,
     token, admin, isAdmin: !!admin,
-    cmsMode, setCmsMode,
+    // permissions: the owner (moderator) can do everything, an admin only what its perms allow
+    isOwner: admin?.role === "owner",
+    can: (perm) => admin?.role === "owner" || !!admin?.perms?.[perm],
+    cmsMode, setCmsMode: (v) => setCmsMode((cur) => { const next = typeof v === "function" ? v(cur) : v; return next && !(admin?.role === "owner" || admin?.perms?.content) ? false : next; }),
     login, logout,
     setContentLocal, saveContent,
     upsertEntity, deleteEntity, reorderEntity, getters, createBooking, createIceBooking, createTripBooking, createProductBooking, createVoucherBooking, orderStatus,
