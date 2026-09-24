@@ -71,7 +71,7 @@ export default function Produkt() {
   const buyTo = p.buy_direct ? `/zakup?produkt=${p.slug}` : "/rezerwacja";
 
   return (
-    <div className={editing ? "cms-on pd" : "pd"} style={style}>
+    <div className={editing ? "cms-on pd" : "pd"} style={style} data-slug={p.slug}>
       <ScrollProgress />
       <Nav />
       <main>

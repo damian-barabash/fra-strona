@@ -257,3 +257,5 @@ p { margin: 0; }
 .upst--upload .upst__spin { border-color: rgba(255,255,255,.35); border-top-color: #fff; }
 @keyframes upstSpin { to { transform: rotate(360deg); } }
 @keyframes upstIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.btn--gift .nav__gift { margin-right: 4px; }

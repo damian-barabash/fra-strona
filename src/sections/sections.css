@@ -471,3 +471,5 @@
 .stept__t b { font: 800 15px/1.15 var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
 @keyframes steptIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
 @media (max-width: 560px) { .stept__n { min-width: 46px; font-size: 21px; } .stept__t b { font-size: 13px; } }
+
+.founder__btns { display: flex; gap: 12px; flex-wrap: wrap; }

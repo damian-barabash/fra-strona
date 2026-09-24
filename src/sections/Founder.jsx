@@ -39,9 +39,14 @@ export default function Founder() {
 
           <div className="founder__foot reveal-up rv-d5">
             <EMedia id="founder.sign" className="founder__sign" alt="" />
-            <Link to="/mariusz-miekos-racing" className="btn btn--dark" onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
-              <EText id="founder.cta" /> <span className="btn__arrow">›</span>
-            </Link>
+            <div className="founder__btns">
+              <Link to="/mariusz-miekos-racing" className="btn btn--dark" onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+                <EText id="founder.cta" /> <span className="btn__arrow">›</span>
+              </Link>
+              <Link to="/produkty/race-taxi" className="btn btn--red" onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+                <EText id="founder.taxiCta" /> <span className="btn__arrow">›</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

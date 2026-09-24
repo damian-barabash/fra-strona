@@ -271,3 +271,9 @@
 .fl-custom .spd__tick--red, .rz--dark .spd__tick--red { stroke: var(--red); }
 .fl-custom .spd__num, .rz--dark .spd__num, .fl-custom .spd__kmh, .rz--dark .spd__kmh { fill: #fff; }
 .fl-custom .spd__hub, .rz--dark .spd__hub { fill: #fff; } .fl-custom .spd__hub2, .rz--dark .spd__hub2 { fill: var(--red); }
+
+/* inside the configurator the car window is narrower — the specs and the WYBIERAM button stay on screen */
+.rz .fl-slider__main { max-width: 560px; }
+.rz .fl-stage { aspect-ratio: 16/7.2; }
+.rz .fl-slider__bottom { margin-top: 14px; padding-top: 14px; }
+.rz .carnav__btn, .rz .carnav__more { min-height: 48px; }

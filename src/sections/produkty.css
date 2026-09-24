@@ -281,3 +281,6 @@
 }
 .pd-gal:hover .pd-gal__zoom { opacity: 1; }
 .pd-gal:hover .pd-gal__zoom:hover { background: var(--red); }
+
+/* Race Taxi hero: keep Mariusz's face in the frame (photo is taller than the hero) */
+.pd[data-slug="race-taxi"] .pd-hero__media img { object-position: 50% 12%; }
