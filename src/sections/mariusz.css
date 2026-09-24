@@ -283,3 +283,14 @@
 .mz-hcups__shelf { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: linear-gradient(90deg, #14161a, #34373d); box-shadow: 0 8px 18px rgba(0,0,0,.25); transform: scaleX(var(--sp)); transform-origin: left; }
 .mz-hcups__lbl { display: block; margin-top: 10px; text-align: center; font: 800 10px/1.4 var(--font-display); letter-spacing: .2em; color: var(--red); opacity: clamp(0, calc((var(--sp) - 0.8) * 5), 1); }
 @media (max-width: 640px) { .mz-hcups__row { gap: 3px; padding: 0 4px 8px; } .mz-hcups { margin-top: 14px; } }
+
+/* ---- Race Taxi band ---- */
+.mz-taxi { background: var(--red); color: #fff; padding: clamp(40px, 6vw, 80px) 0; position: relative; overflow: hidden; }
+.mz-taxi__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(24px, 4vw, 64px); align-items: center; position: relative; }
+.mz-taxi__media img { width: 100%; display: block; aspect-ratio: 16/10; object-fit: cover; box-shadow: 0 30px 70px rgba(0,0,0,.35); }
+.mz-taxi__title { color: #fff; margin-top: 10px; }
+.mz-taxi__p { margin-top: 16px; font: 400 clamp(14px, 1.15vw, 16.5px)/1.65 var(--font-body); color: rgba(255,255,255,.88); max-width: 56ch; white-space: pre-line; }
+.mz-taxi__btns { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 24px; }
+.mz-taxi__from { font: 800 12px var(--font-display); letter-spacing: .12em; text-transform: uppercase; }
+.eyebrow--white { color: #fff; }
+@media (max-width: 860px) { .mz-taxi__grid { grid-template-columns: 1fr; } }

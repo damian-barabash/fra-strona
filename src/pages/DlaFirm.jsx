@@ -55,7 +55,7 @@ const OFFER = [
   { ic: "timer", pl: ["Twoje Grand Prix", "Pomiar czasów, rywalizacja grup i wyniki na żywo na ekranach. Emocje jak w prawdziwych wyścigach."], en: ["Your Grand Prix", "Lap timing, team competition and live results on screens. Emotions like a real race."] },
   { ic: "cater", pl: ["Catering", "Całodniowa przerwa kawowa z przekąskami i ciepły lunch — obsługa na najwyższym poziomie."], en: ["Catering", "All-day coffee break with snacks and a hot lunch — top-level service."] },
   { ic: "cup", pl: ["Nagrody dla uczestników", "Vouchery, gadżety i firmowy branding — pamiątka, która przypomina o wydarzeniu przez długi czas."], en: ["Prizes for participants", "Vouchers, gadgets and corporate branding — a keepsake that recalls the day for a long time."] },
-  { ic: "taxi", pl: ["Race Taxi z Mistrzem Polski", "Przejazd z Mariuszem Miękosiem — 9-krotnym Wyścigowym Mistrzem Polski. Realny limit auta na torze."], en: ["Race Taxi with the champion", "A lap with Mariusz Miękoś — 9-time Polish racing champion. The real limit of the car on track."] },
+  { ic: "taxi", to: "/produkty/race-taxi", pl: ["Race Taxi z Mistrzem Polski", "Przejazd z Mariuszem Miękosiem — 9-krotnym Wyścigowym Mistrzem Polski. Realny limit auta na torze."], en: ["Race Taxi with the champion", "A lap with Mariusz Miękoś — 9-time Polish racing champion. The real limit of the car on track."] },
   { ic: "heli", pl: ["Atrakcje towarzyszące", "Symulatory, przeloty helikopterem, off-road, jachty — dla tych, których łączy pasja prędkości."], en: ["Extra attractions", "Simulators, helicopter flights, off-road, yachts — for those who share a passion for speed."] },
 ];
 const DAY = [
@@ -149,6 +149,7 @@ export default function DlaFirm() {
                   <div className="fr-tile__ic">{OICON[o.ic]}</div>
                   <span className="fr-tile__n">0{i + 1}</span>
                   <h3>{L(o)[0]}</h3><p>{L(o)[1]}</p>
+                  {o.to && <Link to={o.to} className="fr-tile__go" onClick={() => window.scrollTo({ top: 0 })}>{t("fir.tileGo")} ›</Link>}
                 </article>
               ))}
             </div>

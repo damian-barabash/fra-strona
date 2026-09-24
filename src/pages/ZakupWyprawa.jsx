@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "../lib/store";
+import StepTag from "../components/StepTag";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
@@ -86,7 +87,7 @@ export default function ZakupWyprawa() {
               <div className="zw-body">
                 {step === "dane" ? (
                   <>
-                    <h2 className="zw-h">{t("flota.bk.dataTitle")}</h2>
+                    <StepTag n={1} of={2} title={t("flota.bk.dataTitle")} />
                     <p className="zw-sub">{t("zak.sub")}</p>
                     <div className="zw-form">
                       <label className="zw-field"><span className="req">{t("flota.bk.name")}</span>
@@ -112,8 +113,11 @@ export default function ZakupWyprawa() {
                     </div>
                   </>
                 ) : (
-                  <PayTrip pkg={pkg} trip={trip} persons={persons} total={total} form={form}
-                    t={t} create={createTripBooking} />
+                  <>
+                    <StepTag n={2} of={2} title={t("flota.bk.s4")} />
+                    <PayTrip pkg={pkg} trip={trip} persons={persons} total={total} form={form}
+                      t={t} create={createTripBooking} />
+                  </>
                 )}
               </div>
 

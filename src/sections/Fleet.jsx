@@ -91,18 +91,17 @@ export default function Fleet() {
               )}
 
               <div className="fleet__model" style={{ zIndex: 3 }}>{car.name}</div>
-              <Link className="fleet__more" to={`/flota/${car.slug}`} onClick={() => window.scrollTo({ top: 0 })}><EText id="fleet.more" /></Link>
             </div>
 
-            <div className="fleet__ctrls">
-              <div className="fleet__arrows">
-                <button className="navbtn" onClick={() => go(-1)} aria-label="prev">‹</button>
-                <button className="navbtn navbtn--red" onClick={() => go(1)} aria-label="next">›</button>
-              </div>
-              <div className="fleet__neighbors">
-                <span className="fleet__neighbor fleet__neighbor--prev">/// {prev.name}</span>
-                <span className="fleet__neighbor fleet__neighbor--next">/// {next.name}</span>
-              </div>
+            {/* control bar under the car window: previous model ‹ | more | › next model */}
+            <div className="carnav fleet__ctrls">
+              <button className="carnav__btn carnav__btn--prev navbtn" onClick={() => go(-1)} aria-label={`poprzednie: ${prev.name}`}>
+                <i>‹</i><span>{prev.name}</span>
+              </button>
+              <Link className="carnav__more fleet__more" to={`/flota/${car.slug}`} onClick={() => window.scrollTo({ top: 0 })}><EText id="fleet.more" /></Link>
+              <button className="carnav__btn carnav__btn--next navbtn navbtn--red" onClick={() => go(1)} aria-label={`następne: ${next.name}`}>
+                <span>{next.name}</span><i>›</i>
+              </button>
             </div>
           </div>
 

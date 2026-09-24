@@ -91,17 +91,21 @@ export function EMedia({ id, kind = "image", className, style, videoProps = {}, 
     : <img className={className} style={style} src={url} alt={alt} loading="lazy" {...imgProps} />;
 
   if (!editing) return media_el;
+  const open = (e) => { e.preventDefault(); e.stopPropagation(); inputRef.current?.click(); };
+  // display:contents — the wrapper adds no box, so the image keeps exactly the layout it has when not
+  // editing (absolute fills, % heights, flex items). The badge lands in the nearest positioned ancestor.
   return (
-    <span data-editable-media style={{ position: "relative", display: "block", cursor: "pointer", ...(kind === "video" ? { height: "100%" } : {}), ...wrapperStyle }}
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); inputRef.current?.click(); }}>
-      {media_el}
+    <span data-editable-media style={{ display: "contents", ...wrapperStyle }}>
+      {kind === "video"
+        ? <video className={className} style={{ cursor: "pointer", ...style }} src={url} autoPlay loop muted playsInline {...videoProps} onClick={open} />
+        : <img className={className} style={{ cursor: "pointer", ...style }} src={url} alt={alt} loading="lazy" {...imgProps} onClick={open} />}
       <span style={{
         position: "absolute", top: 10, right: 10, zIndex: 5, background: "var(--red)", color: "#fff",
         font: "700 11px/1 var(--font-display)", letterSpacing: ".1em", padding: "7px 10px", borderRadius: 2,
         textTransform: "uppercase", pointerEvents: "none",
       }}>{kind === "video" ? "▲ Wideo" : "▲ Zdjęcie"}</span>
       {st && <span style={{ position: "absolute", left: 10, bottom: 10, zIndex: 6 }}><UploadStatus st={st} /></span>}
-      <input ref={inputRef} type="file" accept={kind === "video" ? "video/*" : "image/*"} hidden onChange={onPick} />
+      <input ref={inputRef} type="file" accept={kind === "video" ? "video/*" : "image/*"} hidden onChange={onPick} onClick={(e) => e.stopPropagation()} />
     </span>
   );
 }
@@ -128,7 +132,7 @@ export function EBg({ id, className, style, children }) {
         <>
           <span style={{ position: "absolute", top: 10, right: 10, zIndex: 5, background: "var(--red)", color: "#fff", font: "700 11px/1 var(--font-display)", letterSpacing: ".1em", padding: "7px 10px", textTransform: "uppercase", pointerEvents: "none" }}>▲ Tło</span>
           {st && <span style={{ position: "absolute", left: 10, bottom: 10, zIndex: 6 }}><UploadStatus st={st} /></span>}
-          <input ref={inputRef} type="file" accept="image/*" hidden onChange={onPick} />
+          <input ref={inputRef} type="file" accept="image/*" hidden onChange={onPick} onClick={(e) => e.stopPropagation()} />
         </>
       )}
     </div>

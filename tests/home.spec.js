@@ -28,7 +28,7 @@ test("fleet slider changes car on next", async ({ page }) => {
   await page.goto("/");
   await page.waitForTimeout(1200);
   const first = await page.locator(".fleet__model").innerText();
-  await page.locator(".fleet__ctrls .navbtn--red").click();
+  await page.locator(".fleet__ctrls .carnav__btn--next").click();
   await page.waitForTimeout(700);
   const second = await page.locator(".fleet__model").innerText();
   expect(second).not.toBe(first);

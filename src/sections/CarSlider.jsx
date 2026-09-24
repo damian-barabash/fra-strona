@@ -104,11 +104,6 @@ export default function CarSlider({ onChoose, onCurrent, jumpTo, onJumped, hideH
         )}
 
         <div className="fl-slider__main">
-          <div className="fl-slider__side fl-slider__side--prev">
-            <span className="fl-slider__neighbor">/// {prev.name}</span>
-            <button className="fl-arrow" onClick={() => go(-1)} aria-label="prev">‹‹</button>
-          </div>
-
           <div className="fl-stage" ref={stageRef} style={{ background: car.color }}>
             <div className="fl-stage__inner" ref={innerRef}>
               <AnimatePresence custom={dir} initial={false}>
@@ -127,12 +122,17 @@ export default function CarSlider({ onChoose, onCurrent, jumpTo, onJumped, hideH
                 </AnimatePresence>
               )}
             </div>
-            <Link className="fl-stage__more" to={`/flota/${car.slug}`} onClick={() => window.scrollTo({ top: 0 })}><EText id="flota.more" /></Link>
           </div>
 
-          <div className="fl-slider__side fl-slider__side--next">
-            <span className="fl-slider__neighbor">/// {next.name}</span>
-            <button className="fl-arrow fl-arrow--red" onClick={() => go(1)} aria-label="next">››</button>
+          {/* control bar under the car window: previous model ‹ | more | › next model */}
+          <div className="carnav fl-slider__nav">
+            <button className="carnav__btn carnav__btn--prev fl-arrow" onClick={() => go(-1)} aria-label={`poprzednie: ${prev.name}`}>
+              <i>‹</i><span>{prev.name}</span>
+            </button>
+            <Link className="carnav__more fl-stage__more" to={`/flota/${car.slug}`} onClick={() => window.scrollTo({ top: 0 })}><EText id="flota.more" /></Link>
+            <button className="carnav__btn carnav__btn--next fl-arrow fl-arrow--red" onClick={() => go(1)} aria-label={`następne: ${next.name}`}>
+              <span>{next.name}</span><i>›</i>
+            </button>
           </div>
         </div>
 

@@ -40,7 +40,7 @@
 .fl-slider__top { margin-bottom: clamp(20px,3vw,36px); }
 .fl-slider__title { margin-top: 12px; max-width: 18ch; }
 
-.fl-slider__main { display: grid; grid-template-columns: minmax(120px,1fr) minmax(0,3fr) minmax(120px,1fr); align-items: center; gap: clamp(10px,2vw,30px); }
+.fl-slider__main { display: block; max-width: 1040px; margin: 0 auto; }
 .fl-slider__side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .fl-slider__side--prev { align-items: flex-start; }
 .fl-slider__side--next { align-items: flex-end; }
@@ -49,11 +49,11 @@
 .fl-slider__neighbor { font: 600 12px/1.3 var(--font-display); letter-spacing: .08em; color: var(--muted-2); text-transform: uppercase; writing-mode: vertical-rl; transform: rotate(180deg);
   height: clamp(150px, 16vw, 210px); text-align: center; overflow: hidden; }
 .fl-slider__side--next .fl-slider__neighbor { transform: none; }
-.fl-arrow { width: 60px; height: 60px; display: grid; place-items: center; background: #17181c; color: #fff; font-size: 20px; font-weight: 700; transition: transform .18s, background .18s; }
-.fl-arrow:hover { transform: translateY(-2px); }
-.fl-arrow--red { background: var(--red); } .fl-arrow--red:hover { background: var(--red-dark); }
+.fl-arrow { background: #17181c; color: #fff; }
+.fl-arrow--red { background: var(--red); }
 
-.fl-stage { position: relative; aspect-ratio: 16/8.4; border-radius: 2px; overflow: hidden; display: grid; place-items: center; box-shadow: 0 34px 80px rgba(0,0,0,.24); }
+.fl-stage { position: relative; aspect-ratio: 16/8.4; border-radius: 2px 2px 0 0; overflow: hidden; display: grid; place-items: center; }
+.fl-slider__main { box-shadow: 0 34px 80px rgba(0,0,0,.24); }
 .fl-stage__inner { position: absolute; inset: 0; display: grid; place-items: center; transform-style: preserve-3d; will-change: transform; }
 .fl-stage__badge { position: absolute; z-index: 1; font: 900 clamp(150px,30vw,420px)/.8 var(--font-display); letter-spacing: -0.04em; user-select: none; transform: translate3d(calc(var(--mx,0px) * -0.5), calc(var(--my,0px) * -0.5), -40px); white-space: nowrap; }
 /* dark chip so the model name stays readable over both the light stage and the dark badge */
@@ -78,14 +78,6 @@
 .fl-slider__choose { white-space: nowrap; }
 @media (max-width: 860px) {
   /* "więcej o modelu" goes under the stage, never over the car */
-  .fl-stage { overflow: visible; clip-path: inset(0 0 -54px 0); margin-bottom: 54px; }
-  .fl-stage__inner { overflow: hidden; }
-  .fl-stage__more { left: 0; right: 0; bottom: -46px; text-align: center; padding: 14px; }
-  .fl-slider__main { grid-template-columns: 1fr; }
-  .fl-slider__side { flex-direction: row; justify-content: space-between; width: 100%; }
-  .fl-slider__side--prev, .fl-slider__side--next { order: 3; }
-  .fl-slider__neighbor { writing-mode: horizontal-tb; transform: none; height: auto; }
-  .fl-slider__side--prev .fl-slider__neighbor { transform: none; }
   .fl-slider__bottom { grid-template-columns: 1fr; }
   .fl-slider__buy { justify-content: space-between; }
   .fl-slider__stats { grid-template-columns: repeat(2,1fr); }

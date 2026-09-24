@@ -170,3 +170,6 @@
   .fr-hero { min-height: 80svh; }
 }
 @media (max-width: 560px) { .fr-offer__grid, .fr-extras__grid, .fr-fleet__grid, .fr-cfg__contact { grid-template-columns: 1fr; } .fr-logos__grid { grid-template-columns: repeat(3, 1fr); } .fr-aud { grid-template-columns: 1fr; } }
+
+.fr-tile__go { display: inline-flex; align-items: center; gap: 8px; margin: -6px 18px 20px; padding: 10px 14px; background: var(--red); color: #fff; font: 800 10.5px var(--font-display); letter-spacing: .14em; text-transform: uppercase; transition: background .2s, transform .2s; }
+.fr-tile__go:hover { background: #fff; color: var(--ink); transform: translateY(-2px); }

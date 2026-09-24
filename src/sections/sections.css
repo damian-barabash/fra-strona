@@ -29,8 +29,8 @@
 .nav__menu a::after { content: ""; position: absolute; left: 0; bottom: -2px; width: 0; height: 2px; background: var(--red); transition: width .25s ease; }
 .nav__menu a:hover { color: var(--red); }
 .nav__menu a:hover::after { width: 100%; }
-.nav__menu a.nav__cta, .nav__cta { display: inline-flex; align-items: center; gap: 8px; background: var(--red); color: #fff !important; padding: 11px 15px; margin: 0 clamp(4px, .6vw, 10px) 0 0; border-radius: 0 !important;
-  font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: clamp(10.5px, .78vw, 12px); white-space: nowrap;
+.nav__menu a.nav__cta, .nav__cta { display: inline-flex; align-items: center; gap: 8px; background: var(--red); color: #fff !important; padding: 13px 19px; margin: 0 clamp(4px, .6vw, 10px) 0 0; border-radius: 0 !important;
+  font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: clamp(11px, .84vw, 12.5px); white-space: nowrap;
   box-shadow: 0 8px 22px rgba(227,6,19,.28); transition: background .2s, transform .2s, box-shadow .2s; }
 .nav__cta::after { display: none !important; }
 .nav__menu a.nav__cta--dark, .nav__cta--dark { margin-left: 0; }
@@ -167,16 +167,33 @@
 /* control cluster overlays the top-left corner of the stage.
    left = inset - abtn  =>  the grey ‹ sits fully in the gutter and the red › left edge
    lands exactly on the stage seam, at every viewport width. */
-.fleet__ctrls { position: absolute; top: 5%; left: calc(var(--inset) - var(--abtn)); z-index: 5; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+/* ---- car slider control bar (home fleet + every CarSlider): flush under the car window ---- */
+.carnav { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; margin-top: 0; }
+.carnav__btn, .carnav__more { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 58px; padding: 0 18px; font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: clamp(10px, .8vw, 12px); line-height: 1.2; transition: background .2s, color .2s; }
+.carnav__btn { background: #1c1e23; color: #fff; width: 100%; height: auto; border-radius: 0; box-shadow: none; transform: none !important; }
+.carnav__btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.carnav__btn i { font-style: normal; font-size: 22px; line-height: 1; flex: 0 0 auto; transition: transform .2s; }
+.carnav__btn--prev { justify-content: flex-start; text-align: left; }
+.carnav__btn--next { justify-content: flex-end; text-align: right; background: var(--red); }
+.carnav__btn--prev:hover { background: #000; } .carnav__btn--prev:hover i { transform: translateX(-3px); }
+.carnav__btn--next:hover { background: var(--red-dark); } .carnav__btn--next:hover i { transform: translateX(3px); }
+.carnav__more { position: static; background: #fff; color: var(--ink); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 0 clamp(14px, 2vw, 28px); white-space: nowrap; }
+.carnav__more:hover { background: var(--ink); color: #fff; }
+@media (max-width: 560px) {
+  .carnav { grid-template-columns: 1fr 1fr; }
+  .carnav__btn, .carnav__more { min-height: 50px; font-size: 10px; padding: 0 12px; }
+  .carnav__more { grid-column: 1 / -1; order: 3; border: none; border-top: 1px solid var(--line); background: var(--ink); color: #fff; }
+}
+.fleet__ctrls { position: static; }
 .fleet__arrows { display: flex; }
-.fleet__ctrls .navbtn { width: var(--abtn); height: var(--abtn); box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+.fleet__ctrls .navbtn { width: 100%; height: auto; box-shadow: none; }
 /* neighbour labels: prev starts under the ‹ (back) button, next follows immediately with a
    tight gap so it reads directly after the › (fwd) button. Everything flows right onto the
    stage (which has room) — the left gutter is too narrow to end prev on the seam without
    clipping, so we anchor to the buttons on the left instead. */
 .fleet__neighbors { display: flex; align-items: baseline; gap: clamp(10px, 1vw, 16px); }
 .fleet__neighbor { font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: clamp(9px, .72vw, 11px); color: #2b2e33; white-space: nowrap; }
-.fleet__stage { position: relative; aspect-ratio: 1.62; background: #8a8f96; border-radius: 3px; overflow: hidden; display: grid; place-items: center; }
+.fleet__stage { position: relative; aspect-ratio: 1.62; background: #8a8f96; border-radius: 3px 3px 0 0; overflow: hidden; display: grid; place-items: center; }
 .fleet__badge { position: absolute; z-index: 1; top: 26%; transform: translateY(-50%); font-family: var(--font-display); font-weight: 900; color: rgba(0,0,0,.82); font-size: clamp(140px, 24vw, 360px); line-height: .8; letter-spacing: -.04em; user-select: none; white-space: nowrap; }
 .fleet__carlayer { position: absolute; inset: 0; z-index: 2; display: flex; align-items: flex-end; justify-content: center; }
 .fleet__car { width: 84%; max-height: 62%; object-fit: contain; object-position: bottom; margin-bottom: 4%; filter: drop-shadow(0 26px 26px rgba(0,0,0,.42)); }
@@ -434,14 +451,23 @@
 @media (max-width: 560px) {
   /* the "więcej o modelu" plate sits UNDER the car block, not over it */
   .fleet__stagewrap { padding-left: 0; }
-  .fleet__stage { overflow: visible; clip-path: inset(0 0 -58px 0); margin-bottom: 58px; }
-  /* the arrows sit ON the car card (top-left corner) instead of hanging out of it */
-  .fleet__ctrls { left: 10px; top: 10px; --abtn: 40px; }
-  .fleet__ctrls .navbtn { box-shadow: 0 6px 16px rgba(0,0,0,.25); }
-  .fleet__more { left: 0; right: 0; bottom: -50px; text-align: center; padding: 15px 14px; background: var(--ink); }
   .fleet__model { top: 10px; right: 12px; max-width: 70%; font-size: 12px; }
   .fleet__stats { grid-template-columns: 1fr 1fr; row-gap: 22px; }
   .cta__title { font-size: 44px; }
   .footer__grid { grid-template-columns: 1fr; }
   .footer__navlbl--ghost { display: none; }   /* single column: no alignment spacer needed */
 }
+
+/* the shared control bar wins over the legacy absolute "więcej o modelu" plates */
+.carnav .carnav__more, .carnav .carnav__more.fleet__more, .carnav .carnav__more.fl-stage__more { position: static; left: auto; right: auto; bottom: auto; background: #fff; color: var(--ink); font-size: clamp(10px, .8vw, 12px); padding: 0 clamp(14px, 2vw, 28px); }
+.carnav .carnav__more:hover { background: var(--ink); color: #fff; }
+@media (max-width: 560px) { .carnav .carnav__more { background: var(--ink); color: #fff; } }
+
+/* ---- "Krok N" tag: leads the customer by the hand through every configurator step ---- */
+.stept { display: inline-flex; align-items: stretch; background: var(--red); color: #fff; margin-bottom: 16px; box-shadow: 0 10px 26px rgba(227,6,19,.22); animation: steptIn .55s cubic-bezier(.16,.8,.3,1) both; }
+.stept__n { display: grid; place-items: center; min-width: 56px; padding: 0 6px; background: rgba(0,0,0,.22); font: 900 26px/1 var(--font-display); }
+.stept__t { display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 10px 18px 10px 14px; }
+.stept__t small { font: 700 9.5px var(--font-display); letter-spacing: .22em; text-transform: uppercase; opacity: .85; }
+.stept__t b { font: 800 15px/1.15 var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
+@keyframes steptIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+@media (max-width: 560px) { .stept__n { min-width: 46px; font-size: 21px; } .stept__t b { font-size: 13px; } }

@@ -246,11 +246,22 @@ async function createIceBooking(p: any) {
 
 async function createProductBooking(p: any) {
   const payer = payerOf(p); if ("err" in payer) return json({ ok: false, error: payer.err }, 400);
-  const { data: prod } = await db.from("products").select("slug, title_pl, price, currency, buy_direct").eq("slug", String(p.product_slug ?? "")).maybeSingle();
-  if (!prod || !prod.buy_direct || !prod.price) return json({ ok: false, error: "product not for sale" }, 404);
+  const { data: prod } = await db.from("products").select("slug, title_pl, price, currency, buy_direct, packages_pl").eq("slug", String(p.product_slug ?? "")).maybeSingle();
+  if (!prod || !prod.buy_direct) return json({ ok: false, error: "product not for sale" }, 404);
+  // variants = package lines like "Alpine A110S — 999 zł netto · …" (Race Taxi); the price comes from the chosen line
+  const variants = String(prod.packages_pl ?? "").split("\n").map((l: string) => l.trim()).filter((l: string) => l && !l.startsWith("## ")).map((l: string) => {
+    const m = l.match(/^(.+?)\s*[—–-]\s*(\d[\d\s]*)\s*zł/i); return m ? { name: m[1].trim(), price: parseInt(m[2].replace(/\s/g, ""), 10) } : null;
+  }).filter(Boolean) as { name: string; price: number }[];
+  let total = Number(prod.price) || 0, variantName = "";
+  if (variants.length) {
+    const v = variants.find((x) => x.name === String(p.variant ?? "")) ?? variants[0];
+    total = v.price; variantName = v.name;
+  }
+  if (!total) return json({ ok: false, error: "product not for sale" }, 404);
+  const label = variantName ? `${prod.title_pl} — ${variantName}` : prod.title_pl;
   return startPayment({
-    kind: "product", product_slug: prod.slug, product_name: prod.title_pl, car_name: prod.title_pl, term_label: prod.title_pl, persons: 1,
-    ...payer, total: prod.price, currency: prod.currency ?? "PLN",
+    kind: "product", product_slug: prod.slug, product_name: prod.title_pl, car_name: variantName || prod.title_pl, term_label: label, persons: 1, package_name: variantName || null,
+    ...payer, total, currency: prod.currency ?? "PLN",
   }, p);
 }
 

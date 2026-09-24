@@ -170,8 +170,8 @@ p { margin: 0; }
 [data-editable] { transition: box-shadow .15s ease, outline .15s ease; }
 .cms-on [data-editable] { outline: 1px dashed rgba(227,6,19,0.5); outline-offset: 3px; cursor: text; border-radius: 2px; }
 .cms-on [data-editable]:hover { outline: 2px solid var(--red); background: rgba(227,6,19,0.04); }
-.cms-on [data-editable-media] { cursor: pointer; }
-.cms-on [data-editable-media]:hover { outline: 2px solid var(--red); outline-offset: 3px; }
+.cms-on [data-editable-media] > img, .cms-on [data-editable-media] > video, .cms-on [data-editable-media][class] { cursor: pointer; }
+.cms-on [data-editable-media] > img:hover, .cms-on [data-editable-media] > video:hover, .cms-on [data-editable-media][class]:hover { outline: 2px solid var(--red); outline-offset: -2px; }
 [contenteditable] { outline: none; }
 [contenteditable]:focus { outline: 2px solid var(--red); outline-offset: 3px; background: rgba(227,6,19,0.05); }
 

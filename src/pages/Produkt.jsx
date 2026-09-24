@@ -14,6 +14,12 @@ import "../sections/produkty.css";
 import { useSeo, breadcrumbs, SITE, clip, nice } from "../lib/seo";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
+/* a field may start with "## Own heading" — the page then shows that instead of the default label */
+const headed = (s, fallback) => {
+  const ls = lines(s);
+  if (ls[0]?.startsWith("## ")) return { label: ls[0].slice(3).trim(), body: ls.slice(1).join("\n"), items: ls.slice(1) };
+  return { label: fallback, body: ls.join("\n"), items: ls };
+};
 
 /* /produkty/:slug — one product. Content is fully CMS-driven (admin tab "Produkty"). */
 export default function Produkt() {
@@ -55,11 +61,14 @@ export default function Produkt() {
   const learn = lines(L(p, "learn"));
   const includes = lines(L(p, "includes"));
   const places = lines(L(p, "places"));
-  const packages = lines(L(p, "packages"));
+  const pk = headed(L(p, "packages"), null);
+  const packages = pk.items;
   const intro = lines(L(p, "intro"));
   const gallery = Array.isArray(p.photos) ? p.photos : [];
   // info-only products (the simulator) never say "packages" — they have training stages
-  const pkgLabel = p.info_only ? t("prod.stages") : t("prod.packages");
+  const pkgLabel = pk.label || (p.info_only ? t("prod.stages") : t("prod.packages"));
+  const theory = headed(L(p, "theory"), t("prod.theory")), practice = headed(L(p, "practice"), t("prod.practice"));
+  const buyTo = p.buy_direct ? `/zakup?produkt=${p.slug}` : "/rezerwacja";
 
   return (
     <div className={editing ? "cms-on pd" : "pd"} style={style}>
@@ -87,20 +96,20 @@ export default function Produkt() {
         )}
 
         {/* ---- theory / practice ---- */}
-        {(L(p, "theory") || L(p, "practice")) && (
+        {(theory.body || practice.body) && (
           <section className="section section--dark pd-parts">
             <div className="speedfx">{[0, 1, 2].map((i) => (
               <span key={i} style={{ top: `${22 + i * 26}%`, left: "-30%", width: "48%", animationDelay: `${i * 1.05}s` }} />
             ))}</div>
             <div className="container pd-parts__grid">
               {[
-                { n: "01", label: t("prod.theory"), body: L(p, "theory") },
-                { n: "02", label: t("prod.practice"), body: L(p, "practice") },
+                { n: "01", label: theory.label, body: theory.body },
+                { n: "02", label: practice.label, body: practice.body },
               ].filter((x) => x.body).map((x, i) => (
                 <article key={x.n} className={`pd-part reveal-up rv-d${i + 1}`}>
                   <span className="pd-part__n">{x.n}</span>
                   <h3 className="pd-part__h">{x.label}</h3>
-                  <p className="pd-part__b">{x.body}</p>
+                  <p className="pd-part__b" style={{ whiteSpace: "pre-line" }}>{x.body}</p>
                   <span className="pd-part__glow" />
                 </article>
               ))}
@@ -157,8 +166,8 @@ export default function Produkt() {
                       <span className="pd-pkg__name">{head.trim()}</span>
                       {tail && <span className="pd-pkg__sub">{tail}</span>}
                       {!p.info_only && (
-                        <Link to="/rezerwacja" className="pd-pkg__go" onClick={() => window.scrollTo({ top: 0 })}>
-                          {t("prod.pick")} ›
+                        <Link to={p.buy_direct ? `${buyTo}&wariant=${i}` : buyTo} className="pd-pkg__go" onClick={() => window.scrollTo({ top: 0 })}>
+                          {p.buy_direct ? t("prod.buy") : t("prod.pick")} ›
                         </Link>
                       )}
                     </div>
@@ -191,7 +200,7 @@ export default function Produkt() {
             <div>
               <span className="eyebrow reveal-up">{L(p, "tag")}</span>
               <h2 className="h-display pd-cta__title reveal-up rv-d1">{L(p, "title")}</h2>
-              <p className="lead pd-cta__sub reveal-up rv-d2">{p.info_only ? t("prod.infoSub") : t("prod.ctaSub")}</p>
+              <p className="lead pd-cta__sub reveal-up rv-d2">{p.info_only ? t("prod.infoSub") : p.buy_direct ? t("prod.ctaSubBuy") : t("prod.ctaSub")}</p>
             </div>
             <div className="pd-cta__btns reveal-up rv-d3">
               {p.info_only ? (
@@ -200,8 +209,8 @@ export default function Produkt() {
                 </a>
               ) : (
                 <>
-                  <Link to="/rezerwacja" className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>
-                    {t("prod.book")} <span className="btn__arrow">›</span>
+                  <Link to={buyTo} className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>
+                    {p.buy_direct ? t("prod.buy") : t("prod.book")} <span className="btn__arrow">›</span>
                   </Link>
                   <Link to="/kalendarz" className="btn btn--ghost pd-cta__ghost" onClick={() => window.scrollTo({ top: 0 })}>
                     {t("prod.ctaCal")}
@@ -224,6 +233,7 @@ export default function Produkt() {
 
 /* hero — photo with a colour wash, code plate and quick facts */
 function Hero({ p, L, t, places, packages, pkgLabel }) {
+  const buyTo = p.buy_direct ? `/zakup?produkt=${p.slug}` : "/rezerwacja";
   const ref = useRef(null);
 
   // subtle photo parallax while scrolling through the hero
@@ -277,8 +287,8 @@ function Hero({ p, L, t, places, packages, pkgLabel }) {
 
         <div className="pd-hero__btns">
           {!p.info_only && (
-            <Link to="/rezerwacja" className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>
-              {t("prod.book")} <span className="btn__arrow">›</span>
+            <Link to={buyTo} className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>
+              {p.buy_direct ? t("prod.buy") : t("prod.book")} <span className="btn__arrow">›</span>
             </Link>
           )}
           <a href="#pd-more" className={`btn ${p.info_only ? "btn--red" : "btn--ghost pd-hero__ghost"}`}>{t("prod.more")}</a>

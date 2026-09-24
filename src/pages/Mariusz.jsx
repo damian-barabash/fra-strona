@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
@@ -37,6 +38,7 @@ export default function Mariusz() {
       <main>
         {editing ? <HeroEditor /> : <HeroScene />}
         <BioSection />
+        <TaxiCta />
         <GalleryBand which="1" />
         <ResultsSection />
         <GalleryBand which="2" alt />
@@ -248,6 +250,33 @@ function BioSection() {
         </div>
         <div className={`reveal mz-bio__body ${inView ? "in" : ""}`}>
           {BIO.map((k) => <EText key={k} id={k} as="p" className="mz-bio__p" multiline />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* Race Taxi — the passenger seat next to Mariusz: a red band right after the bio */
+function TaxiCta() {
+  const { cmsMode, isAdmin } = useStore();
+  const editing = cmsMode && isAdmin;
+  const [ref, inView] = useReveal();
+  return (
+    <section className="mz-taxi" ref={ref}>
+      <div className="container mz-taxi__grid">
+        <div className={`mz-taxi__media reveal-left ${inView ? "in" : ""}`}>
+          <img src="/assets/mariusz/photo1.webp" alt="" loading="lazy" />
+        </div>
+        <div className={`mz-taxi__text reveal-up ${inView ? "in" : ""}`}>
+          <EText id="mz.taxiEyebrow" as="span" className="eyebrow eyebrow--white" />
+          <EText id="mz.taxiTitle" as="h2" className="h-section mz-taxi__title" />
+          <EText id="mz.taxiBody" as="p" className="mz-taxi__p" multiline />
+          <div className="mz-taxi__btns">
+            <Link to="/produkty/race-taxi" className="btn btn--dark" onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+              <EText id="mz.taxiCta" /> <span className="btn__arrow">›</span>
+            </Link>
+            <span className="mz-taxi__from"><EText id="mz.taxiFrom" /></span>
+          </div>
         </div>
       </div>
     </section>

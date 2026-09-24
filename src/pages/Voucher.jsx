@@ -12,6 +12,7 @@ import { PACKAGES, packageOf, carPrice, customPrice, fmtZl } from "../lib/flota"
 import { usePayRedirect } from "../lib/pay";
 import { useRevealOnScroll } from "../lib/hooks";
 import ProductCard from "../components/ProductCard";
+import StepTag from "../components/StepTag";
 import "../sections/productcard.css";
 import "../sections/flota.css";
 import "../sections/rezerwacja.css";
@@ -80,7 +81,7 @@ export default function Voucher() {
               <div className="rz-body">
                 {step === "auto" && (
                   <div className="fl-bk">
-                    <h4 className="fl-bk__h">{t("flota.bk.autoTitle")}</h4>
+                    <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.autoTitle")} />
                     <p className="fl-bk__sub">{t("flota.bk.autoSub")}</p>
                     <div className="rz-cars">
                       {cars.map((c, i) => (
@@ -99,6 +100,7 @@ export default function Voucher() {
 
                 {step === "pakiet" && (
                   <div className="fl-bk">
+                    <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.pkgTitle")} />
                     <h4 className="fl-bk__h">{t("vch.trackTitle")}</h4>
                     <div className="cn-switch vc-switch">
                       {[{ k: "lodz", l: t("cen.lodz") }, { k: "poznan", l: t("cen.poznan") }].map((x) => (
@@ -125,7 +127,7 @@ export default function Voucher() {
 
                 {step === "gift" && (
                   <div className="fl-bk">
-                    <h4 className="fl-bk__h">{t("vch.giftTitle")}</h4>
+                    <StepTag n={stepIdx + 1} of={STEPS.length} title={t("vch.giftTitle")} />
                     <p className="fl-bk__sub">{t("vch.giftSub")}</p>
                     <div className="fl-form">
                       <label className="fl-field fl-field--full"><span>{t("vch.for")}</span>
@@ -139,13 +141,13 @@ export default function Voucher() {
 
                 {step === "produkt" && (
                   <div className="fl-bk">
-                    <h4 className="fl-bk__h">{t("card.title")}</h4>
+                    <StepTag n={stepIdx + 1} of={STEPS.length} title={t("card.title")} />
                     <ProductCard
-                      title={`${t("vch.title")} · ${carName}`} subtitle={car?.own ? t("flota.customDesc").replace(/<[^>]+>/g, "") : (car ? L(car, "description") : "")}
+                      title={`${t("vch.title")} · ${t("flota.bk.product")}`} subtitle={clip(t("card.lead"), 190)}
                       code={car?.own ? "OWN" : car?.badge} color={car?.own ? "var(--red)" : (car?.color || "var(--red)")}
                       photo={car?.own ? "/assets/covers/mariusz.webp" : (car?.png || car?.photos?.[0])} photos={car?.own ? [] : (car?.photos || [])}
                       price={total} currency="PLN" onOrder={goNext}
-                      lines={[[t("vch.sPkg"), pkg ? `${sessions} × · ${lang === "en" ? pkg.en : pkg.pl}` : "—"], [t("kal.fTrack"), track === "poznan" ? "Tor Poznań" : "Tor Łódź"], [t("vch.for"), gift.voucher_for || "—"]]}
+                      lines={[[t("flota.bk.sAuto"), carName], [t("vch.sPkg"), pkg ? `${lang === "en" ? pkg.sub_en : pkg.sub_pl} · ${lang === "en" ? pkg.en : pkg.pl}` : "—"], [t("kal.fTrack"), track === "poznan" ? "Tor Poznań" : "Tor Łódź"], [t("vch.for"), gift.voucher_for || "—"]]}
                       includes={[
                         lang === "en" ? "Gift voucher valid 12 months" : "Voucher prezentowy ważny 12 miesięcy",
                         lang === "en" ? "1-hour sport-driving theory lecture" : "1-godzinny wykład z teorii jazdy sportowej",
@@ -158,7 +160,7 @@ export default function Voucher() {
 
                 {step === "dane" && (
                   <div className="fl-bk">
-                    <h4 className="fl-bk__h">{t("flota.bk.dataTitle")}</h4>
+                    <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.dataTitle")} />
                     <p className="fl-bk__sub">{t("flota.bk.dataSub")}</p>
                     <div className="fl-form">
                       <label className="fl-field"><span className="req">{t("flota.bk.name")}</span><input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} autoComplete="name" /></label>
@@ -169,6 +171,7 @@ export default function Voucher() {
                   </div>
                 )}
 
+                {step === "platnosc" && <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.s4")} />}
                 {step === "platnosc" && (
                   <PayVoucher t={t} create={createVoucherBooking} payload={{
                     car_id: car?.own ? null : car?.id, is_custom: !!car?.own, sessions, track,
@@ -207,7 +210,7 @@ export default function Voucher() {
                 <div className="vc-card__for">{gift.voucher_for || "· · ·"}</div>
                 <div className="vc-card__what">
                   <b>{carName || t("vch.sAuto")}</b>
-                  <span>{pkg ? `${sessions} × ${lang === "en" ? pkg.en : pkg.pl} · ${track === "poznan" ? "Tor Poznań" : "Tor Łódź"}` : t("vch.sPkg")}</span>
+                  <span>{pkg ? `${lang === "en" ? pkg.sub_en : pkg.sub_pl} · ${lang === "en" ? pkg.en : pkg.pl} · ${track === "poznan" ? "Tor Poznań" : "Tor Łódź"}` : t("vch.sPkg")}</span>
                 </div>
                 {gift.voucher_message && <p className="vc-card__msg">“{gift.voucher_message}”</p>}
                 <div className="vc-card__code">{t("vch.code")}</div>

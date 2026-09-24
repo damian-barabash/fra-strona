@@ -8,11 +8,17 @@ import ScrollProgress from "../sections/ScrollProgress";
 import { FuelTank } from "../components/Fuel";
 import { usePayRedirect } from "../lib/pay";
 import { fmtZl } from "../lib/flota";
+import StepTag from "../components/StepTag";
 import "../sections/rezerwacja.css";
 import "../sections/d2r.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
+/* "Alpine A110S — 999 zł netto · opis" → { name, price, note }: a product with such package lines is sold in variants */
+export const parseVariants = (txt) => lines(txt).filter((l) => !l.startsWith("## ")).map((l) => {
+  const m = l.match(/^(.+?)\s*[—–-]\s*(\d[\d\s]*)\s*zł(?:\s*netto)?\s*(?:[·—–-]\s*(.*))?$/i);
+  return m ? { name: m[1].trim(), price: parseInt(m[2].replace(/\s/g, ""), 10), note: (m[3] || "").trim() } : null;
+}).filter(Boolean);
 
 /* /zakup?produkt=<slug> — buying a fixed-price package (Driver2Racer): no configurator,
    straight to DANE → PŁATNOŚĆ. The price is re-read server-side from the product row. */
@@ -27,6 +33,10 @@ export default function Zakup() {
 
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
   const [step, setStep] = useState("dane");     // dane | platnosc
+  const variants = p ? parseVariants(L(p, "packages")) : [];
+  const [variant, setVariant] = useState(() => { const i = parseInt(sp.get("wariant"), 10); return Number.isFinite(i) ? i : 0; });
+  const chosen = variants[variant] || variants[0] || null;
+  const price = chosen ? chosen.price : p?.price;
   const [err, setErr] = useState("");
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
@@ -71,7 +81,7 @@ export default function Zakup() {
               </div>
               <div className="zk-head__price">
                 <span>{t("d2r.priceLabel")}</span>
-                <b>{fmtZl(p.price)}</b>
+                <b>{fmtZl(price)}</b>
                 <i>{t("d2r.net")}</i>
               </div>
             </div>
@@ -89,7 +99,19 @@ export default function Zakup() {
               <div className="zk-body">
                 {step === "dane" && (
                   <>
-                    <h2 className="zk-h">{t("flota.bk.dataTitle")}</h2>
+                    {variants.length > 1 && (
+                      <div className="zk-variants">
+                        <StepTag n={1} of={3} title={t("zak.variant")} />
+                        <div className="zk-variants__grid">
+                          {variants.map((v, i) => (
+                            <button key={v.name} type="button" className={`zk-variant ${i === variant ? "on" : ""}`} onClick={() => setVariant(i)}>
+                              <b>{v.name}</b>{v.note && <small>{v.note}</small>}<span>{fmtZl(v.price)} <i>{t("d2r.net")}</i></span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <StepTag n={variants.length > 1 ? 2 : 1} of={variants.length > 1 ? 3 : 2} title={t("flota.bk.dataTitle")} />
                     <p className="zk-sub">{t("zak.sub")}</p>
                     <div className="zk-form">
                       <label className="zk-field"><span className="req">{t("flota.bk.name")}</span>
@@ -107,14 +129,17 @@ export default function Zakup() {
                     <div className="zk-foot">
                       <button className="btn btn--ghost zk-ghost" onClick={() => nav(-1)}>{t("flota.bk.prev")}</button>
                       <button className={`btn btn--red ${!valid ? "is-locked" : ""}`} onClick={goPay}>
-                        {t("flota.bk.pay")} · {fmtZl(p.price)} <span className="btn__arrow">›</span>
+                        {t("flota.bk.pay")} · {fmtZl(price)} <span className="btn__arrow">›</span>
                       </button>
                     </div>
                   </>
                 )}
 
                 {step === "platnosc" && (
-                  <PayStep p={p} form={form} t={t} create={createProductBooking} />
+                  <>
+                    <StepTag n={variants.length > 1 ? 3 : 2} of={variants.length > 1 ? 3 : 2} title={t("flota.bk.s4")} />
+                    <PayStep p={p} form={form} t={t} create={createProductBooking} variant={chosen?.name} />
+                  </>
                 )}
               </div>
 
@@ -125,12 +150,13 @@ export default function Zakup() {
                   <div className="zk-card__body">
                     <span className="zk-card__code">{p.code}</span>
                     <h3 className="zk-card__t">{L(p, "title")}</h3>
+                    {chosen && <div className="zk-card__variant">{chosen.name}</div>}
                     <ul className="zk-card__list">
                       {lines(L(p, "includes")).slice(0, 5).map((l, i) => <li key={i}>{l}</li>)}
                     </ul>
                     <div className="zk-card__total">
                       <span>{t("flota.bk.total")}</span>
-                      <b>{fmtZl(p.price)}</b>
+                      <b>{fmtZl(price)}</b>
                     </div>
                   </div>
                 </div>
@@ -146,8 +172,8 @@ export default function Zakup() {
 }
 
 /* payment — the tank fills, the order + Tpay transaction are created server-side, then the gateway */
-function PayStep({ p, form, t, create }) {
-  const { phase, fill, err, retry } = usePayRedirect(create, { product_slug: p.slug, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note });
+function PayStep({ p, form, t, create, variant }) {
+  const { phase, fill, err, retry } = usePayRedirect(create, { product_slug: p.slug, variant: variant || null, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note });
   return (
     <div className="zk-pay">
       <FuelTank fill={fill} done={phase === "redirect"} />

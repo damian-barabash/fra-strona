@@ -28,7 +28,7 @@ export const DEFAULTS = {
   "hero.tag": { pl: "Poczuj emocje toru w najlepszych samochodach świata.", en: "Feel the thrill of the track in the world's finest cars.", kind: "text" },
   "hero.scrollHint": { pl: "PRZEWIŃ", en: "SCROLL", kind: "text" },
   // rotating racing quotes under the hero tagline — one per line, "Author | Quote" (kept in English on purpose)
-  "hero.quotes": { pl: "Ayrton Senna | If you no longer go for a gap that exists, you are no longer a racing driver.\nMario Andretti | If everything seems under control, you're not going fast enough.\nMichael Schumacher | I've always believed that you should never, ever give up and you should always keep fighting even when there's only a slightest chance.\nEnzo Ferrari | Ask a child to draw a car, and he will certainly draw it red.", en: "Ayrton Senna | If you no longer go for a gap that exists, you are no longer a racing driver.\nMario Andretti | If everything seems under control, you're not going fast enough.\nMichael Schumacher | I've always believed that you should never, ever give up and you should always keep fighting even when there's only a slightest chance.\nEnzo Ferrari | Ask a child to draw a car, and he will certainly draw it red.", kind: "text" },
+  "hero.quotes": { pl: "Ayrton Senna | If you no longer go for a gap that exists, you are no longer a racing driver.\nMario Andretti | If everything seems under control, you're not going fast enough.\nMichael Schumacher | I've always believed that you should never, ever give up and you should always keep fighting even when there's only a slightest chance.", en: "Ayrton Senna | If you no longer go for a gap that exists, you are no longer a racing driver.\nMario Andretti | If everything seems under control, you're not going fast enough.\nMichael Schumacher | I've always believed that you should never, ever give up and you should always keep fighting even when there's only a slightest chance.", kind: "text" },
 
   // --- programs strip ---
   "programs.eyebrow": { pl: "FASTLINE RACING ACADEMY", en: "FASTLINE RACING ACADEMY", kind: "text" },
@@ -123,6 +123,11 @@ export const DEFAULTS = {
   "mz.kask": { pl: "/assets/mariusz/kask.webp", en: null, kind: "image" },
   "mz.sign": { pl: "/assets/mariusz/signature-black.webp", en: null, kind: "image" },
 
+  "mz.taxiEyebrow": { pl: "RACE TAXI · TOR ŁÓDŹ", en: "RACE TAXI · ŁÓDŹ CIRCUIT", kind: "text" },
+  "mz.taxiTitle": { pl: "PRAWY FOTEL OBOK MISTRZA", en: "THE PASSENGER SEAT NEXT TO THE CHAMPION", kind: "text" },
+  "mz.taxiBody": { pl: "Trzy okrążenia Toru Łódź w tempie wyścigowym obok Mariusza Miękosia. Przeciążenia jak w prawdziwym wyścigu, hamowanie, które wciska w pasy, i zakręty na samej granicy przyczepności. Alpine A110S albo Porsche 911 4 GTS — Twoje jedyne zadanie: oddychać i chłonąć.", en: "Three laps of the Łódź circuit at racing pace next to Mariusz Miękoś. Real race g-forces, braking that pins you into the belts and corners on the very edge of grip. Alpine A110S or Porsche 911 4 GTS — your only job: breathe and take it in.", kind: "text" },
+  "mz.taxiCta": { pl: "RACE TAXI Z MARIUSZEM", en: "RACE TAXI WITH MARIUSZ", kind: "text" },
+  "mz.taxiFrom": { pl: "od 999 zł netto", en: "from 999 zł net", kind: "text" },
   "mz.bioEyebrow": { pl: "FASTLINE RACING ACADEMY", en: "FASTLINE RACING ACADEMY", kind: "text" },
   "mz.bioTitle": { pl: "DZIEWIĘCIOKROTNY MISTRZ POLSKI", en: "NINE-TIME POLISH CHAMPION", kind: "text" },
   "mz.bio1": { pl: "W barwach Fastline Racing od 2017 roku za kierownicą Lamborghini Huracán Super Trofeo EVO II i Porsche 911 GT3 Cup zdobył dziewięć tytułów Wyścigowego Mistrza Polski. W 2023 roku stanął na podium prestiżowego wyścigu Hankook 12h Spa-Francorchamps.", en: "In Fastline Racing colours, since 2017, behind the wheel of the Lamborghini Huracán Super Trofeo EVO II and Porsche 911 GT3 Cup he has won nine Polish Racing Champion titles. In 2023 he stood on the podium of the prestigious Hankook 12h Spa-Francorchamps.", kind: "html" },
@@ -359,6 +364,10 @@ export const DEFAULTS = {
   "prod.places": { pl: "MIEJSCE", en: "LOCATION", kind: "text" },
   "prod.level": { pl: "POZIOM", en: "LEVEL", kind: "text" },
   "prod.book": { pl: "ZAREZERWUJ", en: "BOOK NOW", kind: "text" },
+  "prod.buy": { pl: "KUP TERAZ", en: "BUY NOW", kind: "text" },
+  "prod.ctaSubBuy": { pl: "Wybierz wariant i kup online — potwierdzenie i szczegóły dostaniesz e-mailem, termin ustalimy telefonicznie.", en: "Pick a variant and buy online — confirmation and details land in your inbox, we'll agree the date by phone.", kind: "text" },
+  "zak.variant": { pl: "WYBIERZ AUTO", en: "CHOOSE THE CAR", kind: "text" },
+  "fir.tileGo": { pl: "ZOBACZ OFERTĘ", en: "SEE THE OFFER", kind: "text" },
   // info-only products (simulator): no buying, just contact
   "prod.stages": { pl: "ETAPY SZKOLENIA", en: "TRAINING STAGES", kind: "text" },
   "prod.infoSub": { pl: "Chcesz wiedzieć więcej o szkoleniach na symulatorze? Napisz do nas — dobierzemy program pod Twój poziom i cel.", en: "Want to know more about simulator training? Write to us — we'll match the program to your level and goal.", kind: "html" },

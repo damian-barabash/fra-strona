@@ -7,6 +7,7 @@ import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { fmtEur, fmtDay, addDays, parseISO, isoOf, startDates, iceDateRange } from "../lib/ice";
 import ProductCard from "../components/ProductCard";
+import StepTag from "../components/StepTag";
 import { usePayRedirect } from "../lib/pay";
 import { fmtZl } from "../lib/flota";
 import "../sections/laponia.css";
@@ -114,7 +115,7 @@ export default function RezerwacjaIce() {
             <div className="ri-body">
               {step === "pakiet" && (
                 <div className="ri-block">
-                  <h3 className="lp-h">{t("ice.pickPkg")}</h3>
+                  <StepTag n={stepIdx + 1} of={STEPS.length} title={t("ice.pickPkg")} />
                   <div className="ri-pkgs">
                     {icePackages.map((pk) => (
                       <button key={pk.id} className={`ri-pkg ${pkg?.id === pk.id ? "on" : ""}`} onClick={() => setPkg(pk)}>
@@ -130,7 +131,7 @@ export default function RezerwacjaIce() {
 
               {step === "termin" && (
                 <div className="ri-block">
-                  <h3 className="lp-h">{t("ice.pickDate")}</h3>
+                  <StepTag n={stepIdx + 1} of={STEPS.length} title={t("ice.pickDate")} />
                   <p className="ri-sub">
                     {t("ice.windowNote")} <b>{iceDateRange(win, lang)}</b>
                     {days > 1 && <> · {t("ice.daysNote").replace("{n}", days)}</>}
@@ -147,7 +148,7 @@ export default function RezerwacjaIce() {
 
               {step === "produkt" && (
                 <div className="ri-block">
-                  <h3 className="lp-h">{t("card.title")}</h3>
+                  <StepTag n={stepIdx + 1} of={STEPS.length} title={t("card.title")} />
                   <ProductCard kind="ice" color="#2a9fd0"
                     title={`${L(laponia, "title") || "ICE DRIVING EXPERIENCE"} · ${L(pkg, "name")}`}
                     subtitle={L(pkg, "desc")} code={`${pkg?.days || 1} ${pkg?.days === 1 ? t("ice.day") : t("ice.days")}`}
@@ -162,7 +163,7 @@ export default function RezerwacjaIce() {
 
               {step === "dane" && (
                 <div className="ri-block">
-                  <h3 className="lp-h">{t("flota.bk.dataTitle")}</h3>
+                  <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.dataTitle")} />
                   <p className="ri-sub">{t("flota.bk.dataSub")}</p>
                   <div className="ri-form">
                     <label className="ri-field"><span className="req">{t("flota.bk.name")}</span>
@@ -180,6 +181,7 @@ export default function RezerwacjaIce() {
                 </div>
               )}
 
+              {step === "platnosc" && <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.s4")} />}
               {step === "platnosc" && (
                 <PayIce t={t} create={createIceBooking} payload={{
                   package_id: pkg?.id, window_id: win?.id, date_from: start, persons,

@@ -7,6 +7,7 @@ import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import CarSlider from "../sections/CarSlider";
 import ProductCard from "../components/ProductCard";
+import StepTag from "../components/StepTag";
 import { Speedo, FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, trackLabel, carPrice, customPrice, fmtZl, isPoznan } from "../lib/flota";
 import { usePayRedirect } from "../lib/pay";
@@ -93,7 +94,8 @@ export default function Rezerwacja() {
   const STEP_LABEL = { auto: t("flota.bk.sAuto"), termin: t("flota.bk.s2"), pakiet: t("flota.bk.s1"), produkt: t("card.step"), dane: t("flota.bk.s3"), platnosc: t("flota.bk.s4") };
 
   const cardLines = [
-    [t("flota.bk.s1"), pkg ? `${sessions} × · ${lang === "en" ? pkg.en : pkg.pl}` : "—"],
+    [t("flota.bk.sAuto"), custom ? (carName || t("flota.customName")) : (carSel?.name || "—")],
+    [t("flota.bk.s1"), pkg ? `${lang === "en" ? pkg.sub_en : pkg.sub_pl} · ${lang === "en" ? pkg.en : pkg.pl}` : "—"],
     [t("kal.fTrack"), termSel?.location_pl || trackLabel(track, lang)],
     [t("flota.bk.s2"), termSel?.noDate ? t("flota.bk.noDate") : termSel ? `${fmtDate(termSel.date, lang)} · ${termSel.time}` : "—"],
   ];
@@ -136,7 +138,7 @@ export default function Rezerwacja() {
             <div className="rz-body">
               {step === "auto" && (
                 <div className="fl-bk rz-auto">
-                  <h4 className="fl-bk__h">{t("flota.bk.autoTitle")}</h4>
+                  <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("flota.bk.autoTitle")} />
                   <p className="fl-bk__sub">{t("flota.bk.autoSub")}</p>
                   <CarSlider hideHead priceTrack={track} onCurrent={(c) => setCarSel(c)}
                     onChoose={(c) => { setCarSel(c); setStepIdx((i) => Math.min(stepKeys.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
@@ -145,7 +147,7 @@ export default function Rezerwacja() {
 
               {step === "termin" && (
                 <div className="fl-bk">
-                  <h4 className="fl-bk__h">{t("flota.bk.termTitle")}</h4>
+                  <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("flota.bk.termTitle")} />
                   <p className="fl-bk__sub">{t("flota.bk.termSub")}</p>
                   <div className="fl-terms">
                     {upcoming.map((tm) => (
@@ -165,7 +167,7 @@ export default function Rezerwacja() {
 
               {step === "pakiet" && (
                 <div className="fl-bk">
-                  <h4 className="fl-bk__h">{t("flota.bk.pkgTitle")}</h4>
+                  <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("flota.bk.pkgTitle")} />
                   <p className="fl-bk__sub">{t("flota.bk.pkgSub")} · <b>{termSel?.location_pl || trackLabel(track, lang)}</b> · {lang === "en" ? "all prices net" : "ceny netto"}</p>
                   <div className="fl-pkgs">
                     {PACKAGES.map((p) => {
@@ -185,9 +187,9 @@ export default function Rezerwacja() {
 
               {step === "produkt" && (
                 <div className="fl-bk">
-                  <h4 className="fl-bk__h">{t("card.title")}</h4>
+                  <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("card.title")} />
                   <ProductCard
-                    title={custom ? t("flota.customName") : carSel?.name} subtitle={custom ? t("flota.customDesc").replace(/<[^>]+>/g, "") : (carSel ? L(carSel, "description") : "")}
+                    title={t("flota.bk.product")} subtitle={clip(t("card.lead"), 190)}
                     code={custom ? "OWN" : carSel?.badge} color={custom ? "var(--red)" : (carSel?.color || "var(--red)")}
                     photo={custom ? "/assets/covers/mariusz.webp" : (carSel?.png || carSel?.photos?.[0])} photos={custom ? [] : (carSel?.photos || [])}
                     price={total} currency="PLN" lines={cardLines} includes={cardIncludes} onOrder={goNext}
@@ -197,7 +199,7 @@ export default function Rezerwacja() {
 
               {step === "dane" && (
                 <div className="fl-bk">
-                  <h4 className="fl-bk__h">{t("flota.bk.dataTitle")}</h4>
+                  <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("flota.bk.dataTitle")} />
                   <p className="fl-bk__sub">{t("flota.bk.dataSub")}</p>
                   <div className="fl-form">
                     {custom && (
@@ -216,6 +218,7 @@ export default function Rezerwacja() {
                 </div>
               )}
 
+              {step === "platnosc" && <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("flota.bk.s4")} />}
               {step === "platnosc" && (
                 <PayStep create={createBooking} payload={{
                   car_id: custom ? null : carSel?.id, car_name: custom ? carName : carSel?.name, is_custom: custom, sessions,
