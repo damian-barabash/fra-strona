@@ -35,3 +35,17 @@ test("footer links to both legal documents", async ({ page }) => {
   await expect(page).toHaveURL(/\/polityka-prywatnosci/);
   await expect(page.locator(".lg-body")).toBeVisible();
 });
+
+test("unknown paths go home, old WordPress paths land on the matching page", async ({ page }) => {
+  await page.goto("/blabla");
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator(".hero")).toBeVisible();
+  await page.goto("/eventy-firmowe/");
+  await expect(page).toHaveURL(/\/dla-firm$/);
+  await page.goto("/samochody/");
+  await expect(page).toHaveURL(/\/flota$/);
+  await page.goto("/produkt/mercedes-a45-amg/");
+  await expect(page).toHaveURL(/\/oferta$/);
+  await page.goto("/oferta/");   // a trailing slash is not an error
+  await expect(page.locator(".pp").first()).toBeVisible();
+});

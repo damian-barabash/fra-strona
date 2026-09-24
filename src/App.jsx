@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import Home from "./pages/Home";
 import Mariusz from "./pages/Mariusz";
@@ -24,6 +24,24 @@ import CookieBar from "./components/CookieBar";
 import WhatsAppFab from "./components/WhatsAppFab";
 
 const Admin = lazy(() => import("./pages/Admin"));
+
+/* Old WordPress paths (still in Google and in old links) land on the matching new page; anything
+   else that does not exist goes to the home page instead of a blank screen. */
+const OLD_PATHS = [
+  [/^\/eventy-firmowe/, "/dla-firm"],
+  [/^\/samochody/, "/flota"],
+  [/^\/produkt(y)?\/?$/, "/oferta"],
+  [/^\/produkt\//, "/oferta"],
+  [/^\/tory/, "/"],
+  [/^\/instruktorzy/, "/"],
+  [/^\/o-nas/, "/o-szkole"],
+  [/^\/voucher(y)?/, "/voucher"],
+];
+function NotFound() {
+  const { pathname } = useLocation();
+  const hit = OLD_PATHS.find(([re]) => re.test(pathname));
+  return <Navigate to={hit ? hit[1] : "/"} replace />;
+}
 
 /* Racing "curtain" between pages: a checkered-flag panel wipes in from the left to
    cover the old page, then flies off to the right revealing the new one. It only
@@ -79,6 +97,7 @@ function AnimatedRoutes() {
         <Route path="/polityka-prywatnosci" element={<Legal slug="polityka-prywatnosci" />} />
         <Route path="/regulamin-platnosci" element={<Legal slug="regulamin-platnosci" />} />
         <Route path="/admin" element={<Suspense fallback={<div />}><Admin /></Suspense>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
 
       <motion.div

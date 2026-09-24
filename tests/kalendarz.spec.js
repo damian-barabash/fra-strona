@@ -39,8 +39,8 @@ test("picking a training leads into the booking flow with the date preset", asyn
   await page.waitForSelector(".kal-cell.has", { timeout: 10000 });
 
   if (isMobile) {
-    // mobile: tapping a day opens the bottom sheet with the training card
-    await page.locator(".kal-cell.has").first().click();
+    // mobile: tapping an upcoming day opens the bottom sheet with the training card (a past day offers the next date instead)
+    await page.locator(".kal-cell.has:not(.is-past)").first().click();
     await expect(page.locator(".kal-sheet__box")).toBeVisible();
     await page.locator(".kal-sheet .kal-card__btn").first().click();
   } else {
@@ -99,4 +99,20 @@ test("menu 'KUP PREZENT' (black button) opens the voucher configurator", async (
     await page.locator(".nav__cta--dark").click();
   }
   await expect(page).toHaveURL(/\/voucher$/);
+});
+
+test("a past term cannot be booked — the card offers the next date instead", async ({ page, isMobile }) => {
+  test.skip(isMobile, "desktop side rail; the mobile sheet shares the same TermCard");
+  await page.goto("/kalendarz");
+  await page.waitForSelector(".kal-card");
+  const pastPill = page.locator(".kal-cell.is-past.has .kal-pill").first();
+  test.skip(!(await pastPill.count()), "no past term on the board this month");
+  await pastPill.click();
+  const card = page.locator(".kal-card");
+  await expect(card).toContainText("TEN TERMIN JUŻ SIĘ ODBYŁ");
+  await expect(card.locator(".kal-card__past .kal-card__btn")).toContainText("NAJBLIŻSZY TERMIN");
+  expect(await card.getByText("ZAREZERWUJ", { exact: true }).count()).toBe(0);
+  await card.locator(".kal-card__past .kal-card__btn").click();
+  await expect(card).not.toContainText("TEN TERMIN JUŻ SIĘ ODBYŁ");
+  await expect(card.locator(".kal-card__btn")).toContainText("ZAREZERWUJ");
 });

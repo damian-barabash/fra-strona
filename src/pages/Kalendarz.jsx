@@ -100,7 +100,14 @@ export default function Kalendarz() {
   const openSpecial = (s) => { window.scrollTo({ top: 0 }); nav(`/produkty/${s.slug}`); };
   const tracksCount = new Set(upcoming.map((e) => e.track)).size;
 
-  const book = (e) => { window.scrollTo({ top: 0 }); nav(`/rezerwacja?term=${e.id}`); };
+  const book = (e) => { if (!e || e.date < today) return; window.scrollTo({ top: 0 }); nav(`/rezerwacja?term=${e.id}`); };
+  // the first upcoming term after a given (past) one — what the card offers instead of booking
+  const nextAfter = (e) => upcoming.find((x) => x.date > e.date) || upcoming[0] || null;
+  const goNext = (e) => {
+    const n = nextAfter(e); if (!n) return;
+    const d = parseDate(n.date); if (d) { moved.current = true; setDir(1); setCur({ y: d.getFullYear(), m: d.getMonth() }); }
+    setSelId(n.id); setSheet(isMobile ? n.date : null);
+  };
 
   return (
     <div className={editing ? "cms-on kal" : "kal"}>
@@ -263,10 +270,10 @@ export default function Kalendarz() {
                     key={sel.id}
                     initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
                     transition={{ duration: 0.3 }}
-                    className="kal-card"
+                    className={`kal-card ${sel.date < today ? "is-past" : ""}`}
                     style={{ ["--tc"]: typeOf(sel).color }}
                   >
-                    <TermCard term={sel} cars={cars} lang={lang} t={t} L={L} onBook={() => book(sel)} />
+                    <TermCard term={sel} cars={cars} lang={lang} t={t} L={L} onBook={() => book(sel)} past={sel.date < today} next={nextAfter(sel)} onNext={() => goNext(sel)} />
                   </motion.div>
                 ) : (
                   <div className="kal-card kal-card--empty" key="empty">{t("kal.emptyAll")}</div>
@@ -361,7 +368,7 @@ export default function Kalendarz() {
               <div className="kal-sheet__body">
                 {(byDate[sheet] || []).map((e) => (
                   <div key={e.id} className="kal-card kal-card--sheet" style={{ ["--tc"]: typeOf(e).color }}>
-                    <TermCard term={e} cars={cars} lang={lang} t={t} L={L} onBook={() => book(e)} />
+                    <TermCard term={e} cars={cars} lang={lang} t={t} L={L} onBook={() => book(e)} past={e.date < today} next={nextAfter(e)} onNext={() => goNext(e)} />
                   </div>
                 ))}
               </div>
@@ -377,7 +384,7 @@ export default function Kalendarz() {
 }
 
 /* one training: everything the user needs before jumping into the booking flow */
-function TermCard({ term, cars, lang, t, L, onBook }) {
+function TermCard({ term, cars, lang, t, L, onBook, past = false, next = null, onNext }) {
   const ty = typeOf(term);
   const from = priceFrom(cars, term.track);
   const desc = L(term, "description");
@@ -404,10 +411,26 @@ function TermCard({ term, cars, lang, t, L, onBook }) {
 
         {desc && <p className="kal-card__desc">{desc}</p>}
 
-        <button className="btn btn--red kal-card__btn" onClick={onBook}>
-          {t("kal.book")} <span className="btn__arrow">›</span>
-        </button>
-        <p className="kal-card__hint">{t("kal.bookHint")}</p>
+        {past ? (
+          <div className="kal-card__past">
+            <span className="kal-card__pastlbl">{t("kal.pastTitle")}</span>
+            {next ? (
+              <button className="btn btn--red kal-card__btn" onClick={onNext}>
+                {t("kal.pastNext")}: {longDate(next.date, lang)} <span className="btn__arrow">›</span>
+              </button>
+            ) : (
+              <Link to="/kontakt" className="btn btn--red kal-card__btn" onClick={() => window.scrollTo({ top: 0 })}>{t("kal.pastAsk")} <span className="btn__arrow">›</span></Link>
+            )}
+            <p className="kal-card__hint">{next ? t("kal.pastHint") : t("kal.pastNoneHint")}</p>
+          </div>
+        ) : (
+          <>
+            <button className="btn btn--red kal-card__btn" onClick={onBook}>
+              {t("kal.book")} <span className="btn__arrow">›</span>
+            </button>
+            <p className="kal-card__hint">{t("kal.bookHint")}</p>
+          </>
+        )}
       </div>
     </>
   );

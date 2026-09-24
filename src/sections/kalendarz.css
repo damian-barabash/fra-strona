@@ -272,3 +272,9 @@
 /* address line under the circuit in the rail card + upcoming rows */
 .kal-card__facts dd small { display: block; margin-top: 3px; font: 500 11px/1.3 var(--font-body); color: var(--muted); }
 .kal-row__addr { display: block; font-size: 11.5px; color: rgba(255,255,255,.4); margin-top: 2px; }
+
+/* past term in the side card / sheet: no booking, a jump to the next date instead */
+.kal-card__past { margin-top: 18px; }
+.kal-card__pastlbl { display: inline-block; font: 800 10.5px var(--font-display); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); padding: 6px 10px; }
+.kal-card__past .kal-card__btn { margin-top: 12px; text-align: center; }
+.kal-card.is-past .kal-card__media { filter: grayscale(.7); }

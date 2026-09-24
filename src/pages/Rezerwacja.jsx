@@ -36,7 +36,7 @@ export default function Rezerwacja() {
   const custom = sp.get("custom") === "1";
   const termIdQ = sp.get("term");
   const presetCar = carId ? cars.find((c) => c.id === carId) : null;
-  const presetTerm = termIdQ ? terms.find((x) => x.id === termIdQ) : null;
+  const presetTerm = termIdQ ? terms.find((x) => x.id === termIdQ && x.date >= today()) || null : null;
 
   const [carSel, setCarSel] = useState(null);
   const [termSel, setTermSel] = useState(null);
