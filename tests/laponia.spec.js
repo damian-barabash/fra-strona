@@ -1,18 +1,16 @@
 import { test, expect } from "@playwright/test";
+import { visibleProducts } from "./_cms.js";
 // the cookie bar is answered up-front so it never sits over a button under test
 test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
-test("products lead with Heels → Driver2Racer, then the premium pair (Monaco + Laponia)", async ({ page }) => {
+test("the wall follows the CMS order and carries the flagship products", async ({ page, request }) => {
+  const products = await visibleProducts(request);
   await page.goto("/produkty");
   await page.waitForSelector(".pp");
-  const codes = await page.locator(".pp__title").allInnerTexts();
-  expect(codes[0]).toContain("HEELS");
-  expect(codes[1]).toContain("DRIVER 2 RACER");
-  // Monaco and Laponia sit right after (their order relative to each other is CMS-controlled)
-  const premium = [codes[2], codes[3], codes[4]].join(" | ");   // Andaluzja 2026 joined the premium group
-  expect(premium).toContain("MONACO");
-  expect(premium).toContain("ICE DRIVING");
-  expect(await page.locator(".pp").count()).toBe(10);
+  const titles = await page.locator(".pp__title").allInnerTexts();
+  expect(titles).toEqual(products.map((p) => p.title_pl));
+  const all = titles.join(" | ");
+  for (const must of ["HEELS", "DRIVER 2 RACER", "MONACO", "ICE DRIVING"]) expect(all).toContain(must);
 });
 
 test("Laponia page renders in the ice theme with hero video and CMS packages", async ({ page }) => {

@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
+import { visibleProducts } from "./_cms.js";
 // the cookie bar is answered up-front so it never sits over a button under test
 test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
-test("Monaco sits in the premium group near the top of the wall", async ({ page }) => {
+test("Monaco sits on the wall exactly where the CMS puts it", async ({ page, request }) => {
+  const products = await visibleProducts(request);
   await page.goto("/produkty");
   await page.waitForSelector(".pp");
   const titles = await page.locator(".pp__title").allInnerTexts();
-  const idx = titles.findIndex((tx) => tx.includes("MONACO"));
-  expect(idx).toBeGreaterThanOrEqual(2);   // after Heels + Driver2Racer
-  expect(idx).toBeLessThanOrEqual(4);       // still ahead of the Stage trainings (Andaluzja sits next to it)
+  expect(titles.findIndex((tx) => tx.includes("MONACO"))).toBe(products.findIndex((p) => p.slug === "monaco"));
 });
 
 test("the trip page renders in the product's accent colour, with attractions, map and schedule", async ({ page }) => {
@@ -73,13 +73,15 @@ test("a finished trip hides the packages and shows the recap instead", async ({ 
   }
 });
 
-test("the footer product columns come from the CMS", async ({ page }) => {
+test("the footer product columns come from the CMS (+ corporate events)", async ({ page, request }) => {
+  const products = await visibleProducts(request);
   await page.goto("/");
   await page.waitForSelector(".fnav__item");
 
   const items = page.locator(".fnav__item");
-  expect(await items.count()).toBe(10);                                 // one per product
-  await expect(items.nth(0)).toHaveAttribute("href", "https://heelsonthetrack.pl/");   // external (Heels)
+  await expect(items).toHaveCount(products.length + 1);                  // one per product + Dla firm (the products arrive with the CMS fetch)
+  await expect(items.last()).toHaveAttribute("href", "/dla-firm");       // EVENTY FIRMOWE NA TORACH
+  await expect(items.filter({ hasText: "HEELS" })).toHaveAttribute("href", "https://heelsonthetrack.pl/");   // external (Heels)
   // Monaco is generated from the CMS like every other product (its exact slot follows the CMS order)
   const monaco = items.filter({ hasText: "MONACO" });
   await expect(monaco).toHaveCount(1);

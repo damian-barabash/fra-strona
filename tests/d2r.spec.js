@@ -1,14 +1,17 @@
 import { test, expect } from "@playwright/test";
+import { visibleProducts } from "./_cms.js";
 // the cookie bar is answered up-front so it never sits over a button under test
 test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
-test("Driver2Racer is the second product on the wall", async ({ page }) => {
+test("Driver2Racer sits on the wall in its CMS slot", async ({ page, request }) => {
+  const products = await visibleProducts(request);
   await page.goto("/produkty");
   await page.waitForSelector(".pp");
   const titles = await page.locator(".pp__title").allInnerTexts();
-  expect(titles[0]).toContain("HEELS");
-  expect(titles[1]).toContain("DRIVER 2 RACER");
-  expect(await page.locator(".pp").count()).toBe(10);
+  const idx = products.findIndex((p) => p.slug === "driver2racer");
+  expect(idx).toBeGreaterThanOrEqual(0);
+  expect(titles[idx]).toContain("DRIVER 2 RACER");
+  expect(await page.locator(".pp").count()).toBe(products.length);
 });
 
 test("Driver2Racer page renders the parsed program (hero video, gains, sessions, fleet)", async ({ page }) => {

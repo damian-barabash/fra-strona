@@ -5,11 +5,14 @@
 export const MENU_A = ["nav.forBiz"];
 export const MENU_B = ["nav.products", "nav.calendar", "nav.pricing", "nav.about", "nav.fleet", "nav.contact"];
 export const MENU_CTA = "nav.forYou";
-export const MENU = [MENU_CTA, ...MENU_A, ...MENU_B];
+// "nav.gift" is the second (black) button — KUP PREZENT → voucher configurator
+export const MENU_CTA2 = "nav.gift";
+export const MENU = [MENU_CTA, MENU_CTA2, ...MENU_A, ...MENU_B];
 
 // default href per menu id (fallback when no content override exists)
 export const MENU_HREF = {
   "nav.forYou": "/rezerwacja",
+  "nav.gift": "/voucher",
   "nav.forBiz": "/dla-firm",
   "nav.products": "/oferta",
   "nav.calendar": "/kalendarz",

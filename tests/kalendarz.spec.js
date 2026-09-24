@@ -72,9 +72,9 @@ test("menu 'KUP SZKOLENIE' opens the full configurator (car → date → package
   await page.waitForTimeout(1200);
   if (isMobile) {
     await page.locator(".nav__burger").click();
-    await page.locator(".mobile-menu__cta").click();
+    await page.locator(".mobile-menu__cta").first().click();
   } else {
-    await page.locator(".nav__cta").click();
+    await page.locator(".nav__cta").first().click();
   }
   await expect(page).toHaveURL(/\/rezerwacja$/);
   // the header names the product, the line under it the flow
@@ -87,4 +87,16 @@ test("menu 'KUP SZKOLENIE' opens the full configurator (car → date → package
   await expect(page.locator(".fl-steps__i").nth(2)).toContainText(/PAKIET/i);
   await expect(page.locator(".fl-steps__i").nth(3)).toContainText(/PRODUKT/i);
   await expect(page.locator(".rz-auto .fl-stage")).toBeVisible(); // the car configurator slider
+});
+
+test("menu 'KUP PREZENT' (black button) opens the voucher configurator", async ({ page, isMobile }) => {
+  await page.goto("/");
+  await page.waitForTimeout(800);
+  if (isMobile) {
+    await page.locator(".nav__burger").click();
+    await page.locator(".mobile-menu__cta--dark").click();
+  } else {
+    await page.locator(".nav__cta--dark").click();
+  }
+  await expect(page).toHaveURL(/\/voucher$/);
 });

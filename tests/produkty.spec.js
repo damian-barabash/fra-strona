@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { visibleProducts } from "./_cms.js";
 // the cookie bar is answered up-front so it never sits over a button under test
 test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
-test("products wall renders every product from the CMS, no console errors", async ({ page }) => {
+test("products wall renders every product from the CMS, no console errors", async ({ page, request }) => {
+  const products = await visibleProducts(request);
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
@@ -10,13 +12,14 @@ test("products wall renders every product from the CMS, no console errors", asyn
   await page.goto("/produkty");
   await page.waitForSelector(".pp", { timeout: 10000 });
 
-  expect(await page.locator(".pp").count()).toBe(10);
-  // Heels and Laponia carry their own logos, so the first code plate belongs to Driver2Racer
-  await expect(page.locator(".pp__code").first()).toHaveText("D2R");
-  await expect(page.locator(".pp__logo")).toHaveCount(2);
+  expect(await page.locator(".pp").count()).toBe(products.length);
+  // plates with a logo show it instead of the code plate; the first code plate belongs to the first product without a logo
+  const firstCode = products.find((p) => !p.logo);
+  await expect(page.locator(".pp__code").first()).toHaveText(firstCode.code);
+  await expect(page.locator(".pp__logo")).toHaveCount(products.filter((p) => p.logo).length);
   // every plate has a photo
   const withPhoto = await page.locator(".pp__photo").count();
-  expect(withPhoto).toBe(10);
+  expect(withPhoto).toBe(products.length);
 
   const scrollX = await page.evaluate(() => { window.scrollTo(400, 0); return window.scrollX; });
   expect(scrollX).toBe(0);

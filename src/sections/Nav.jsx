@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
-import { MENU, MENU_A, MENU_B, MENU_CTA, MENU_HREF, hrefKey, ABOUT_ITEMS } from "../lib/menu";
+import { MENU, MENU_A, MENU_B, MENU_CTA, MENU_CTA2, MENU_HREF, hrefKey, ABOUT_ITEMS } from "../lib/menu";
 
 import Social from "../components/Social";
 
@@ -49,6 +49,10 @@ export default function Nav() {
               onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
               <EText id={MENU_CTA} /> <i>›</i>
             </Link>
+            <Link to={hrefOf(MENU_CTA2).startsWith("/") ? hrefOf(MENU_CTA2) : "/voucher"} className="nav__cta nav__cta--dark"
+              onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+              <EText id={MENU_CTA2} /> <i>›</i>
+            </Link>
             {MENU_A.map((id) => <NavLink key={id} id={id} />)}
             <span className="nav__div" />
             {MENU_B.map((id) => <NavLink key={id} id={id} />)}
@@ -72,8 +76,8 @@ export default function Nav() {
         onClick={() => setOpen(false)}>
         <button className="mobile-menu__close" aria-label="close">×</button>
         {MENU.map((id) =>
-          id === MENU_CTA ? (
-            <Link key={id} to={hrefOf(id).startsWith("/") ? hrefOf(id) : "/rezerwacja"} className="mobile-menu__cta"
+          id === MENU_CTA || id === MENU_CTA2 ? (
+            <Link key={id} to={hrefOf(id).startsWith("/") ? hrefOf(id) : (id === MENU_CTA ? "/rezerwacja" : "/voucher")} className={`mobile-menu__cta ${id === MENU_CTA2 ? "mobile-menu__cta--dark" : ""}`}
               onClick={(e) => { if (editing) { e.preventDefault(); return; } setOpen(false); window.scrollTo({ top: 0 }); }}><EText id={id} /> ›</Link>
           ) : id === "nav.about" ? (
             <div className="mobile-menu__group" key={id} onClick={(e) => e.stopPropagation()}>

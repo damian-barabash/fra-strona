@@ -21,10 +21,21 @@ export default function Footer() {
   const { t, L, products, cmsMode, isAdmin } = useStore();
   const editing = cmsMode && isAdmin;
 
-  const half = Math.ceil(products.length / 2);
-  const cols = [products.slice(0, half), products.slice(half)];
+  // corporate events are a page, not a product — they still belong in the offer list (last item)
+  const items = [...products, { id: "__firma", firma: true }];
+  const half = Math.ceil(items.length / 2);
+  const cols = [items.slice(0, half), items.slice(half)];
 
   const ProductLink = ({ p }) => {
+    if (p.firma) {
+      return (
+        <Link className="fnav__item" to="/dla-firm"
+          onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+          <span className="fnav__title"><EText id="footer.firmTitle" /></span>
+          <span className="fnav__sub"><EText id="footer.firmSub" /></span>
+        </Link>
+      );
+    }
     const inner = (
       <>
         <span className="fnav__title">{L(p, "title")}</span>

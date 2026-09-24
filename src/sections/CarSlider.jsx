@@ -6,7 +6,7 @@ import { EText } from "../components/Editable";
 import { useReveal } from "../lib/hooks";
 import { tint, isLight } from "../lib/util";
 import { carPrice, fmtZl } from "../lib/flota";
-import { Speedo } from "../components/Fuel";
+
 
 const EASE = [0.16, 0.8, 0.3, 1];
 const carVar = {
@@ -146,7 +146,6 @@ export default function CarSlider({ onChoose, onCurrent, jumpTo, onJumped, hideH
             ))}
           </div>
           <div className="fl-slider__buy">
-            <Speedo value={0.72} />
             <div className="fl-slider__buywrap">
               {fromPrice > 0 && <span className="fl-slider__from">{t("flota.from")} {fmtZl(fromPrice)}</span>}
               <button className="btn btn--red fl-slider__choose" onClick={() => onChoose?.(car)}>

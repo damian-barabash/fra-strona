@@ -31,10 +31,13 @@
   font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: clamp(11px, .82vw, 13px); white-space: nowrap;
   box-shadow: 0 8px 22px rgba(227,6,19,.28); transition: background .2s, transform .2s, box-shadow .2s; }
 .nav__cta::after { display: none !important; }
+.nav__menu a.nav__cta--dark, .nav__cta--dark { background: var(--ink); margin-left: 0; box-shadow: 0 8px 22px rgba(0,0,0,.18); }
+.nav__cta--dark:hover { background: #000; box-shadow: 0 12px 28px rgba(0,0,0,.3); }
 .nav__cta i { font-style: normal; font-size: 15px; line-height: 1; transition: transform .2s; }
 .nav__cta:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(227,6,19,.38); }
 .nav__cta:hover i { transform: translateX(3px); }
 .mobile-menu__cta { display: inline-flex; align-items: center; gap: 10px; background: var(--red); color: #fff; padding: 13px 20px; margin-top: 64px; white-space: nowrap; font-family: var(--font-display); font-weight: 900; text-transform: uppercase; letter-spacing: .08em; font-size: 15px; box-shadow: 0 12px 30px rgba(227,6,19,.35); }
+.mobile-menu__cta.mobile-menu__cta--dark { background: #fff; color: var(--ink); margin-top: -12px; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
 .nav__div { width: 1px; height: 22px; background: rgba(0,0,0,.16); display: inline-block; flex: 0 0 auto; }
 .nav__right { display: flex; align-items: center; gap: 18px; }
 .social { display: flex; gap: 12px; }
@@ -97,6 +100,12 @@
   text-shadow: 0 2px 16px rgba(0,0,0,.55);
   opacity: 0; transform: translateY(16px); animation: heroIn 1s .5s forwards cubic-bezier(.16,.8,.3,1);
 }
+.hero__quote { margin: clamp(18px,2.4vw,30px) auto 0; min-height: 5.6em; max-width: 56ch; opacity: 0; animation: heroIn 1s .75s forwards cubic-bezier(.16,.8,.3,1); }
+.hero__quote blockquote { margin: 0; }
+.hero__quote p { margin: 0; font-family: var(--font-body); font-weight: 400; font-style: italic; font-size: clamp(13px, 1.15vw, 16px); line-height: 1.55; color: rgba(255,255,255,.82); text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+.hero__quote cite { display: block; margin-top: 9px; font-style: normal; font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .24em; font-size: 10.5px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,.7); }
+.hero__quote cite::before { content: ""; display: inline-block; width: 18px; height: 1px; background: var(--red); vertical-align: middle; margin-right: 10px; }
+@media (max-width: 640px) { .hero__quote { max-width: 34ch; min-height: 7em; } .hero__quote p { font-size: 12.5px; } }
 @keyframes heroIn { to { opacity: 1; transform: none; } }
 @keyframes heroSweep { to { transform: translateX(0); } }
 

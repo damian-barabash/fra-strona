@@ -148,7 +148,7 @@ export default function Voucher() {
                       lines={[[t("vch.sPkg"), pkg ? `${sessions} × · ${lang === "en" ? pkg.en : pkg.pl}` : "—"], [t("kal.fTrack"), track === "poznan" ? "Tor Poznań" : "Tor Łódź"], [t("vch.for"), gift.voucher_for || "—"]]}
                       includes={[
                         lang === "en" ? "Gift voucher valid 12 months" : "Voucher prezentowy ważny 12 miesięcy",
-                        lang === "en" ? "30-minute sport-driving theory lecture" : "30-minutowy wykład z teorii jazdy sportowej",
+                        lang === "en" ? "1-hour sport-driving theory lecture" : "1-godzinny wykład z teorii jazdy sportowej",
                         lang === "en" ? `${sessions} track sessions 1:1 with an instructor` : `${sessions} sesji na torze 1:1 z instruktorem`,
                         lang === "en" ? "Fastline Racing Academy certificate signed by Mariusz Miękoś" : "Certyfikat Fastline Racing Academy z podpisem Mariusza Miękosia",
                       ]}
