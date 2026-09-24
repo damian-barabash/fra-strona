@@ -51,7 +51,7 @@ export default function Nav() {
             </Link>
             <Link to={hrefOf(MENU_CTA2).startsWith("/") ? hrefOf(MENU_CTA2) : "/voucher"} className="nav__cta nav__cta--dark"
               onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
-              <EText id={MENU_CTA2} /> <i>›</i>
+              <svg className="nav__gift" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg><EText id={MENU_CTA2} /> <i>›</i>
             </Link>
             {MENU_A.map((id) => <NavLink key={id} id={id} />)}
             <span className="nav__div" />
@@ -78,7 +78,7 @@ export default function Nav() {
         {MENU.map((id) =>
           id === MENU_CTA || id === MENU_CTA2 ? (
             <Link key={id} to={hrefOf(id).startsWith("/") ? hrefOf(id) : (id === MENU_CTA ? "/rezerwacja" : "/voucher")} className={`mobile-menu__cta ${id === MENU_CTA2 ? "mobile-menu__cta--dark" : ""}`}
-              onClick={(e) => { if (editing) { e.preventDefault(); return; } setOpen(false); window.scrollTo({ top: 0 }); }}><EText id={id} /> ›</Link>
+              onClick={(e) => { if (editing) { e.preventDefault(); return; } setOpen(false); window.scrollTo({ top: 0 }); }}>{id === MENU_CTA2 && <svg className="nav__gift" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg>}<EText id={id} /> ›</Link>
           ) : id === "nav.about" ? (
             <div className="mobile-menu__group" key={id} onClick={(e) => e.stopPropagation()}>
               <span className="mobile-menu__grouplbl"><EText id="nav.about" /></span>

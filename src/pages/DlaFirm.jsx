@@ -44,7 +44,8 @@ const OICON = {
   timer: <svg viewBox="0 0 64 64"><circle cx="34" cy="36" r="20" /><path d="M28 8h12M34 8v8M50 18l4-4" /><path className="a" d="M34 24v12l8 6" /><path d="M6 30h10M4 38h12M8 46h8" /></svg>,
   cater: <svg viewBox="0 0 64 64"><path d="M8 44h48" /><path d="M12 44a20 20 0 0 1 40 0" /><path className="a" d="M32 20v-6M28 12h8" /><path d="M6 52h52" /></svg>,
   cup: <svg viewBox="0 0 64 64"><path d="M20 10h24v12a12 12 0 0 1-24 0z" /><path d="M20 14h-8v4a8 8 0 0 0 8 8M44 14h8v4a8 8 0 0 1-8 8" /><path d="M32 34v8M22 54h20M26 42h12v12H26z" /><path className="a" d="M28 20l3 3 6-6" /></svg>,
-  taxi: <svg viewBox="0 0 64 64"><path d="M10 40l4-12a4 4 0 0 1 4-3h28a4 4 0 0 1 4 3l4 12v10H10z" /><circle cx="19" cy="48" r="4" /><circle cx="45" cy="48" r="4" /><path className="a" d="M6 40h52M24 16h16v9" /></svg>,
+  // race taxi = a Huracán Super Trofeo silhouette: low wedge, big cabin, rear wing, splitter
+  taxi: <svg viewBox="0 0 64 64"><path d="M2 44l2-6 9-4 10-1 6-8h11l8 6 9 3 3 6v4H2z" /><path d="M24 33l5-6h9l6 5z" /><circle cx="16" cy="45" r="5.5" /><circle cx="48" cy="45" r="5.5" /><circle cx="16" cy="45" r="1.8" /><circle cx="48" cy="45" r="1.8" /><path className="a" d="M44 20h19M51 30v-10M58 33v-13M10 39h24M0 44h6" /></svg>,
   heli: <svg viewBox="0 0 64 64"><path d="M8 14h48M32 14v10" /><path d="M22 34a10 10 0 0 1 10-10h6a12 12 0 0 1 12 12v4H26a4 4 0 0 1-4-4z" /><path d="M22 34H8l-4-8" /><path className="a" d="M26 48h20M32 40v8M44 40v8" /><circle cx="42" cy="30" r="3" /></svg>,
 };
 const OFFER = [
