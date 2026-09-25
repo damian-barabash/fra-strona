@@ -6,6 +6,7 @@ import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import { fmtZl } from "../lib/flota";
+import { fmtMoney, gross } from "../lib/vat";
 import "../sections/platnosc.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
@@ -50,7 +51,7 @@ export default function Platnosc() {
 
   const isVoucher = order?.kind === "voucher";
   const copy = () => { navigator.clipboard?.writeText(order?.voucher_code || ""); setCopied(true); setTimeout(() => setCopied(false), 1800); };
-  const money = order ? (order.currency === "EUR" ? `${(order.total || 0).toLocaleString("pl-PL")} €` : fmtZl(order.total)) : "";
+  const money = order ? `${fmtMoney(order.total_gross != null ? order.total_gross : gross(order.total), order.currency)} brutto` : "";
 
   return (
     <div className="pl">

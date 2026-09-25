@@ -394,3 +394,5 @@
 .zk-variant.on { border-color: var(--red); box-shadow: 0 10px 26px rgba(227,6,19,.14); }
 .zk-variant:hover { transform: translateY(-2px); }
 .zk-card__variant { font: 700 12px var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--red); margin: -6px 0 10px; }
+
+.zk-card__vat { margin-top: 4px; font: 500 12px var(--font-body); color: var(--muted); text-align: right; }

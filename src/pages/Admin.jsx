@@ -214,6 +214,8 @@ const TAB_LABEL = (t) => GROUPS.flatMap((g) => g.tabs).find((x) => x.t === t)?.l
 const KIND = { track: ["Szkolenie", "#e30613"], ice: ["Laponia", "#2f9fe0"], product: ["Program", "#8b5cf6"], trip: ["Wyprawa", "#f0a500"], voucher: ["Voucher", "#21b573"] };
 const STATUS = { paid: ["Opłacone", "ok"], pending: ["Oczekuje", "warn"], cancelled: ["Anulowane", "off"], chargeback: ["Zwrot", "bad"] };
 const money = (b) => (b.currency === "EUR" ? `${(Number(b.total) || 0).toLocaleString("pl-PL")} €` : fmtZl(b.total));
+const money2 = (n, currency = "PLN") => `${(Number(n) || 0).toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency === "EUR" ? "€" : "zł"}`;
+const grossOf = (b) => (b.total_gross != null ? Number(b.total_gross) : Number(b.total) || 0);
 const when = (s) => (s ? new Date(s).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
 
 export default function Admin() {
@@ -324,7 +326,7 @@ function Dashboard({ go }) {
 
       {can("orders") && <div className="adm-grid2">
         <div className="adm-card">
-          <div className="adm-card__head"><b>Przychód miesięcznie</b><span>ostatnie 12 miesięcy · PLN netto</span></div>
+          <div className="adm-card__head"><b>Przychód miesięcznie</b><span>ostatnie 12 miesięcy · PLN brutto</span></div>
           <div className="adm-chart">
             {months.map((m) => (
               <div key={m.month} className="adm-chart__col" title={`${m.month}: ${fmtZl(m.revenue)} · ${m.orders} zam.`}>
@@ -439,7 +441,7 @@ function OrdersTab({ only }) {
               <span className="adm-tr__date">{when(b.created_at)}</span>
               <span className="adm-tr__who"><b>{b.full_name}</b><small>{b.email}</small></span>
               <span className="adm-tr__what"><span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span><b>{b.car_name || b.product_name}</b><small>{b.sessions ? `${b.sessions} sesji · ` : ""}{b.term_label || b.package_name || ""}{b.voucher_code ? ` · ${b.voucher_code}` : ""}</small></span>
-              <span className="adm-tr__sum"><b>{money(b)}</b>{b.currency === "EUR" && <small>{fmtZl(b.amount_pln)}</small>}</span>
+              <span className="adm-tr__sum"><b>{money2(grossOf(b), b.currency)}</b><small>{money(b)} netto{b.currency === "EUR" ? ` · ${money2(b.amount_pln)}` : ""}</small></span>
               <span><i className={`adm-badge adm-badge--${STATUS[b.status]?.[1] || "off"}`}>{STATUS[b.status]?.[0] || b.status}</i>{b.payment_error && <small className="adm-tr__err" title={b.payment_error}>⚠</small>}</span>
               <span><button className="adm-mini adm-mini--dark" onClick={() => setOpen(b)}>Szczegóły</button></span>
             </div>
@@ -504,9 +506,10 @@ function OrderDrawer({ id, onClose, onChanged }) {
               <section>
                 <h5>Kwoty</h5>
                 <dl>
-                  <div><dt>Wartość netto</dt><dd><b>{money(o)}</b></dd></div>
-                  {o.currency === "EUR" && <div><dt>Do zapłaty (PLN)</dt><dd><b>{fmtZl(o.amount_pln)}</b></dd></div>}
-                  <div><dt>Zapłacono</dt><dd>{o.paid_amount != null ? fmtZl(o.paid_amount) : "—"}</dd></div>
+                  <div><dt>Wartość netto</dt><dd>{money(o)}</dd></div>
+                  <div><dt>VAT {Math.round(Number(o.vat_rate ?? 0) * 100)}%</dt><dd>{money2(grossOf(o) - (Number(o.total) || 0), o.currency)}</dd></div>
+                  <div><dt>Do zapłaty brutto</dt><dd><b>{money2(grossOf(o), o.currency)}</b>{o.currency === "EUR" && ` · ${money2(o.amount_pln)}`}</dd></div>
+                  <div><dt>Zapłacono</dt><dd>{o.paid_amount != null ? money2(o.paid_amount) : "—"}</dd></div>
                   <div><dt>Metoda</dt><dd>{o.tpay_method || lastAttempt?.paymentMethod || "—"}</dd></div>
                   {o.payment_error && <div><dt>Uwaga</dt><dd className="adm-doc__err">{o.payment_error}</dd></div>}
                 </dl>

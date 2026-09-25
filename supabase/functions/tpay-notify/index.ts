@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     await db.from("bookings").update({ payment_error: `tr_status=${trStatus} ${f.get("tr_error") || ""}`.trim() }).eq("id", o.id);
     return TRUE();
   }
-  const paidPln = Math.round(parseFloat(trPaid.replace(",", ".")));
+  const paidPln = Math.round(parseFloat(trPaid.replace(",", ".")) * 100) / 100;   // grosze matter: gross amounts carry cents
   if (currency !== "PLN") return FAIL(`waluta ${currency}`);
   if (!Number.isFinite(paidPln) || paidPln < Number(o.amount_pln)) {
     await db.from("bookings").update({ payment_error: `niedopłata: ${trPaid} z ${o.amount_pln}`, paid_amount: paidPln }).eq("id", o.id);

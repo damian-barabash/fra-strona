@@ -622,6 +622,8 @@ export const DEFAULTS = {
   "card.order": { pl: "ZAMAWIAM", en: "ORDER", kind: "text" },
   "card.priceLabel": { pl: "CENA", en: "PRICE", kind: "text" },
   "card.net": { pl: "netto", en: "net", kind: "text" },
+  "card.gross": { pl: "brutto · do zapłaty", en: "gross · to pay", kind: "text" },
+  "card.grossShort": { pl: "brutto", en: "gross", kind: "text" },
   "card.includes": { pl: "W CENIE", en: "INCLUDED", kind: "text" },
   "card.descTitle": { pl: "OPIS SZKOLENIA", en: "TRAINING DESCRIPTION", kind: "text" },
   "card.theory": { pl: "SZKOLENIE TEORETYCZNE", en: "THEORY SESSION", kind: "text" },

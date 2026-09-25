@@ -31,10 +31,19 @@ function summaryRows(o: any) {
     if (o.term_label) rows.push(row("Termin", esc(o.term_label)));
     if (o.date_from) rows.push(row("Daty", `${o.date_from}${o.date_to && o.date_to !== o.date_from ? ` – ${o.date_to}` : ""}`));
   }
-  rows.push(row("Wartość", `<b>${zl(o.total, o.currency)}</b>${o.currency === "EUR" && o.amount_pln ? ` (opłacono ${zl(o.amount_pln)})` : ""}`, true));
+  const rate = Number(o.vat_rate ?? 0), g = o.total_gross != null ? Number(o.total_gross) : Number(o.total);
+  rows.push(row("Wartość netto", zl(o.total, o.currency)));
+  if (rate > 0) rows.push(row(`VAT ${Math.round(rate * 100)}%`, zl2(round2(g - Number(o.total)), o.currency)));
+  rows.push(row("Do zapłaty brutto", `<b>${zl2(g, o.currency)}</b>${o.currency === "EUR" && o.amount_pln ? ` (${zl2(o.amount_pln)} PLN)` : ""}`, true));
   if (o.tpay_title) rows.push(row("Transakcja Tpay", esc(o.tpay_title)));
   return table(rows.join(""));
 }
+
+/* every list price is NET; the customer pays GROSS */
+export const VAT_RATE = 0.23;
+export const round2 = (n: number) => Math.round(n * 100) / 100;
+export const gross = (net: number, rate = VAT_RATE) => round2(Number(net) * (1 + rate));
+export const zl2 = (n: number, currency = "PLN") => `${(Number(n) || 0).toLocaleString("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency === "EUR" ? "€" : "zł"}`;
 
 export async function fulfillOrder(orderId: string, paidAmount?: number, method?: string) {
   const { data: o } = await db.from("bookings").select("*").eq("id", orderId).maybeSingle();

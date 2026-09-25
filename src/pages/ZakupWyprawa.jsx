@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "../lib/store";
 import StepTag from "../components/StepTag";
+import { fmtGross } from "../lib/vat";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
@@ -69,8 +70,8 @@ export default function ZakupWyprawa() {
               </div>
               <div className="zw-head__price">
                 <span>{t("d2r.priceLabel")}</span>
-                <b>{fmtEur(total, pkg.currency)}</b>
-                <i>{persons > 1 ? `${persons} × ${fmtEur(pkg.price, pkg.currency)}` : t("d2r.net")}</i>
+                <b>{fmtGross(total, pkg.currency)}</b>
+                <i>{persons > 1 ? `${persons} × ${fmtEur(pkg.price, pkg.currency)} ${t("d2r.net")}` : `${fmtEur(total, pkg.currency)} ${t("d2r.net")}`} + VAT 23%</i>
               </div>
             </div>
 
@@ -108,7 +109,7 @@ export default function ZakupWyprawa() {
                     <div className="zw-foot">
                       <button className="btn wy-btn--ghost zw-ghost" onClick={() => nav(-1)}>{t("flota.bk.prev")}</button>
                       <button className={`btn wy-btn ${!valid ? "is-locked" : ""}`} onClick={goPay}>
-                        {t("flota.bk.pay")} · {fmtEur(total, pkg.currency)} <span className="btn__arrow">›</span>
+                        {t("flota.bk.pay")} · {fmtGross(total, pkg.currency)} <span className="btn__arrow">›</span>
                       </button>
                     </div>
                   </>
@@ -133,8 +134,9 @@ export default function ZakupWyprawa() {
                     {lines(L(pkg, "note")).map((n, i) => <p key={i} className="zw-card__note">{n}</p>)}
                     <div className="zw-card__total">
                       <span>{t("flota.bk.total")}</span>
-                      <b>{fmtEur(total, pkg.currency)}</b>
+                      <b>{fmtGross(total, pkg.currency)}</b>
                     </div>
+                    <div className="zk-card__vat">{fmtEur(total, pkg.currency)} {t("d2r.net")} + VAT 23%</div>
                   </div>
                 </div>
               </aside>

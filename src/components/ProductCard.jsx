@@ -1,6 +1,7 @@
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
 import { fmtZl } from "../lib/flota";
+import { gross, vatOf, fmtMoney, VAT_RATE } from "../lib/vat";
 
 /* The "shop product card" shown in every configurator right before the customer's data:
    a big photo with thumbnails, a buy-box on the right, and the full training description below
@@ -11,7 +12,10 @@ export default function ProductCard({
 }) {
   const { t, lang } = useStore();
   const gallery = [photo, ...photos].filter(Boolean).slice(0, 5);
-  const priceStr = currency === "EUR" ? `${(Number(price) || 0).toLocaleString("pl-PL")} €` : fmtZl(price);
+  const netStr = currency === "EUR" ? `${(Number(price) || 0).toLocaleString("pl-PL")} €` : fmtZl(price);
+  const grossStr = fmtMoney(gross(price), currency);
+  const vatStr = fmtMoney(vatOf(price), currency);
+  const vatPct = Math.round(VAT_RATE * 100);
 
   return (
     <div className="pcard-x" style={{ ["--pc"]: color }}>
@@ -35,8 +39,9 @@ export default function ProductCard({
           <ul className="pcard-x__lines">{lines.map((l, i) => <li key={i}><b>{l[0]}</b><span>{l[1]}</span></li>)}</ul>
           <div className="pcard-x__price">
             <span><EText id="card.priceLabel" /></span>
-            <b>{priceStr}</b>
-            <i>{currency === "EUR" && pricePln ? `≈ ${fmtZl(pricePln)} · ${t("card.pln")}` : t("card.net")}</i>
+            <b>{grossStr}</b>
+            <i>{t("card.gross")}</i>
+            <em className="pcard-x__vat">{netStr} {t("card.net")} + VAT {vatPct}% ({vatStr}){currency === "EUR" && pricePln ? ` · ≈ ${fmtMoney(gross(pricePln))} ${t("card.pln")}` : ""}</em>
           </div>
           <button type="button" className="btn btn--red pcard-x__btn" onClick={onOrder}>{orderLabel || t("card.order")} <span className="btn__arrow">›</span></button>
           <div className="pcard-x__trust">

@@ -2,7 +2,7 @@
 // Prices are ALWAYS computed here from the database; the browser only sends ids.
 import { db, cfg, listOf, sendMail, shell, table, row, chip, esc, zl } from "../_shared/mail.ts";
 import { tpayConfigured, tpayCreateTransaction, tpayToken, TPAY_API } from "../_shared/tpay.ts";
-import { fulfillOrder, sendOrderMails } from "../_shared/orders.ts";
+import { fulfillOrder, sendOrderMails, VAT_RATE, gross, round2 } from "../_shared/orders.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -157,8 +157,11 @@ const phoneOf = (s: string) => { const d = s.replace(/[^\d+]/g, ""); return /^\+
 /** Insert the pending booking and open the Tpay transaction. Returns what the browser needs. */
 async function startPayment(rowIn: Record<string, unknown>, p: any) {
   const row: Record<string, unknown> = { ...rowIn, status: "pending", lang: p.lang === "en" ? "en" : "pl" };
-  if (row.currency === "EUR") row.amount_pln = Math.round(Number(row.total) * (await eurRate()));
-  else row.amount_pln = Number(row.total);
+  // list prices are net — the gateway charges gross (23% VAT), converted to PLN for EUR trips
+  row.vat_rate = VAT_RATE;
+  row.total_gross = gross(Number(row.total));
+  if (row.currency === "EUR") row.amount_pln = round2(Number(row.total_gross) * (await eurRate()));
+  else row.amount_pln = Number(row.total_gross);
   const { data: o, error } = await db.from("bookings").insert(row).select("*").single();
   if (error) return json({ ok: false, error: error.message }, 500);
 
@@ -170,7 +173,7 @@ async function startPayment(rowIn: Record<string, unknown>, p: any) {
   const back = returnOrigin(p.return_origin);
   try {
     const tr = await tpayCreateTransaction({
-      amountGrosze: Number(o.amount_pln) * 100,
+      amountGrosze: Math.round(Number(o.amount_pln) * 100),
       description: shortDesc(o),
       hiddenDescription: o.id,
       payerEmail: o.email as string, payerName: o.full_name as string, payerPhone: phoneOf(String(o.phone || "")),
@@ -180,7 +183,7 @@ async function startPayment(rowIn: Record<string, unknown>, p: any) {
       lang: row.lang as string,
     });
     await db.from("bookings").update({ tpay_id: tr.transactionId, tpay_title: tr.title, payment_url: tr.transactionPaymentUrl }).eq("id", o.id);
-    return json({ ok: true, id: o.id, number: o.number, payment_url: tr.transactionPaymentUrl, total: o.total, currency: o.currency, amount_pln: o.amount_pln });
+    return json({ ok: true, id: o.id, number: o.number, payment_url: tr.transactionPaymentUrl, total: o.total, total_gross: o.total_gross, vat_rate: o.vat_rate, currency: o.currency, amount_pln: o.amount_pln });
   } catch (e) {
     console.error("checkout: tpay", e);
     await db.from("bookings").update({ payment_error: String(e).slice(0, 300) }).eq("id", o.id);

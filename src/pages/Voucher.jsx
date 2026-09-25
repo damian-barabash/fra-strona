@@ -13,6 +13,7 @@ import { usePayRedirect } from "../lib/pay";
 import { useRevealOnScroll } from "../lib/hooks";
 import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
+import { fmtGross } from "../lib/vat";
 import "../sections/productcard.css";
 import "../sections/flota.css";
 import "../sections/rezerwacja.css";
@@ -184,7 +185,7 @@ export default function Voucher() {
               {step === "produkt" && (
                 <div className="rz-foot">
                   <button className="btn btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
-                  <div className="rz-foot__sum"><span>{carName}</span><b>{fmtZl(total)}</b></div>
+                  <div className="rz-foot__sum"><span>{carName}</span><b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")}</small></b></div>
                   <button className="btn btn--red" onClick={goNext}>{t("card.order")} ›</button>
                 </div>
               )}
@@ -193,7 +194,7 @@ export default function Voucher() {
                   {err && <div className="rz-err">{err}</div>}
                   <div className="rz-foot">
                     <button className="btn btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
-                    <div className="rz-foot__sum">{sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}{total > 0 && <b>{fmtZl(total)}</b>}</div>
+                    <div className="rz-foot__sum">{sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}{total > 0 && <b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")} · {fmtZl(total)} {t("card.net")}</small></b>}</div>
                     <button className={`btn btn--red ${!canNext ? "is-locked" : ""}`} onClick={goNext}>{step === "dane" ? t("vch.pay") : t("flota.bk.next")} ›</button>
                   </div>
                 </>
@@ -214,7 +215,7 @@ export default function Voucher() {
                 </div>
                 {gift.voucher_message && <p className="vc-card__msg">“{gift.voucher_message}”</p>}
                 <div className="vc-card__code">{t("vch.code")}</div>
-                <div className="vc-card__price">{total ? fmtZl(total) : "—"} <small>{t("card.net")}</small></div>
+                <div className="vc-card__price">{total ? fmtGross(total) : "—"} <small>{t("card.grossShort")}</small></div>
                 {(car?.png || car?.photos?.[0]) && <img className="vc-card__car" src={car.png || car.photos[0]} alt="" />}
               </motion.div>
             </aside>

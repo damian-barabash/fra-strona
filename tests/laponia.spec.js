@@ -42,7 +42,7 @@ test("ice configurator: package → date inside the season window → product ca
 
   // the package is preset, so we start on the date step (no car choice for the ice programme)
   await expect(page.locator(".ri-step.on")).toContainText("TERMIN");
-  await expect(page.locator(".ri-chips")).toContainText("5450");
+  await expect(page.locator(".ri-chips")).toContainText("6703,50");   // 5450 € net + 23% VAT
   await expect(page.locator(".ri-step", { hasText: "AUTO" })).toHaveCount(0);
 
   // only dates where a 2-day stay fits inside the window are selectable
@@ -54,7 +54,7 @@ test("ice configurator: package → date inside the season window → product ca
   await page.locator(".ri-foot .lp-btn").click();       // → PRODUKT (the shop-style card)
   await expect(page.locator(".ri-step.on")).toContainText("PRODUKT");
   await expect(page.locator(".pcard-x__price b")).toContainText("€");
-  await expect(page.locator(".pcard-x__price i")).toContainText("PLN");
+  await expect(page.locator(".pcard-x__price .pcard-x__vat")).toContainText("PLN");   // "≈ … zł do zapłaty w PLN" sits on the VAT line now
   await page.locator(".pcard-x__btn").click();          // ZAMAWIAM → DANE
   await expect(page.locator(".ri-step.on")).toContainText("DANE");
   await page.fill('.ri-field:has(span:text-is("Imię i nazwisko")) input', "Playwright Ice");

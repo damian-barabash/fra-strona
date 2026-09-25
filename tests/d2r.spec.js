@@ -53,5 +53,5 @@ test("buying the package skips the configurator: details → payment", async ({ 
   await page.fill('.zk-field:has(span:text-is("Imię i nazwisko")) input', "Playwright D2R");
   await page.fill('.zk-field:has(span:text-is("Telefon")) input', "+48 500 600 700");
   await page.fill('.zk-field input[type=email]', "pw-d2r@example.com");
-  await expect(page.locator(".zk-foot .btn--red")).toContainText("17 800");
+  await expect(page.locator(".zk-foot .btn--red")).toContainText("21 894,00");   // 17 800 net + 23% VAT — the gateway is charged gross
 });
