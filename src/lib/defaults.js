@@ -426,6 +426,7 @@ export const DEFAULTS = {
   "cen.car": { pl: "SAMOCHÓD", en: "CAR", kind: "text" },
   "cen.book": { pl: "REZERWUJ", en: "BOOK", kind: "text" },
   "cen.ownSub": { pl: "Przyjeżdżasz swoim autem", en: "You bring your own car", kind: "text" },
+  "cen.ownNote": { pl: "* Cena nie zawiera wjazdu na tor własnym samochodem.", en: "* The price does not include track entry with your own car.", kind: "text" },
   "cen.poznanNote": { pl: "* Ceny na Torze Poznań zawierają opłatę za wjazd samochodu na tor (1200 zł netto).", en: "* Poznań prices include the circuit entry fee for the car (1200 zł net).", kind: "text" },
   "cen.sessionNote": { pl: "Pakiet zawiera wykład z teorii jazdy sportowej oraz trening na torze w sesjach 1:1 z instruktorem. Możliwość odwołania rezerwacji do tygodnia przed terminem.", en: "Each package includes the sport-driving theory lecture and 1:1 track training in sessions. You can cancel your booking up to a week before.", kind: "html" },
   "cen.seeMore": { pl: "ZOBACZ SZCZEGÓŁY", en: "SEE THE DETAILS", kind: "text" },

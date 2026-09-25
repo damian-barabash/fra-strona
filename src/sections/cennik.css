@@ -34,12 +34,14 @@
 .cn-cell { display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-width: 0; }
 .cn-cell--pkg { flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
 .cn-cell--pkg b { font: 900 20px/1 var(--font-display); color: var(--red); }
+.cn-cell--pkg b em { font: 800 12px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: #fff; font-style: normal; }
 .cn-cell--pkg i { font: 700 9px/1.2 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.5); font-style: normal; }
 
 .cn-cell--car img { width: 76px; height: 46px; object-fit: contain; flex: 0 0 auto; }
 .cn-car { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .cn-car b { font: 800 13.5px/1.15 var(--font-display); text-transform: uppercase; color: var(--text); }
 .cn-car i { font: 500 11.5px/1.2 var(--font-body); color: var(--muted); font-style: normal; }
+.cn-star { color: var(--red); margin-left: 2px; }
 .cn-own { width: 76px; text-align: center; font-size: 26px; color: var(--red); flex: 0 0 auto; }
 .cn-row--own { background: var(--paper); }
 
@@ -50,7 +52,7 @@
   font: 800 15px/1 var(--font-display); color: var(--text);
   transition: background .2s ease, color .2s ease;
 }
-.cn-cell__lbl { display: none; font: 700 9px/1 var(--font-display); letter-spacing: .1em; color: var(--muted); }
+.cn-cell__lbl { display: none; font: 700 9px/1 var(--font-display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
 .cn-cell__go {
   position: absolute; inset: auto 0 6px 0; opacity: 0; transform: translateY(4px);
   font: 700 8.5px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: #fff;

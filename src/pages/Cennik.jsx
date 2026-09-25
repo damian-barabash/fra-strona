@@ -89,8 +89,8 @@ export default function Cennik() {
                 <span className="cn-cell cn-cell--car">{t("cen.car")}</span>
                 {PACKAGES.map((p) => (
                   <span key={p.n} className="cn-cell cn-cell--pkg">
-                    <b>{p.n}</b>
-                    <i>{lang === "en" ? p.en : p.pl}</i>
+                    <b>{p.n} <em>{(lang === "en" ? p.sub_en : p.sub_pl).replace(/^\d+\s*/, "")}</em></b>
+                    <i>{lang === "en" ? `${p.en} PACKAGE` : `PAKIET ${p.pl}`}</i>
                   </span>
                 ))}
               </div>
@@ -114,7 +114,7 @@ export default function Cennik() {
                           <button key={p.n} className={`cn-cell cn-cell--price ${price ? "" : "is-off"}`}
                             disabled={!price} onClick={() => book(c, p.n)}
                             title={`${c.name} · ${p.n} ${lang === "en" ? "sessions" : "sesji"}`}>
-                            <span className="cn-cell__lbl">{p.n}×</span>
+                            <span className="cn-cell__lbl">{lang === "en" ? p.sub_en : p.sub_pl}</span>
                             {price ? <>{fmtZl(price)} <small className="cn-net">{t("card.net")}</small></> : "—"}
                             <span className="cn-cell__go">{t("cen.book")} ›</span>
                           </button>
@@ -128,7 +128,7 @@ export default function Cennik() {
                     <span className="cn-cell cn-cell--car">
                       <span className="cn-own">⌁</span>
                       <span className="cn-car">
-                        <b>{t("flota.customName")}</b>
+                        <b>{t("flota.customName")}<span className="cn-star">*</span></b>
                         <i>{t("cen.ownSub")}</i>
                       </span>
                     </span>
@@ -138,7 +138,7 @@ export default function Cennik() {
                         <button key={p.n} className={`cn-cell cn-cell--price ${price ? "" : "is-off"}`}
                           disabled={!price}
                           onClick={() => { window.scrollTo({ top: 0 }); nav(`/rezerwacja?custom=1&sessions=${p.n}`); }}>
-                          <span className="cn-cell__lbl">{p.n}×</span>
+                          <span className="cn-cell__lbl">{lang === "en" ? p.sub_en : p.sub_pl}</span>
                           {price ? <>{fmtZl(price)} <small className="cn-net">{t("card.net")}</small></> : "—"}
                           <span className="cn-cell__go">{t("cen.book")} ›</span>
                         </button>
@@ -151,6 +151,7 @@ export default function Cennik() {
 
             <div className="cn-notes reveal-up">
               {isPoznan(track) && <EText id="cen.poznanNote" as="p" className="cn-note cn-note--red" />}
+              <EText id="cen.ownNote" as="p" className="cn-note cn-note--red" />
               <EText id="cen.sessionNote" as="p" className="cn-note" multiline />
             </div>
           </div>
