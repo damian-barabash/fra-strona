@@ -70,8 +70,8 @@ export default function ZakupWyprawa() {
               </div>
               <div className="zw-head__price">
                 <span>{t("d2r.priceLabel")}</span>
-                <b>{fmtGross(total, pkg.currency)}</b>
-                <i>{persons > 1 ? `${persons} × ${fmtEur(pkg.price, pkg.currency)} ${t("d2r.net")}` : `${fmtEur(total, pkg.currency)} ${t("d2r.net")}`} + VAT 23%</i>
+                <b>{fmtEur(total, pkg.currency)}</b>
+                <i>{persons > 1 ? `${persons} × ${fmtEur(pkg.price, pkg.currency)}` : t("d2r.net")}</i>
               </div>
             </div>
 
@@ -107,7 +107,7 @@ export default function ZakupWyprawa() {
                     {err && <div className="zw-err">{err}</div>}
 
                     <div className="zw-foot">
-                      <button className="btn wy-btn--ghost zw-ghost" onClick={() => nav(-1)}>{t("flota.bk.prev")}</button>
+                      <button className="btn btn--back" onClick={() => nav(-1)}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                       <button className={`btn wy-btn ${!valid ? "is-locked" : ""}`} onClick={goPay}>
                         {t("flota.bk.pay")} · {fmtGross(total, pkg.currency)} <span className="btn__arrow">›</span>
                       </button>
@@ -134,9 +134,9 @@ export default function ZakupWyprawa() {
                     {lines(L(pkg, "note")).map((n, i) => <p key={i} className="zw-card__note">{n}</p>)}
                     <div className="zw-card__total">
                       <span>{t("flota.bk.total")}</span>
-                      <b>{fmtGross(total, pkg.currency)}</b>
+                      <b>{fmtEur(total, pkg.currency)}</b>
                     </div>
-                    <div className="zk-card__vat">{fmtEur(total, pkg.currency)} {t("d2r.net")} + VAT 23%</div>
+                    <div className="zk-card__vat">{t("d2r.net")} · {t("flota.bk.pay").toLowerCase()}: {fmtGross(total, pkg.currency)} {t("card.grossShort")}</div>
                   </div>
                 </div>
               </aside>

@@ -259,3 +259,18 @@ p { margin: 0; }
 @keyframes upstIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 .btn--gift .nav__gift { margin-right: 4px; }
+
+/* grey "‹ Wstecz" */
+.btn--back { background: #e9eaee; color: var(--text); border: none; gap: 10px; }
+.btn--back:hover { background: #dcdde3; transform: translateY(-2px); }
+.btn__back { font-style: normal; font-size: 20px; line-height: 1; margin-top: -2px; }
+
+/* checkout footer bar glued to the bottom of the screen (every configurator / checkout) */
+.rz-foot, .ri-foot, .zk-foot, .zw-foot {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; margin: 0;
+  background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border: none; border-top: 1px solid var(--line);
+  box-shadow: 0 -12px 40px rgba(0,0,0,.08); padding: 12px var(--gut);
+}
+body:has(.rz-foot) main, body:has(.ri-foot) main, body:has(.zk-foot) main, body:has(.zw-foot) main { padding-bottom: 104px; }
+body:has(.rz-foot) .wa-fab, body:has(.ri-foot) .wa-fab, body:has(.zk-foot) .wa-fab, body:has(.zw-foot) .wa-fab { bottom: 96px; }
+@media (max-width: 560px) { .rz-foot, .ri-foot, .zk-foot, .zw-foot { padding: 10px 14px; } body:has(.rz-foot) main, body:has(.ri-foot) main, body:has(.zk-foot) main, body:has(.zw-foot) main { padding-bottom: 150px; } }

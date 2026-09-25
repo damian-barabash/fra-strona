@@ -115,9 +115,8 @@ export default function Voucher() {
                         const price = priceFor(p.n);
                         return (
                           <button key={p.n} className={`fl-pkg ${sessions === p.n ? "on" : ""}`} onClick={() => setSessions(p.n)} disabled={!price}>
-                            <span className="fl-pkg__n">{p.n}<i>×</i></span>
+                            <span className="fl-pkg__n">{p.n} <i>{(lang === "en" ? p.sub_en : p.sub_pl).replace(/^\d+\s*/, "")}</i></span>
                             <span className="fl-pkg__name">{lang === "en" ? p.en : p.pl}</span>
-                            <span className="fl-pkg__sub">{lang === "en" ? p.sub_en : p.sub_pl}</span>
                             <span className="fl-pkg__price">{price ? fmtZl(price) : "—"} <small>{t("card.net")}</small></span>
                           </button>
                         );
@@ -144,7 +143,7 @@ export default function Voucher() {
                   <div className="fl-bk">
                     <StepTag n={stepIdx + 1} of={STEPS.length} title={t("card.title")} />
                     <ProductCard
-                      title={`${t("vch.title")} · ${t("flota.bk.product")}`} subtitle={clip(t("card.lead"), 190)}
+                      title={`${t("vch.title")} · ${t("flota.bk.product")}`} subtitle={t("card.desc")}
                       code={car?.own ? "OWN" : car?.badge} color={car?.own ? "var(--red)" : (car?.color || "var(--red)")}
                       photo={car?.own ? "/assets/covers/mariusz.webp" : (car?.png || car?.photos?.[0])} photos={car?.own ? [] : (car?.photos || [])}
                       price={total} currency="PLN" onOrder={goNext}
@@ -184,7 +183,7 @@ export default function Voucher() {
 
               {step === "produkt" && (
                 <div className="rz-foot">
-                  <button className="btn btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
+                  <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                   <div className="rz-foot__sum"><span>{carName}</span><b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")}</small></b></div>
                   <button className="btn btn--red" onClick={goNext}>{t("card.order")} ›</button>
                 </div>
@@ -193,8 +192,8 @@ export default function Voucher() {
                 <>
                   {err && <div className="rz-err">{err}</div>}
                   <div className="rz-foot">
-                    <button className="btn btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
-                    <div className="rz-foot__sum">{sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}{total > 0 && <b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")} · {fmtZl(total)} {t("card.net")}</small></b>}</div>
+                    <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
+                    <div className="rz-foot__sum">{sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}{total > 0 && <b>{fmtZl(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.net")}</small></b>}</div>
                     <button className={`btn btn--red ${!canNext ? "is-locked" : ""}`} onClick={goNext}>{step === "dane" ? t("vch.pay") : t("flota.bk.next")} ›</button>
                   </div>
                 </>
@@ -215,7 +214,7 @@ export default function Voucher() {
                 </div>
                 {gift.voucher_message && <p className="vc-card__msg">“{gift.voucher_message}”</p>}
                 <div className="vc-card__code">{t("vch.code")}</div>
-                <div className="vc-card__price">{total ? fmtGross(total) : "—"} <small>{t("card.grossShort")}</small></div>
+                <div className="vc-card__price">{total ? fmtZl(total) : "—"} <small>{t("card.net")}</small></div>
                 {(car?.png || car?.photos?.[0]) && <img className="vc-card__car" src={car.png || car.photos[0]} alt="" />}
               </motion.div>
             </aside>

@@ -99,7 +99,7 @@ export default function RezerwacjaIce() {
                 <div className="ri-chips">
                   {pkg && <span className="lp-frost-chip"><b>{t("ice.sPkg")}</b>{L(pkg, "name")}</span>}
                   {start && <span className="lp-frost-chip"><b>{t("ice.sDate")}</b>{fmtDay(start, lang)}{days > 1 ? ` – ${fmtDay(end, lang)}` : ""}</span>}
-                  {pkg && <span className="lp-frost-chip"><b>{t("ice.total")}</b>{fmtGross(total, pkg.currency)} {t("card.grossShort")}</span>}
+                  {pkg && <span className="lp-frost-chip"><b>{t("ice.total")}</b>{fmtEur(total, pkg.currency)} {t("card.net")}</span>}
                 </div>
               </div>
               <IceGauge value={step === "platnosc" ? 1 : progress} />
@@ -195,10 +195,10 @@ export default function RezerwacjaIce() {
               <>
                 {err && <div className="ri-err">{err}</div>}
                 <div className="ri-foot">
-                  <button className="btn lp-btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
+                  <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                   <div className="ri-foot__sum">
                     {pkg && <span>{L(pkg, "name")}{persons > 1 ? ` · ${persons} ${t("ice.personsShort")}` : ""}</span>}
-                    {total > 0 && <b>{fmtGross(total, pkg?.currency)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")} · {fmtEur(total, pkg?.currency)} {t("card.net")}</small></b>}
+                    {total > 0 && <b>{fmtEur(total, pkg?.currency)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.net")}</small></b>}
                   </div>
                   <button className={`btn lp-btn ${!canNext ? "is-locked" : ""}`} onClick={goNext}>
                     {step === "dane" ? t("ice.pay") : t("flota.bk.next")} ›

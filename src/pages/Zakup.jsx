@@ -9,7 +9,7 @@ import { FuelTank } from "../components/Fuel";
 import { usePayRedirect } from "../lib/pay";
 import { fmtZl } from "../lib/flota";
 import StepTag from "../components/StepTag";
-import { fmtGross, vatOf, fmtMoney } from "../lib/vat";
+import { fmtGross } from "../lib/vat";
 import "../sections/rezerwacja.css";
 import "../sections/d2r.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
@@ -82,8 +82,8 @@ export default function Zakup() {
               </div>
               <div className="zk-head__price">
                 <span>{t("d2r.priceLabel")}</span>
-                <b>{fmtGross(price)}</b>
-                <i>{t("card.grossShort")} · {fmtZl(price)} {t("d2r.net")} + VAT 23% {fmtMoney(vatOf(price))}</i>
+                <b>{fmtZl(price)}</b>
+                <i>{t("d2r.net")}</i>
               </div>
             </div>
 
@@ -128,7 +128,7 @@ export default function Zakup() {
                     {err && <div className="zk-err">{err}</div>}
 
                     <div className="zk-foot">
-                      <button className="btn btn--ghost zk-ghost" onClick={() => nav(-1)}>{t("flota.bk.prev")}</button>
+                      <button className="btn btn--back" onClick={() => nav(-1)}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                       <button className={`btn btn--red ${!valid ? "is-locked" : ""}`} onClick={goPay}>
                         {t("flota.bk.pay")} · {fmtGross(price)} <span className="btn__arrow">›</span>
                       </button>
@@ -157,9 +157,9 @@ export default function Zakup() {
                     </ul>
                     <div className="zk-card__total">
                       <span>{t("flota.bk.total")}</span>
-                      <b>{fmtGross(price)}</b>
+                      <b>{fmtZl(price)}</b>
                     </div>
-                    <div className="zk-card__vat">{fmtZl(price)} {t("d2r.net")} + VAT 23%</div>
+                    <div className="zk-card__vat">{t("d2r.net")} · {t("flota.bk.pay").toLowerCase()}: {fmtGross(price)} {t("card.grossShort")}</div>
                   </div>
                 </div>
               </aside>

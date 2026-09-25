@@ -622,6 +622,7 @@ export const DEFAULTS = {
   "card.order": { pl: "ZAMAWIAM", en: "ORDER", kind: "text" },
   "card.priceLabel": { pl: "CENA", en: "PRICE", kind: "text" },
   "card.net": { pl: "netto", en: "net", kind: "text" },
+  "card.desc": { pl: "Sport Driving Experience to indywidualne szkolenie jazdy sportowej na torze wyścigowym w formule 1:1 — obok Ciebie zawsze siedzi instruktor, czynny zawodnik motorsportu. Zaczynasz od wykładu z teorii jazdy sportowej, potem siadasz za kierownicą wybranego auta z floty Fastline i trenujesz linię wyścigową, hamowanie, pracę na pedałach i balans samochodu na limicie przyczepności. Szkolenie kończy certyfikat podpisany przez Mariusza Miękosia.", en: "Sport Driving Experience is a one-to-one sport-driving course on a race circuit — an instructor who races himself always sits next to you. You start with a sport-driving theory lecture, then take the wheel of the car you picked from the Fastline fleet and train the racing line, braking, pedal work and car balance at the limit of grip. The course ends with a certificate signed by Mariusz Miękoś.", kind: "html" },
   "card.gross": { pl: "brutto · do zapłaty", en: "gross · to pay", kind: "text" },
   "card.grossShort": { pl: "brutto", en: "gross", kind: "text" },
   "card.includes": { pl: "W CENIE", en: "INCLUDED", kind: "text" },

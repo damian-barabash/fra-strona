@@ -48,6 +48,7 @@ export default function Fleet() {
   const next = cars[((idx + 1) % n + n) % n];
 
   const go = (d) => { setIdx([idx + d, d]); setThumb(0); };
+  const jump = (i, d) => { setIdx([i, d]); setThumb(0); };
 
   const badgeColor = isLight(car.color) ? "rgba(0,0,0,.7)" : "rgba(0,0,0,.82)";
   const photos = Array.isArray(car.photos) ? car.photos : [];
@@ -102,6 +103,14 @@ export default function Fleet() {
               <button className="carnav__btn carnav__btn--next navbtn navbtn--red" onClick={() => go(1)} aria-label={`następne: ${next.name}`}>
                 <span>{next.name}</span><i>›</i>
               </button>
+            </div>
+            <div className="carthumbs" role="tablist" aria-label="modele">
+              {cars.map((c, i) => (
+                <button key={c.id} type="button" role="tab" aria-selected={c.id === car.id} className={`carthumb ${c.id === car.id ? "on" : ""}`} style={{ background: c.color }} title={c.name}
+                  onClick={() => { const cur = ((idx % n) + n) % n; if (i !== cur) jump(i, i > cur ? 1 : -1); }}>
+                  {(c.png || c.photos?.[0]) ? <img src={c.png || c.photos[0]} alt={c.name} loading="lazy" /> : <span>{c.badge}</span>}
+                </button>
+              ))}
             </div>
           </div>
 

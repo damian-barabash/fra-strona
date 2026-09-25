@@ -179,7 +179,7 @@
 .fl-pkg:hover:not(:disabled) { transform: translateY(-3px); border-color: var(--muted); }
 .fl-pkg.on { border-color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
 .fl-pkg:disabled { opacity: .4; cursor: default; }
-.fl-pkg__n { font: 900 28px/1 var(--font-display); color: var(--red); } .fl-pkg__n i { font-size: .5em; font-style: normal; color: var(--muted); }
+.fl-pkg__n { font: 900 30px/1 var(--font-display); color: var(--red); display: flex; align-items: baseline; gap: 6px; } .fl-pkg__n i { font: 800 13px var(--font-display); font-style: normal; letter-spacing: .08em; text-transform: uppercase; color: var(--red); }
 .fl-pkg__name { font: 800 12px/1.2 var(--font-display); letter-spacing: .02em; text-transform: uppercase; margin-top: 6px; overflow-wrap: anywhere; hyphens: auto; }
 .fl-pkg__sub { font: 500 11px var(--font-body); color: var(--muted); }
 .fl-pkg__price { font: 800 16px var(--font-display); margin-top: 8px; white-space: nowrap; }
@@ -277,3 +277,10 @@
 .rz .fl-stage { aspect-ratio: 16/7.2; }
 .rz .fl-slider__bottom { margin-top: 14px; padding-top: 14px; }
 .rz .carnav__btn, .rz .carnav__more { min-height: 48px; }
+
+/* Heels on the Track dates stand out in maroon */
+.fl-term--heels { background: #62050f; border-color: #62050f; color: #fff; }
+.fl-term--heels .fl-term__loc, .fl-term--heels .fl-term__time, .fl-term--heels .fl-term__date { color: #fff; }
+.fl-term--heels .fl-term__loc { color: rgba(255,255,255,.75); }
+.fl-term--heels.on { border-color: var(--red); box-shadow: inset 0 0 0 1px var(--red), 0 10px 26px rgba(98,5,15,.35); }
+.fl-term--heels:hover { background: #7a0813; }

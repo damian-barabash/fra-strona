@@ -81,6 +81,7 @@ export default function CarSlider({ onChoose, onCurrent, jumpTo, onJumped, hideH
   const prev = cars[((idx - 1) % n + n) % n];
   const next = cars[((idx + 1) % n + n) % n];
   const go = (d) => setIdx([idx + d, d]);
+  const jump = (i, d) => setIdx([i, d]);
 
   const badgeColor = isLight(car.color) ? "rgba(0,0,0,.72)" : "rgba(0,0,0,.8)";
   const fromPrice = carPrice(car, 3, priceTrack);
@@ -133,6 +134,14 @@ export default function CarSlider({ onChoose, onCurrent, jumpTo, onJumped, hideH
             <button className="carnav__btn carnav__btn--next fl-arrow fl-arrow--red" onClick={() => go(1)} aria-label={`następne: ${next.name}`}>
               <span>{next.name}</span><i>›</i>
             </button>
+          </div>
+          <div className="carthumbs" role="tablist" aria-label="modele">
+            {cars.map((c, i) => (
+              <button key={c.id} type="button" role="tab" aria-selected={c.id === car.id} className={`carthumb ${c.id === car.id ? "on" : ""}`} style={{ background: c.color }} title={c.name}
+                onClick={() => { const cur = ((idx % n) + n) % n; if (i !== cur) jump(i, i > cur ? 1 : -1); }}>
+                {(c.png || c.photos?.[0]) ? <img src={c.png || c.photos[0]} alt={c.name} loading="lazy" /> : <span>{c.badge}</span>}
+              </button>
+            ))}
           </div>
         </div>
 

@@ -473,3 +473,13 @@
 @media (max-width: 560px) { .stept__n { min-width: 46px; font-size: 21px; } .stept__t b { font-size: 13px; } }
 
 .founder__btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* thumbnails of every car under the control bar — makes the slider obvious */
+.carthumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.carthumbs::-webkit-scrollbar { display: none; }
+.carthumb { flex: 0 0 66px; height: 50px; display: grid; place-items: center; padding: 4px 6px; border: 2px solid transparent; border-radius: 3px; opacity: .6; transition: opacity .2s, transform .2s, border-color .2s; }
+.carthumb img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }
+.carthumb span { font: 900 10px var(--font-display); color: rgba(255,255,255,.9); }
+.carthumb:hover { opacity: .9; transform: translateY(-2px); }
+.carthumb.on { opacity: 1; border-color: var(--red); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+@media (max-width: 560px) { .carthumb { flex-basis: 56px; height: 42px; } }

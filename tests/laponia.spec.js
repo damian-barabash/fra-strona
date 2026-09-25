@@ -42,7 +42,7 @@ test("ice configurator: package → date inside the season window → product ca
 
   // the package is preset, so we start on the date step (no car choice for the ice programme)
   await expect(page.locator(".ri-step.on")).toContainText("TERMIN");
-  await expect(page.locator(".ri-chips")).toContainText("6703,50");   // 5450 € net + 23% VAT
+  await expect(page.locator(".ri-chips")).toContainText("5450");   // chips stay net — gross shows only on the product card
   await expect(page.locator(".ri-step", { hasText: "AUTO" })).toHaveCount(0);
 
   // only dates where a 2-day stay fits inside the window are selectable

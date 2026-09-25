@@ -122,7 +122,7 @@ export default function Rezerwacja() {
                 <div className="rz-head__ctx">
                   {(carSel || custom) && <span className="rz-chip"><b>{t("flota.bk.chosenCar")}</b>{custom ? t("flota.customName") : carSel?.name}</span>}
                   {dateLabel && <span className="rz-chip"><b>{t("flota.bk.chosenDate")}</b>{dateLabel}</span>}
-                  {sessions && <span className="rz-chip"><b>{t("flota.bk.total")}</b>{fmtGross(total)} {t("card.grossShort")}</span>}
+                  {sessions && <span className="rz-chip"><b>{t("flota.bk.total")}</b>{fmtZl(total)} {t("card.net")}</span>}
                 </div>
               </div>
               <div className="rz-head__gauge"><Speedo value={step === "platnosc" ? 1 : gauge} big /></div>
@@ -152,7 +152,7 @@ export default function Rezerwacja() {
                   <p className="fl-bk__sub">{t("flota.bk.termSub")}</p>
                   <div className="fl-terms">
                     {upcoming.map((tm) => (
-                      <button key={tm.id} className={`fl-term ${termSel?.id === tm.id ? "on" : ""}`} onClick={() => setTermSel(tm)}>
+                      <button key={tm.id} className={`fl-term ${(tm.type || "sport") === "heels" ? "fl-term--heels" : ""} ${termSel?.id === tm.id ? "on" : ""}`} onClick={() => setTermSel(tm)}>
                         <span className="fl-term__date">{fmtDate(tm.date, lang)}</span>
                         <span className="fl-term__loc">{tm.location_pl || trackLabel(tm.track, lang)}{isPoznan(tm.track) && <b className="fl-term__pz">POZNAŃ</b>}</span>
                         <span className="fl-term__time">{tm.time}{tm.title_pl && (tm.type || "sport") !== "sport" ? ` · ${L(tm, "title")}` : ""}</span>
@@ -175,9 +175,8 @@ export default function Rezerwacja() {
                       const price = priceFor(p.n);
                       return (
                         <button key={p.n} className={`fl-pkg ${sessions === p.n ? "on" : ""}`} onClick={() => setSessions(p.n)} disabled={!price}>
-                          <span className="fl-pkg__n">{p.n}<i>×</i></span>
+                          <span className="fl-pkg__n">{p.n} <i>{(lang === "en" ? p.sub_en : p.sub_pl).replace(/^\d+\s*/, "")}</i></span>
                           <span className="fl-pkg__name">{lang === "en" ? p.en : p.pl}</span>
-                          <span className="fl-pkg__sub">{lang === "en" ? p.sub_en : p.sub_pl}</span>
                           <span className="fl-pkg__price">{price ? fmtZl(price) : "—"} <small>{t("card.net")}</small></span>
                         </button>
                       );
@@ -190,7 +189,7 @@ export default function Rezerwacja() {
                 <div className="fl-bk">
                   <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("card.title")} />
                   <ProductCard
-                    title={t("flota.bk.product")} subtitle={clip(t("card.lead"), 190)}
+                    title={t("flota.bk.product")} subtitle={t("card.desc")}
                     code={custom ? "OWN" : carSel?.badge} color={custom ? "var(--red)" : (carSel?.color || "var(--red)")}
                     photo={custom ? "/assets/covers/mariusz.webp" : (carSel?.png || carSel?.photos?.[0])} photos={custom ? [] : (carSel?.photos || [])}
                     price={total} currency="PLN" lines={cardLines} includes={cardIncludes} onOrder={goNext}
@@ -234,10 +233,10 @@ export default function Rezerwacja() {
               <>
                 {err && <div className="rz-err">{err}</div>}
                 <div className="rz-foot">
-                  <button className="btn btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
+                  <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                   <div className="rz-foot__sum">
                     {sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}
-                    {total > 0 && <b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")} · {fmtZl(total)} {t("card.net")}</small></b>}
+                    {total > 0 && <b>{fmtZl(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.net")}</small></b>}
                   </div>
                   <button className={`btn btn--red ${!canNext ? "is-locked" : ""}`} onClick={goNext}>
                     {step === "dane" ? t("flota.bk.pay") : t("flota.bk.next")} ›
@@ -247,7 +246,7 @@ export default function Rezerwacja() {
             )}
             {step === "produkt" && (
               <div className="rz-foot">
-                <button className="btn btn--ghost" onClick={goPrev}>{t("flota.bk.prev")}</button>
+                <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                 <div className="rz-foot__sum"><span>{carTitle}</span><b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")}</small></b></div>
                 <button className="btn btn--red" onClick={goNext}>{t("card.order")} ›</button>
               </div>
