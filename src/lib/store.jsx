@@ -1,13 +1,20 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "./supabase";
 import { DEFAULTS } from "./defaults";
 import { authLogin, authVerify, adminCall } from "./api";
+import { track, chain, isMutation, hasUnsaved } from "./sync";
 
 const Ctx = createContext(null);
 export const useStore = () => useContext(Ctx);
 
 const LS_LANG = "fra_lang";
 const LS_TOKEN = "fra_admin_token";
+
+const ACTION_LABEL = (a) => ({
+  "config.set": "Ustawienia", "media.upload": "Wysyłka pliku", "admins.create": "Nowe konto", "admins.update": "Konto administratora",
+  "admins.delete": "Usunięcie konta", "bookings.markPaid": "Oznaczenie jako opłacone", "bookings.resendMail": "Ponowna wysyłka e-maili",
+  "bookings.cancel": "Anulowanie zamówienia", "bookings.delete": "Usunięcie zamówienia", "messages.delete": "Usunięcie wiadomości",
+}[a] || a);
 
 export function StoreProvider({ children }) {
   const [lang, setLang] = useState(() => localStorage.getItem(LS_LANG) || "pl");
@@ -108,17 +115,25 @@ export function StoreProvider({ children }) {
     if (r.ok) { setToken(r.token); setAdmin(r.admin); localStorage.setItem(LS_TOKEN, r.token); }
     return r;
   };
-  const logout = () => { setToken(""); setAdmin(null); setCmsMode(false); localStorage.removeItem(LS_TOKEN); };
+  const logout = () => {
+    if (hasUnsaved() && !confirm("Nie wszystkie zmiany zostały jeszcze zapisane na serwerze. Wylogować mimo to? Te zmiany mogą nie zostać zastosowane.")) return;
+    setToken(""); setAdmin(null); setCmsMode(false); localStorage.removeItem(LS_TOKEN); };
 
   // optimistic content edit
   const setContentLocal = (key, pl, kind) =>
     setContent((c) => ({ ...c, [key]: { ...(c[key] || raw(key)), pl, kind: kind || raw(key).kind } }));
 
-  const saveContent = async (key, pl, kind) => {
+  // optimistic: the text/photo changes on screen at once, the save (+ server-side EN translation) runs
+  // in the background; a failure restores the previous value and shows up in the sync indicator
+  const saveContent = (key, pl, kind) => {
+    const before = content[key];
+    const k = kind || raw(key).kind;
     setContentLocal(key, pl, kind);
-    const r = await adminCall(token, "content.save", { items: [{ key, pl, kind: kind || raw(key).kind }] });
-    if (r.ok && r.rows?.[0]) setContent((c) => ({ ...c, [key]: { pl: r.rows[0].pl, en: r.rows[0].en, kind: r.rows[0].kind } }));
-    return r;
+    return chain(`content:${key}`, () => track(`Treść: ${key}`, async () => {
+      const r = await adminCall(token, "content.save", { items: [{ key, pl, kind: k }] });
+      if (r.ok && r.rows?.[0]) setContent((c) => ({ ...c, [key]: { pl: r.rows[0].pl, en: r.rows[0].en, kind: r.rows[0].kind } }));
+      return r;
+    }, () => setContent((c) => { const n = { ...c }; if (before) n[key] = before; else delete n[key]; return n; })));
   };
 
   // configurators, price board and the home slider only ever see the sport cars; the race cars
@@ -140,25 +155,80 @@ export function StoreProvider({ children }) {
   const createVoucherBooking = checkout("booking.createVoucher");
   const orderStatus = (id) => adminCall("", "booking.status", { id });
 
-  const upsertEntity = async (table, row) => {
-    const r = await adminCall(token, `${table}.upsert`, row);
-    if (r.ok && r.row) {
-      setters[table]((list) => {
-        const exists = list.some((x) => x.id === r.row.id);
-        const next = exists ? list.map((x) => (x.id === r.row.id ? r.row : x)) : [...list, r.row];
-        return next.sort((a, b) => a.sort - b.sort);
-      });
-    }
-    return r;
+  /* ---- optimistic collection edits ----
+     The list changes immediately; the request runs in the background (per-record queue, so two quick
+     edits of one row can't overtake each other). A new row gets a temporary id until the server
+     answers — editing, deleting or reordering it meanwhile waits for the real id. On failure the
+     change is rolled back and listed in the sync indicator with a retry. */
+  const TABLE_LABEL = { cars: "Samochód", instructors: "Instruktor", events: "Wydarzenie", programs: "Kafelek", banners: "Baner", tracks: "Tor", media: "Media o nas", terms: "Termin", products: "Produkt", ice_packages: "Laponia — pakiet", ice_windows: "Laponia — termin", trip_packages: "Wyprawa — pakiet", trip_attractions: "Wyprawa — atrakcja", trip_points: "Wyprawa — punkt" };
+  const labelOf = (table, row) => `${TABLE_LABEL[table] || table}: ${row?.name || row?.title_pl || row?.label_pl || row?.label || row?.date || row?.id || "nowy"}`;
+  const isTmp = (id) => typeof id === "string" && id.startsWith("tmp-");
+  const created = useRef(new Map()); // tmp id → Promise<real id | null>
+  const realId = async (id) => (isTmp(id) ? await (created.current.get(id) || Promise.resolve(null)) : id);
+  const bySort = (a, b) => (a.sort ?? 0) - (b.sort ?? 0);
+  const clean = (row) => { const { _pending, _rev, ...rest } = row; return rest; };
+
+  const rev = useRef(0);
+  const upsertEntity = (table, row) => {
+    const set = setters[table];
+    const tmp = row.id ? null : `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const localId = row.id || tmp;
+    const myRev = ++rev.current;
+    // what to restore on failure: the last server version (an unsaved new row simply disappears)
+    const prev = row.id && !isTmp(row.id) ? getters[table]?.find((x) => x.id === row.id) : null;
+    const prevSaved = prev && !prev._pending ? prev : prev ? clean(prev) : null;
+    set((list) => {
+      const optimistic = { ...row, id: localId, _pending: true, _rev: myRev };
+      const next = list.some((x) => x.id === localId) ? list.map((x) => (x.id === localId ? optimistic : x)) : [...list, optimistic];
+      return next.sort(bySort);
+    });
+    let serverId = isTmp(localId) ? null : localId;
+    const mine = (x) => x.id === localId || (serverId != null && x.id === serverId);
+    const op = chain(`${table}:${localId}`, () => track(labelOf(table, row), async () => {
+      // a brand-new row goes without id; an edit of a still-unsaved new row waits for its real id
+      const id = tmp ? null : await realId(localId);
+      if (!tmp && id === null) return { ok: false, error: "nie utworzono rekordu" };
+      serverId = id;
+      const payload = clean(tmp ? row : { ...row, id });
+      if (tmp) delete payload.id;
+      const r = await adminCall(token, `${table}.upsert`, payload);
+      if (r.ok && r.row) {
+        serverId = r.row.id;
+        // a newer local edit of the same row wins on screen — only the real id is taken over
+        set((list) => list.map((x) => (mine(x) ? (x._rev === myRev ? r.row : { ...x, id: r.row.id }) : x)).sort(bySort));
+      }
+      return r;
+    }, () => set((list) => {
+      const cur = list.find(mine);
+      if (cur && cur._rev !== myRev) return list;                       // a newer edit is on screen — keep it
+      return (prevSaved ? list.map((x) => (mine(x) ? prevSaved : x)) : list.filter((x) => !mine(x))).sort(bySort);
+    })));
+    if (tmp) created.current.set(tmp, op.then((r) => (r.ok && r.row ? r.row.id : null)));
+    return op;
   };
-  const deleteEntity = async (table, id) => {
-    setters[table]((list) => list.filter((x) => x.id !== id)); // optimistic
-    return adminCall(token, `${table}.delete`, { id });
+  const deleteEntity = (table, id) => {
+    const set = setters[table];
+    const prev = getters[table]?.find((x) => x.id === id);
+    set((list) => list.filter((x) => x.id !== id));
+    return chain(`${table}:${id}`, () => track(`Usunięcie — ${labelOf(table, prev)}`, async () => {
+      const rid = await realId(id);
+      if (rid === null) return { ok: true }; // the row never reached the server — nothing to delete
+      return adminCall(token, `${table}.delete`, { id: rid });
+    }, () => prev && set((list) => [...list, prev].sort(bySort))));
   };
-  const reorderEntity = async (table, ids) => {
-    setters[table]((list) => ids.map((id, i) => ({ ...list.find((x) => x.id === id), sort: i + 1 })));
-    return adminCall(token, `${table}.reorder`, { ids });
+  const reorderEntity = (table, ids) => {
+    const set = setters[table];
+    const before = getters[table] || [];
+    set((list) => ids.map((id, i) => ({ ...list.find((x) => x.id === id), sort: i + 1 })));
+    return chain(`${table}:order`, () => track(`Kolejność — ${TABLE_LABEL[table] || table}`, async () => {
+      const real = (await Promise.all(ids.map(realId))).filter((x) => x !== null);
+      return adminCall(token, `${table}.reorder`, { ids: real });
+    }, () => set(() => before)));
   };
+
+  // every other admin action that changes data (settings, uploads, accounts, orders) is tracked too
+  const call = (action, payload) =>
+    isMutation(action) ? track(ACTION_LABEL(action), () => adminCall(token, action, payload)) : adminCall(token, action, payload);
 
   const value = {
     lang, setLang, ready,
@@ -172,7 +242,7 @@ export function StoreProvider({ children }) {
     login, logout,
     setContentLocal, saveContent,
     upsertEntity, deleteEntity, reorderEntity, getters, createBooking, createIceBooking, createTripBooking, createProductBooking, createVoucherBooking, orderStatus,
-    adminCall: (action, payload) => adminCall(token, action, payload),
+    adminCall: call,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -665,14 +665,14 @@ function EntityTab({ table }) {
   const items = store.getters[table] || [];
   const cfg = CFG[table];
   const [editing, setEditing] = useState(null);
-  const [busy, setBusy] = useState(false);
   const blank = () => {
     const r = { visible: true, sort: (items.at(-1)?.sort || 0) + 1 };
     cfg.fields.forEach((f) => { r[f.k] = f.t === "images" ? [] : f.t === "color" ? "#2b2b2b" : f.t === "select" ? (f.options?.[0]?.value ?? "") : f.t === "number" ? "" : ""; });
     setEditing(r);
   };
-  const save = async () => { setBusy(true); await store.upsertEntity(table, editing); setBusy(false); setEditing(null); };
-  const remove = async (id) => { if (!confirm("Usunąć ten element?")) return; await store.deleteEntity(table, id); };
+  // optimistic: the row updates in the list at once, the server save runs in the background (sync indicator)
+  const save = () => { store.upsertEntity(table, editing); setEditing(null); };
+  const remove = (id) => { if (!confirm("Usunąć ten element?")) return; store.deleteEntity(table, id); };
   const move = async (i, d) => { const arr = items.map((x) => x.id); const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; await store.reorderEntity(table, arr); };
 
   return (
@@ -682,7 +682,7 @@ function EntityTab({ table }) {
         {items.map((r, i) => (
           <div className="adm-row" key={r.id}>
             <div className="adm-row__thumb" style={{ background: r.color || "#e9eaec" }}>{(r.png || r.photo || r.image || r.photos?.[0]) && <img src={r.png || r.photo || r.image || r.photos?.[0]} alt="" />}</div>
-            <div className="adm-row__title">{cfg.title(r) || "—"}{r.visible === false && <span className="adm-badge adm-badge--off" style={{ marginLeft: 8 }}>ukryte</span>}</div>
+            <div className="adm-row__title">{cfg.title(r) || "—"}{r.visible === false && <span className="adm-badge adm-badge--off" style={{ marginLeft: 8 }}>ukryte</span>}{r._pending && <span className="adm-badge adm-badge--sync" style={{ marginLeft: 8 }}>zapisuję…</span>}</div>
             <div className="adm-row__ops">
               <button className="adm-mini" onClick={() => move(i, -1)} disabled={i === 0}>↑</button>
               <button className="adm-mini" onClick={() => move(i, 1)} disabled={i === items.length - 1}>↓</button>
@@ -705,7 +705,7 @@ function EntityTab({ table }) {
               <label className="adm-check"><input type="checkbox" checked={editing.visible !== false} onChange={(e) => setEditing((x) => ({ ...x, visible: e.target.checked }))} />Widoczne na stronie</label>
               <div style={{ flex: 1 }} />
               <button className="adm-btn" onClick={() => setEditing(null)}>Anuluj</button>
-              <button className="adm-btn adm-btn--red" onClick={save} disabled={busy}>{busy ? "Zapisuję…" : "Zapisz"}</button>
+              <button className="adm-btn adm-btn--red" onClick={save}>Zapisz</button>
             </div>
           </div>
         </div>
@@ -722,12 +722,11 @@ function TripEditor({ slug }) {
   const cfg = CFG[tab];
   const rows = (store.getters[tab] || []).filter((r) => r.product_slug === slug);
   const [row, setRow] = useState(null);
-  const [busy, setBusy] = useState(false);
   if (!slug) return <div className="adm-trip"><div className="adm-note">Najpierw wpisz „Adres podstrony” (slug) i zapisz produkt — potem dodasz tu pakiety, punkty trasy i atrakcje.</div></div>;
   const fields = cfg.fields.filter((f) => f.k !== "product_slug");
   const blank = () => { const r = { product_slug: slug, visible: true, sort: (rows.at(-1)?.sort || 0) + 1 }; fields.forEach((f) => { r[f.k] = f.t === "images" ? [] : f.t === "select" ? (f.options?.[0]?.value ?? "") : ""; }); setRow(r); };
-  const save = async () => { setBusy(true); await store.upsertEntity(tab, { ...row, product_slug: slug }); setBusy(false); setRow(null); };
-  const remove = async (r) => { if (!confirm("Usunąć ten element?")) return; await store.deleteEntity(tab, r.id); };
+  const save = () => { store.upsertEntity(tab, { ...row, product_slug: slug }); setRow(null); };
+  const remove = (r) => { if (!confirm("Usunąć ten element?")) return; store.deleteEntity(tab, r.id); };
   const move = async (i, d) => { const j = i + d; if (j < 0 || j >= rows.length) return; const ids = rows.map((x) => x.id); [ids[i], ids[j]] = [ids[j], ids[i]]; await store.reorderEntity(tab, ids); };
   return (
     <div className="adm-trip">
@@ -743,7 +742,7 @@ function TripEditor({ slug }) {
       </div>
       {row ? (
         <div className="adm-trip__form">{fields.map((f) => <Field key={f.k} f={f} value={row[f.k]} onChange={(v) => setRow((x) => ({ ...x, [f.k]: v }))} />)}
-          <div className="adm-trip__foot"><button type="button" className="adm-btn" onClick={() => setRow(null)}>Anuluj</button><button type="button" className="adm-btn adm-btn--red" onClick={save} disabled={busy}>{busy ? "Zapisuję…" : "Zapisz element"}</button></div></div>
+          <div className="adm-trip__foot"><button type="button" className="adm-btn" onClick={() => setRow(null)}>Anuluj</button><button type="button" className="adm-btn adm-btn--red" onClick={save}>Zapisz element</button></div></div>
       ) : <button type="button" className="adm-btn" onClick={blank}>+ Dodaj</button>}
     </div>
   );

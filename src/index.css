@@ -241,7 +241,6 @@ html.ck-lock, html.ck-lock body { overflow: hidden !important; }
 .wa-fab svg { position: relative; z-index: 1; }
 .wa-fab__pulse { position: absolute; inset: 0; border-radius: 50%; background: #25d366; animation: waPulse 2.2s ease-out infinite; opacity: .5; }
 @keyframes waPulse { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.75); opacity: 0; } }
-.admin-page .wa-fab { display: none; }
 @media (max-width: 560px) { .wa-fab { right: 12px; bottom: 12px; width: 54px; height: 54px; } }
 @media (prefers-reduced-motion: reduce) { .wa-fab__pulse { animation: none; } }
 
@@ -276,3 +275,34 @@ html.ck-lock, html.ck-lock body { overflow: hidden !important; }
 body:has(.rz-foot) main, body:has(.ri-foot) main, body:has(.zk-foot) main, body:has(.zw-foot) main { padding-bottom: 104px; }
 body:has(.rz-foot) .wa-fab, body:has(.ri-foot) .wa-fab, body:has(.zk-foot) .wa-fab, body:has(.zw-foot) .wa-fab { bottom: 96px; }
 @media (max-width: 560px) { .rz-foot, .ri-foot, .zk-foot, .zw-foot { padding: 10px 14px; } body:has(.rz-foot) main, body:has(.ri-foot) main, body:has(.zk-foot) main, body:has(.zw-foot) main { padding-bottom: 150px; } }
+
+/* ---------- admin sync indicator (bottom-right) ---------- */
+.sync { position: fixed; right: 18px; bottom: 18px; z-index: 400; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; font-family: var(--font-display); }
+.sync--site { bottom: 92px; }
+.sync__pill { display: inline-flex; align-items: center; gap: 9px; padding: 9px 14px 9px 10px; background: #fff; color: var(--ink, #111); border: 1px solid rgba(0,0,0,.1);
+  box-shadow: 0 10px 28px rgba(0,0,0,.14); font: 700 11px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; cursor: default; transition: background .25s, color .25s, border-color .25s, transform .25s; }
+.sync__ico { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; flex: 0 0 auto; transition: background .25s; }
+.sync__txt em { font-style: normal; margin-left: 6px; padding: 2px 6px; background: rgba(0,0,0,.1); }
+.sync__txt small { font-size: 10px; opacity: .8; }
+.sync--ok .sync__ico { background: #1f9d55; color: #fff; }
+.sync--ok:not(.sync--fresh) .sync__pill { opacity: .78; }
+.sync--ok:not(.sync--fresh) .sync__pill:hover { opacity: 1; }
+.sync--fresh .sync__pill { border-color: #1f9d55; transform: translateY(-2px); }
+.sync--sync .sync__pill { background: #14161a; color: #fff; border-color: #14161a; }
+.sync--sync .sync__ico { background: rgba(255,255,255,.1); }
+.sync--sync .sync__txt em { background: var(--red); color: #fff; }
+.sync__spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); border-top-color: #fff; animation: upstSpin .7s linear infinite; }
+.sync--err .sync__pill { background: var(--red); color: #fff; border-color: var(--red); cursor: pointer; }
+.sync--err .sync__ico { background: #fff; color: var(--red); font: 900 12px/1 var(--font-display); }
+.sync--err .sync__txt em { background: rgba(255,255,255,.22); }
+.sync__list { width: min(360px, calc(100vw - 36px)); background: #fff; border-top: 3px solid var(--red); box-shadow: 0 18px 44px rgba(0,0,0,.22); padding: 12px 14px; animation: upstIn .2s ease; }
+.sync__listhead { font: 800 11px var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; }
+.sync__item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line, #e6e6e6); }
+.sync__item > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sync__item b { font: 700 12px/1.25 var(--font-body); color: var(--text, #111); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sync__item span { font: 500 11px/1.3 var(--font-body); color: var(--muted, #666); }
+.sync__retry { font: 800 10px var(--font-display); letter-spacing: .1em; text-transform: uppercase; padding: 7px 10px; background: var(--red); color: #fff; }
+.sync__x { font-size: 18px; line-height: 1; padding: 2px 6px; color: var(--muted, #666); }
+.sync__note { margin-top: 6px; font: 500 11px/1.4 var(--font-body); color: var(--muted, #666); }
+@media (max-width: 560px) { .sync { right: 10px; bottom: 10px; } .sync--site { bottom: 76px; } }
+.adm .adm-badge--sync, .adm-badge.adm-badge--sync { background: #14161a; color: #fff; animation: upstIn .2s ease; }

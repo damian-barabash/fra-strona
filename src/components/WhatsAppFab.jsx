@@ -1,11 +1,13 @@
+import { useLocation } from "react-router-dom";
 import { useStore } from "../lib/store";
 
 /* Floating WhatsApp button (bottom-right, like on the old site). Number lives in the content
    key `wa.number` — editable in the CMS (Menu → not needed; inline edit on any page shows it). */
 export default function WhatsAppFab() {
   const { t, isAdmin, cmsMode } = useStore();
+  const { pathname } = useLocation();
   const num = (t("wa.number") || "48732098423").replace(/\D/g, "");
-  if (!num) return null;
+  if (!num || pathname.startsWith("/admin")) return null;   // not in the admin panel (the sync badge lives there)
   return (
     <a className="wa-fab" href={`https://wa.me/${num}`} target="_blank" rel="noreferrer" aria-label="WhatsApp"
       onClick={(e) => isAdmin && cmsMode && e.preventDefault()}>

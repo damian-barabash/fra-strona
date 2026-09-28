@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import { Pages, preloadRoute } from "./lib/routes";
 import CookieBar from "./components/CookieBar";
 import WhatsAppFab from "./components/WhatsAppFab";
+import SyncIndicator from "./components/SyncIndicator";
 
 const { Mariusz, MediaPage, Szkola, Flota, Auto, Rezerwacja, Kalendarz, Produkty, Produkt, RezerwacjaIce,
   Cennik, Kontakt, Zakup, ZakupWyprawa, Legal, Platnosc, Voucher, DlaFirm, Admin } = Pages;
@@ -111,6 +112,7 @@ export default function App() {
     <>
       <AnimatedRoutes />
       <WhatsAppFab />
+      <SyncIndicator />
       <CookieBar />
     </>
   );
