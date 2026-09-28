@@ -172,6 +172,10 @@ for (const r of routes) {
     const { html, text, title } = await page.evaluate(() => {
       document.querySelectorAll(".reveal, .reveal-up, .reveal-left, .reveal-right, .reveal-scale").forEach((el) => el.classList.add("in"));
       document.querySelectorAll(".cookie, .cookiebar, [class*='cookie']").forEach((el) => el.remove());
+      // the snapshot must not start downloading desktop hero videos before React boots and picks
+      // the right (mobile / desktop) file — keep the markup, drop the source
+      document.querySelectorAll("video").forEach((v) => { v.removeAttribute("src"); v.removeAttribute("autoplay"); v.setAttribute("preload", "none"); });
+      document.querySelectorAll("img").forEach((i) => i.setAttribute("decoding", "async"));
       const main = document.querySelector("#root main");
       const text = main ? main.innerText.replace(/\n{3,}/g, "\n\n").trim() : "";
       return { html: `<!doctype html>\n${document.documentElement.outerHTML}`, text, title: document.title };

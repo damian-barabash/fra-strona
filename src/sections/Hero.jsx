@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "../lib/motion";
 import { useStore } from "../lib/store";
 import { EMedia, EText } from "../components/Editable";
+import { vsrc } from "../lib/video";
 
 /* Racing quotes under the tagline: a random one first, then another random one every 10 s,
    swapped with a soft blur/slide. Text lives in the CMS key hero.quotes ("Author | Quote" per line). */
@@ -42,17 +43,21 @@ export default function Hero() {
   const toggle = () => {
     const v = wrapRef.current?.querySelector("video");
     if (!v) return;
-    if (v.paused) { v.play(); setPlaying(true); } else { v.pause(); setPlaying(false); }
+    if (v.paused) { delete v.dataset.userPaused; v.play(); setPlaying(true); } else { v.dataset.userPaused = "1"; v.pause(); setPlaying(false); }
   };
 
-  // parallax on the video for depth
+  // parallax on the video for depth — once per frame, and only while the hero is on screen
   useEffect(() => {
-    const onScroll = () => {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      if (window.scrollY > window.innerHeight * 1.2) return;
       const v = wrapRef.current?.querySelector("video");
-      if (v) v.style.transform = `translateY(${Math.min(window.scrollY * 0.25, 200)}px) scale(1.06)`;
+      if (v) v.style.transform = `translate3d(0,${Math.min(window.scrollY * 0.25, 200)}px,0) scale(1.06)`;
     };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("scroll", onScroll); };
   }, []);
 
   return (
@@ -61,7 +66,7 @@ export default function Hero() {
         {editing
           ? <EMedia id="hero.video" kind="video" className="hero__vid"
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-          : <video src={media("hero.video")} autoPlay loop muted playsInline
+          : <video src={vsrc(media("hero.video"))} autoPlay loop muted playsInline
               style={{ willChange: "transform" }} />}
       </div>
       <div className="hero__scrim" />

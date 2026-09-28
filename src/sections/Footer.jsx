@@ -60,7 +60,7 @@ export default function Footer() {
       <div className="footer__flag" />
       <div className="container footer__grid">
         <div className="footer__brand">
-          <img className="footer__logo" src="/assets/ui/logo_dark.webp" alt="Fastline Racing Academy" />
+          <img className="footer__logo" loading="lazy" decoding="async" src="/assets/ui/logo_dark.webp" alt="Fastline Racing Academy" />
           <EText id="footer.eyebrow" as="div" className="footer__eyebrow" />
           <EText id="footer.tagline" as="div" className="footer__tag" />
           <Social className="footer__socials" />

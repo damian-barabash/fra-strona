@@ -9,6 +9,7 @@ import { useRevealOnScroll } from "../lib/hooks";
 import { useLightbox } from "../components/Lightbox";
 import { fmtEur, iceDateRange } from "../lib/ice";
 import "../sections/laponia.css";
+import { vsrc } from "../lib/video";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
@@ -40,7 +41,7 @@ export default function Laponia({ p }) {
         {/* ---------------- HERO ---------------- */}
         <section className="lp-hero">
           {p.video
-            ? <video className="lp-hero__vid" src={p.video} autoPlay loop muted playsInline poster={p.photo} />
+            ? <video className="lp-hero__vid" src={vsrc(p.video)} autoPlay loop muted playsInline poster={p.photo} />
             : <img className="lp-hero__vid" src={p.photo} alt="" />}
           <div className="lp-hero__frost" />
           <div className="lp-hero__scrim" />

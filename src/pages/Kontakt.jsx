@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import { sendContact } from "../lib/api";
 import Nav from "../sections/Nav";

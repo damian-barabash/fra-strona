@@ -1,29 +1,13 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion } from "./lib/motion";
 import Home from "./pages/Home";
-import Mariusz from "./pages/Mariusz";
-import MediaPage from "./pages/MediaPage";
-import Szkola from "./pages/Szkola";
-import Flota from "./pages/Flota";
-import Auto from "./pages/Auto";
-import Rezerwacja from "./pages/Rezerwacja";
-import Kalendarz from "./pages/Kalendarz";
-import Produkty from "./pages/Produkty";
-import Produkt from "./pages/Produkt";
-import RezerwacjaIce from "./pages/RezerwacjaIce";
-import Cennik from "./pages/Cennik";
-import Kontakt from "./pages/Kontakt";
-import Zakup from "./pages/Zakup";
-import ZakupWyprawa from "./pages/ZakupWyprawa";
-import Legal from "./pages/Legal";
-import Platnosc from "./pages/Platnosc";
-import Voucher from "./pages/Voucher";
-import DlaFirm from "./pages/DlaFirm";
+import { Pages, preloadRoute } from "./lib/routes";
 import CookieBar from "./components/CookieBar";
 import WhatsAppFab from "./components/WhatsAppFab";
 
-const Admin = lazy(() => import("./pages/Admin"));
+const { Mariusz, MediaPage, Szkola, Flota, Auto, Rezerwacja, Kalendarz, Produkty, Produkt, RezerwacjaIce,
+  Cennik, Kontakt, Zakup, ZakupWyprawa, Legal, Platnosc, Voucher, DlaFirm, Admin } = Pages;
 
 /* Old WordPress paths (still in Google and in old links) land on the matching new page; anything
    else that does not exist goes to the home page instead of a blank screen. */
@@ -65,7 +49,11 @@ function AnimatedRoutes() {
   }, [location, displayed, anim]);
 
   const onComplete = (def) => {
-    if (def === "cover") { setDisplayed(location); window.scrollTo(0, 0); setAnim("reveal"); }
+    // the curtain stays down until the next page's chunk is in (usually already prefetched)
+    if (def === "cover") {
+      const target = location;
+      preloadRoute(target.pathname).then(() => { setDisplayed(target); window.scrollTo(0, 0); setAnim("reveal"); });
+    }
     else if (def === "reveal") setAnim("idle");                    // the effect re-covers if the URL moved on
   };
 
@@ -73,6 +61,7 @@ function AnimatedRoutes() {
 
   return (
     <>
+      <Suspense fallback={null}>
       <Routes location={displayed}>
         <Route path="/" element={<Home />} />
         <Route path="/mariusz-miekos-racing" element={<Mariusz />} />
@@ -96,9 +85,10 @@ function AnimatedRoutes() {
         {/* legal docs — kept under the exact old-site paths so links survive the domain switch */}
         <Route path="/polityka-prywatnosci" element={<Legal slug="polityka-prywatnosci" />} />
         <Route path="/regulamin-platnosci" element={<Legal slug="regulamin-platnosci" />} />
-        <Route path="/admin" element={<Suspense fallback={<div />}><Admin /></Suspense>} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
 
       <motion.div
         className="rt-curtain" aria-hidden="true"
@@ -109,7 +99,7 @@ function AnimatedRoutes() {
       >
         <div className="rt-curtain__flag" />
         <div className="rt-curtain__streaks">{[0, 1, 2, 3].map((i) => <span key={i} style={{ ["--i"]: i }} />)}</div>
-        <img src="/assets/ui/logo_dark.webp" alt="" className="rt-curtain__logo" />
+        <img src="/assets/ui/logo_dark.webp" alt="" className="rt-curtain__logo" decoding="async" />
         <span className="rt-curtain__edge" />
       </motion.div>
     </>

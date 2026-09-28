@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
@@ -11,6 +11,7 @@ import { useRevealOnScroll } from "../lib/hooks";
 import { useLightbox } from "../components/Lightbox";
 import { fmtEur } from "../lib/ice";
 import "../sections/wyprawa.css";
+import { vsrc } from "../lib/video";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 // "Sobota, 06.06.2026 — Przylot" → { day, what }
@@ -67,7 +68,7 @@ export default function Wyprawa({ p }) {
         {/* ---------------- HERO ---------------- */}
         <section className="wy-hero">
           {p.video
-            ? <video className="wy-hero__vid" src={p.video} autoPlay loop muted playsInline poster={p.photo} />
+            ? <video className="wy-hero__vid" src={vsrc(p.video)} autoPlay loop muted playsInline poster={p.photo} />
             : <img className="wy-hero__vid" src={p.photo} alt="" />}
           <div className="wy-hero__scrim" />
           <div className="wy-hero__glow" />

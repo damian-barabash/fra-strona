@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
 import { useReveal } from "../lib/hooks";
@@ -48,7 +48,7 @@ export default function Instructors() {
                     <img className="icard__fig" src={p.photo} alt={p.name} loading="lazy" />
                   </div>
                   {p.signature && !isUrl(p.signature) && <div className="icard__sig">{p.signature}</div>}
-                  {isUrl(p.signature) && <img className="icard__sig-img" src={p.signature} alt="" />}
+                  {isUrl(p.signature) && <img className="icard__sig-img" loading="lazy" decoding="async" src={p.signature} alt="" />}
                   <div className="icard__label">{L(p, "label") || "ZAWODNIK"}</div>
                   <div className="icard__name">{p.name}</div>
                   <div className="icard__sub">{L(p, "subtitle")}</div>

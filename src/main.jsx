@@ -18,15 +18,23 @@ import "./sections/mariusz.css";
 import App from "./App";
 import { StoreProvider } from "./lib/store";
 import { LightboxProvider } from "./components/Lightbox";
+import { preloadRoute, prefetchAllWhenIdle } from "./lib/routes";
+import { autoPauseVideos } from "./lib/video";
+import { LazyMotion, domAnimation } from "./lib/motion";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+// load the current page's chunk first (the prerendered snapshot stays on screen meanwhile), then boot
+preloadRoute(window.location.pathname).then(() => ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <StoreProvider>
-        <LightboxProvider>
-          <App />
-        </LightboxProvider>
+        <LazyMotion features={domAnimation} strict>
+          <LightboxProvider>
+            <App />
+          </LightboxProvider>
+        </LazyMotion>
       </StoreProvider>
     </BrowserRouter>
   </React.StrictMode>,
-);
+));
+prefetchAllWhenIdle();
+autoPauseVideos();

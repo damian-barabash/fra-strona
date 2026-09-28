@@ -62,7 +62,7 @@
 @keyframes mzGrid { to { transform: translate(66px, 66px); } }
 
 .mz-flag { position: absolute; width: min(560px, 58vw); aspect-ratio: 1/1;
-  background: url(/assets/ui/menu_back.webp) center/contain no-repeat; opacity: .06; mix-blend-mode: multiply; }
+  background: url(/assets/ui/menu_back.webp) center/contain no-repeat; opacity: .06; }
 .mz-flag--a { top: -8%; left: -9%; animation: mzFloatA 28s ease-in-out infinite; }
 .mz-flag--b { bottom: -12%; right: -10%; animation: mzFloatB 34s ease-in-out infinite; }
 @keyframes mzFloatA { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(44px,30px) rotate(4deg); } }

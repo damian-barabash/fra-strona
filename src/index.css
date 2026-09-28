@@ -54,7 +54,6 @@ p { margin: 0; }
   background-repeat: no-repeat;
   background-position: -6% -14%;
   background-size: clamp(620px, 64%, 1180px) auto;
-  mix-blend-mode: multiply;
   opacity: 0.85;
 }
 /* a second, mirrored flag toward the right for balance */
@@ -177,7 +176,7 @@ p { margin: 0; }
 
 /* ---------- racing scroll-progress bar (lap progress) ---------- */
 .scrollprog { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 200; background: rgba(0,0,0,.05); pointer-events: none; }
-.scrollprog__fill { position: relative; height: 100%; width: 0; background: linear-gradient(90deg, var(--red-dark), var(--red)); transition: width .1s linear; }
+.scrollprog__fill { position: relative; height: 100%; width: 100%; transform: translate3d(-100%,0,0); will-change: transform; background: linear-gradient(90deg, var(--red-dark), var(--red)); }
 .scrollprog__head { position: absolute; right: -1px; top: 50%; width: 9px; height: 9px; border-radius: 50%; background: var(--red); transform: translate(50%, -50%); box-shadow: 0 0 8px 1px rgba(227,6,19,.7); }
 
 /* ---------- reveal-on-scroll: heading eyebrow gets a racing red dash ---------- */
@@ -218,8 +217,13 @@ p { margin: 0; }
 .cmsbar__hint { flex-basis: 100%; text-align: center; font: 500 11px var(--font-body); color: #9aa0a6; }
 
 /* ---------- cookie consent ---------- */
-.ckb { position: fixed; z-index: 340; left: 16px; bottom: 16px; width: min(440px, calc(100vw - 32px)); background: #fff; color: var(--text);
-  box-shadow: 0 30px 70px rgba(0,0,0,.28); border-top: 4px solid var(--red); overflow: hidden; }
+/* full-screen wall: covers nav, menus and the WhatsApp button until the visitor chooses */
+.ckw { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px;
+  background: rgba(10,11,13,.72); backdrop-filter: blur(8px) saturate(.8); -webkit-backdrop-filter: blur(8px) saturate(.8);
+  overscroll-behavior: contain; touch-action: none; }
+html.ck-lock, html.ck-lock body { overflow: hidden !important; }
+.ckb { position: relative; width: min(480px, 100%); max-height: calc(100svh - 32px); overflow: auto; touch-action: pan-y; background: #fff; color: var(--text);
+  box-shadow: 0 30px 70px rgba(0,0,0,.4); border-top: 4px solid var(--red); }
 .ckb__flag { position: absolute; top: 0; right: 0; bottom: 0; width: 34px; background-image: repeating-conic-gradient(#14161a 0% 25%, #fff 0% 50%); background-size: 17px 17px; opacity: .9; }
 .ckb__body { padding: 22px 60px 22px 24px; }
 .ckb__eyebrow { font: 700 10px var(--font-display); letter-spacing: .24em; color: var(--red); }
@@ -228,7 +232,7 @@ p { margin: 0; }
 .ckb__more { color: var(--red); text-decoration: underline; }
 .ckb__btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .ckb__btns .btn { padding: 12px 16px; font-size: 11.5px; }
-@media (max-width: 560px) { .ckb { left: 8px; bottom: 8px; width: calc(100vw - 16px); } .ckb__body { padding: 18px 50px 18px 18px; } }
+@media (max-width: 560px) { .ckb__body { padding: 18px 50px 18px 18px; } }
 
 /* ---------- floating WhatsApp button (bottom-right, like the old site) ---------- */
 .wa-fab { position: fixed; right: 18px; bottom: 18px; z-index: 330; width: 60px; height: 60px; border-radius: 50%; background: #25d366; display: grid; place-items: center;
@@ -239,8 +243,6 @@ p { margin: 0; }
 @keyframes waPulse { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.75); opacity: 0; } }
 .admin-page .wa-fab { display: none; }
 @media (max-width: 560px) { .wa-fab { right: 12px; bottom: 12px; width: 54px; height: 54px; } }
-/* keep the cookie card clear of the WhatsApp button on phones */
-@media (max-width: 560px) { .ckb { bottom: 78px; } }
 @media (prefers-reduced-motion: reduce) { .wa-fab__pulse { animation: none; } }
 
 /* ---------- forms: required-field marker ---------- */
@@ -268,7 +270,7 @@ p { margin: 0; }
 /* checkout footer bar glued to the bottom of the screen (every configurator / checkout) */
 .rz-foot, .ri-foot, .zk-foot, .zw-foot {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; margin: 0;
-  background: rgba(255,255,255,.96); backdrop-filter: blur(8px); border: none; border-top: 1px solid var(--line);
+  background: rgba(255,255,255,.97); border: none; border-top: 1px solid var(--line);
   box-shadow: 0 -12px 40px rgba(0,0,0,.08); padding: 12px var(--gut);
 }
 body:has(.rz-foot) main, body:has(.ri-foot) main, body:has(.zk-foot) main, body:has(.zw-foot) main { padding-bottom: 104px; }

@@ -192,7 +192,7 @@ function HeroScene() {
 
         {/* signature drawn on scroll + role */}
         <div className="mz-plate">
-          <img className="mz-sign" src={media("mz.sign")} alt={t("mz.name")} />
+          <img className="mz-sign" loading="lazy" decoding="async" src={media("mz.sign")} alt={t("mz.name")} />
           <EText id="mz.role" as="span" className="mz-role" />
           {/* nine cups — one per Polish title — each one rises onto the shelf a little further into the scroll */}
           <div className="mz-hcups" aria-label={t("mz.cupsLabel")}>

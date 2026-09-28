@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
 import { useReveal } from "../lib/hooks";

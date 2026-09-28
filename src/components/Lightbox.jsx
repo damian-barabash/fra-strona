@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "../lib/motion";
 import "../sections/lightbox.css";
 
 /* Fullscreen photo viewer shared by every gallery on the site (products, Laponia, cars…).

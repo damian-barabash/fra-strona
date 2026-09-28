@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
 import { useReveal } from "../lib/hooks";
@@ -28,18 +28,24 @@ export default function Fleet() {
   const [headRef, headIn] = useReveal();
 
   // subtle scroll parallax on the badge (hook must run before any early return)
+  // (once per frame, and only while the slider is near the viewport)
   useEffect(() => {
-    const el = badgeRef.current;
-    const onScroll = () => {
+    let raf = 0, near = false;
+    const update = () => {
+      raf = 0;
+      const el = badgeRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const p = (rect.top + rect.height / 2 - window.innerHeight / 2) / window.innerHeight;
       el.style.setProperty("--pl", `${-p * 40}px`);
     };
+    const onScroll = () => { if (near && !raf) raf = requestAnimationFrame(update); };
+    const io = new IntersectionObserver(([e]) => { near = e.isIntersecting; if (near) onScroll(); }, { rootMargin: "200px 0px" });
+    const host = badgeRef.current?.closest("section");
+    if (host) io.observe(host);
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    return () => { cancelAnimationFrame(raf); io.disconnect(); window.removeEventListener("scroll", onScroll); };
+  }, [cars.length]);
 
   if (!cars.length) return <section className="section section--paper" id="flota" />;
   const n = cars.length;
@@ -142,7 +148,7 @@ export default function Fleet() {
             {photos.slice(0, 3).map((p, i) => (
               // click shows the photo in the stage; the ⤢ badge opens it fullscreen
               <span key={i} className="fleet__thumb">
-                <img src={p} alt="" onClick={() => setThumb(i)}
+                <img src={p} alt="" loading="lazy" decoding="async" onClick={() => setThumb(i)}
                   style={{ outline: thumb === i && car.png ? "2px solid var(--red)" : "none" }} loading="lazy" />
                 <button className="fleet__zoom" aria-label="Powiększ"
                   onClick={(e) => { e.stopPropagation(); openLightbox(photos, i); }}>⤢</button>

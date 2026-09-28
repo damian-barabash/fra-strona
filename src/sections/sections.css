@@ -2,6 +2,8 @@
 .nav { position: fixed; inset: 0 0 auto 0; z-index: 100; background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.07); transition: background .3s ease, box-shadow .3s ease, backdrop-filter .3s ease; }
 /* frosted / matte look once scrolled — subtle */
 .nav--scrolled { background: rgba(255,255,255,.72); -webkit-backdrop-filter: blur(10px) saturate(1.1); backdrop-filter: blur(10px) saturate(1.1); box-shadow: 0 6px 22px rgba(0,0,0,.09); }
+/* phones: a live blur under a fixed header is re-rendered on every scroll frame — use an almost-opaque plate instead */
+@media (max-width: 900px), (hover: none) { .nav--scrolled { background: rgba(255,255,255,.96); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 /* The header draws its OWN checkered flag: menu_back.webp is nearly white and disappears on a
    white bar. It clips itself — the nav must NOT be overflow:hidden, or the "O NAS" dropdown
    would be cut off by the bar. */
@@ -170,7 +172,7 @@
 /* ---- car slider control bar (home fleet + every CarSlider): flush under the car window ---- */
 .carnav { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; margin-top: 0; }
 .carnav__btn, .carnav__more { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 58px; padding: 0 18px; font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: clamp(10px, .8vw, 12px); line-height: 1.2; transition: background .2s, color .2s; }
-.carnav__btn { background: #1c1e23; color: #fff; width: 100%; height: auto; border-radius: 0; box-shadow: none; transform: none !important; }
+.carnav__btn { min-width: 0; background: #1c1e23; color: #fff; width: 100%; height: auto; border-radius: 0; box-shadow: none; transform: none !important; }
 .carnav__btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .carnav__btn i { font-style: normal; font-size: 22px; line-height: 1; flex: 0 0 auto; transition: transform .2s; }
 .carnav__btn--prev { justify-content: flex-start; text-align: left; }
@@ -180,7 +182,7 @@
 .carnav__more { position: static; background: #fff; color: var(--ink); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 0 clamp(14px, 2vw, 28px); white-space: nowrap; }
 .carnav__more:hover { background: var(--ink); color: #fff; }
 @media (max-width: 560px) {
-  .carnav { grid-template-columns: 1fr 1fr; }
+  .carnav { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .carnav__btn, .carnav__more { min-height: 50px; font-size: 10px; padding: 0 12px; }
   .carnav__more { grid-column: 1 / -1; order: 3; border: none; border-top: 1px solid var(--line); background: var(--ink); color: #fff; }
 }
@@ -407,7 +409,7 @@
   .nav__burger span, .nav__burger span::before, .nav__burger span::after { background: var(--text); }
 }
 @media (max-width: 1080px) {
-  .fleet__grid, .fleet__bottom { grid-template-columns: 1fr; }
+  .fleet__grid, .fleet__bottom { grid-template-columns: minmax(0, 1fr); }
   .fleet__side { padding-top: 8px; }
   .events__grid { grid-template-columns: 1fr; }
   .events__panel { position: static; }
@@ -475,7 +477,8 @@
 .founder__btns { display: flex; gap: 12px; flex-wrap: wrap; }
 
 /* thumbnails of every car under the control bar — makes the slider obvious */
-.carthumbs { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.fleet__stagewrap, .fleet__side { min-width: 0; }
+.carthumbs { max-width: 100%; display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
 .carthumbs::-webkit-scrollbar { display: none; }
 .carthumb { flex: 0 0 66px; height: 50px; display: grid; place-items: center; padding: 4px 6px; border: 2px solid transparent; border-radius: 3px; opacity: .6; transition: opacity .2s, transform .2s, border-color .2s; }
 .carthumb img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0,0,0,.35)); }

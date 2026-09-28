@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
 import { processUpload } from "../lib/api";
 import UploadStatus from "./UploadStatus";
+import { vsrc } from "../lib/video";
 
 /* ---------- tiny HTML sanitiser for CMS rich text (b/i/u/span/color/size/align only) ---------- */
 const ALLOWED = /^(b|strong|i|em|u|s|span|br|font|mark|a|div|p)$/i;
@@ -87,7 +88,7 @@ export function EMedia({ id, kind = "image", className, style, videoProps = {}, 
   };
 
   const media_el = kind === "video"
-    ? <video className={className} style={style} src={url} autoPlay loop muted playsInline {...videoProps} />
+    ? <video className={className} style={style} src={vsrc(url)} autoPlay loop muted playsInline {...videoProps} />
     : <img className={className} style={style} src={url} alt={alt} loading="lazy" {...imgProps} />;
 
   if (!editing) return media_el;

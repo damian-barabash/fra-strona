@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion } from "../lib/motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
@@ -11,6 +11,7 @@ import { useReveal, useRevealOnScroll, useCountUp } from "../lib/hooks";
 import { useLightbox } from "../components/Lightbox";
 import { fmtZl } from "../lib/flota";
 import "../sections/d2r.css";
+import { vsrc } from "../lib/video";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 // "SZYBKOŚĆ — Znacznie poprawisz…" → { head, body }
@@ -45,7 +46,7 @@ export default function D2R({ p }) {
         {/* ---------------- HERO ---------------- */}
         <section className="d2-hero">
           {p.video
-            ? <video className="d2-hero__vid" src={p.video} autoPlay loop muted playsInline poster={p.photo} />
+            ? <video className="d2-hero__vid" src={vsrc(p.video)} autoPlay loop muted playsInline poster={p.photo} />
             : <img className="d2-hero__vid" src={p.photo} alt="" />}
           <div className="d2-hero__scrim" />
           <div className="d2-hero__grid" />
@@ -110,7 +111,7 @@ export default function D2R({ p }) {
                   ? <span key={i} className="d2-coach__sign reveal-up rv-d3">{par}</span>
                   : <p key={i} className={`lead reveal-up rv-d${i + 2}`}>{par}</p>
               ))}
-              <img className="d2-coach__signature reveal-up rv-d4" src="/assets/mariusz/signature-black.webp" alt="" />
+              <img className="d2-coach__signature reveal-up rv-d4" loading="lazy" decoding="async" src="/assets/mariusz/signature-black.webp" alt="" />
             </div>
           </div>
         </section>
@@ -189,7 +190,7 @@ export default function D2R({ p }) {
             </div>
 
             <aside className="d2-price reveal-scale rv-d2">
-              <img className="d2-price__logo" src="/assets/d2r/logo-red.webp" alt="" />
+              <img className="d2-price__logo" loading="lazy" decoding="async" src="/assets/d2r/logo-red.webp" alt="" />
               <span className="d2-price__l">{t("d2r.priceLabel")}</span>
               <div className="d2-price__v">{fmtZl(p.price)}<i>{t("d2r.net")}</i></div>
               <div className="d2-price__rows">
