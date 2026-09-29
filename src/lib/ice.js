@@ -31,14 +31,32 @@ export const iceDateRange = (w, lang = "pl") => {
   return `${short(a)} – ${short(b)} ${b.getFullYear()}`;
 };
 
-/** Every start date inside the window where a `days`-long stay still fits. */
+/** Days marked in the panel as sold out entirely (`ice_windows.sold_out`, ISO dates). */
+export const soldOutSet = (w) => new Set((Array.isArray(w?.sold_out) ? w.sold_out : []).map((d) => String(d).slice(0, 10)));
+
+/** Every start date inside the window where a `days`-long stay still fits and touches no sold-out day. */
 export const startDates = (w, days) => {
   if (!w) return [];
+  const sold = soldOutSet(w);
+  const n = Math.max(1, days);
   const out = [];
   let cur = w.date_from;
   while (cur <= w.date_to) {
-    if (addDays(cur, Math.max(1, days) - 1) <= w.date_to) out.push(cur);
+    const last = addDays(cur, n - 1);
+    let free = last <= w.date_to;
+    for (let i = 0; free && i < n; i++) if (sold.has(addDays(cur, i))) free = false;
+    if (free) out.push(cur);
     cur = addDays(cur, 1);
   }
+  return out;
+};
+
+/** First-of-month dates for every month the window touches. */
+export const windowMonths = (w) => {
+  const from = parseISO(w?.date_from), to = parseISO(w?.date_to);
+  if (!from || !to) return [];
+  const out = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  while (cur <= to) { out.push(new Date(cur)); cur.setMonth(cur.getMonth() + 1); }
   return out;
 };

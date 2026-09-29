@@ -291,3 +291,14 @@
 .adm-admin__pos { font: 600 12px var(--font-body); color: #2c2f36; background: #fff3d6; padding: 3px 8px; }
 .adm-admin__grid { grid-template-columns: 1fr 1fr 1fr; }
 @media (max-width: 720px) { .adm-admin__grid { grid-template-columns: 1fr; } }
+
+/* Laponia — sold-out day picker */
+.adm-so { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.adm-so__m > b { display: block; font: 800 11px var(--font-display); letter-spacing: .12em; margin-bottom: 8px; }
+.adm-so__g { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.adm-so__g > i { font: 700 9px var(--font-display); font-style: normal; letter-spacing: .08em; color: var(--muted); text-align: center; padding-bottom: 3px; }
+.adm-so__d { aspect-ratio: 1; border: 1px solid #d9dbe0; background: #fff; font: 700 12px var(--font-display); cursor: pointer; transition: background .15s, color .15s; }
+.adm-so__d:hover:not(:disabled) { border-color: #e30613; }
+.adm-so__d:disabled { background: #f1f2f4; color: #c3c6cc; border-color: #f1f2f4; cursor: default; }
+.adm-so__d.on { background: #e30613; border-color: #e30613; color: #fff; text-decoration: line-through; }
+.adm-so__foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; font-size: 12px; }

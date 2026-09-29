@@ -10,6 +10,7 @@ import { useLightbox } from "../components/Lightbox";
 import { fmtEur, iceDateRange } from "../lib/ice";
 import "../sections/laponia.css";
 import { vsrc } from "../lib/video";
+import IceCalendar from "../components/IceCalendar";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
@@ -170,6 +171,20 @@ export default function Laponia({ p }) {
             {L(p, "price_note") && <p className="lp-note lp-slab lp-slab--tight reveal-up">{L(p, "price_note")}</p>}
           </div>
         </section>
+
+        {/* ---------------- AVAILABILITY (read-only season calendar; sold-out days from the panel) ---------------- */}
+        {window_ && (
+          <section className="lp-sec lp-avail" id="lp-terminy">
+            <div className="container">
+              <span className="lp-kicker reveal-up">{iceDateRange(window_, lang)}</span>
+              <h2 className="lp-h2 reveal-up rv-d1">{t("ice.availTitle")}</h2>
+              <p className="lp-pkgs__sub reveal-up rv-d2">{t("ice.availSub")}</p>
+              <div className="lp-avail__board reveal-up rv-d3">
+                <IceCalendar win={window_} lang={lang} t={t} readOnly />
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ---------------- GALLERY ---------------- */}
         {!!gallery.length && (

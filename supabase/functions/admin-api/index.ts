@@ -239,6 +239,12 @@ async function createIceBooking(p: any) {
   const end = new Date(start + "T00:00:00"); end.setDate(end.getDate() + days - 1);
   const endIso = end.toISOString().slice(0, 10);
   if (start < win.date_from || endIso > win.date_to) return json({ ok: false, error: "date outside window" }, 400);
+  // days marked sold out in the panel — no stay may touch one
+  const sold = new Set(((win.sold_out ?? []) as string[]).map((d) => String(d).slice(0, 10)));
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + i);
+    if (sold.has(d.toISOString().slice(0, 10))) return json({ ok: false, error: "Wybrany termin jest już wyprzedany — wybierz inny dzień." }, 409);
+  }
   const total = (pkg.price ?? 0) * persons;
   return startPayment({
     kind: "ice", product_slug: "ice-driving-laponia", package_id: pkg.id, package_name: pkg.name_pl, days, persons,

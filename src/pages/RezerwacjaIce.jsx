@@ -5,7 +5,8 @@ import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
-import { fmtEur, fmtDay, addDays, parseISO, isoOf, startDates, iceDateRange } from "../lib/ice";
+import { fmtEur, fmtDay, addDays, startDates, iceDateRange } from "../lib/ice";
+import IceCalendar from "../components/IceCalendar";
 import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
 import { fmtGross } from "../lib/vat";
@@ -16,7 +17,6 @@ import "../sections/productcard.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const lines = (x) => String(x || "").split("\n").map((v) => v.trim()).filter(Boolean);
-const WD = { pl: ["PN", "WT", "ŚR", "CZ", "PT", "SB", "ND"], en: ["MO", "TU", "WE", "TH", "FR", "SA", "SU"] };
 
 /* The ice configurator: PAKIET → TERMIN (a start date inside the CMS season window) → DANE → PŁATNOŚĆ.
    Prices and the window come from the CMS; the total is recomputed server-side on submit. */
@@ -46,6 +46,8 @@ export default function RezerwacjaIce() {
 
   const days = pkg?.days || 1;
   const allowed = useMemo(() => new Set(startDates(win, days)), [win, days]);
+  // a package switch (or a day sold out meanwhile) can strand the picked start date — drop it
+  useEffect(() => { if (start && win && !allowed.has(start)) setStart(""); }, [allowed, start, win]);
   const end = start ? addDays(start, days - 1) : "";
   const total = (pkg?.price || 0) * persons;
 
@@ -137,7 +139,7 @@ export default function RezerwacjaIce() {
                     {t("ice.windowNote")} <b>{iceDateRange(win, lang)}</b>
                     {days > 1 && <> · {t("ice.daysNote").replace("{n}", days)}</>}
                   </p>
-                  <IceCalendar win={win} allowed={allowed} days={days} start={start} onPick={setStart} lang={lang} />
+                  <IceCalendar win={win} allowed={allowed} days={days} start={start} onPick={setStart} lang={lang} t={t} />
                   {start && (
                     <div className="ri-range">
                       <span>{t("ice.stay")}</span>
@@ -211,70 +213,6 @@ export default function RezerwacjaIce() {
       </main>
       <Footer />
       <CmsBar />
-    </div>
-  );
-}
-
-/* month grid limited to the season window; a hovered day previews the whole stay */
-function IceCalendar({ win, allowed, days, start, onPick, lang }) {
-  const [hover, setHover] = useState("");
-  if (!win) return null;
-
-  const from = parseISO(win.date_from), to = parseISO(win.date_to);
-  if (!from || !to) return null;
-
-  // every month the window touches
-  const months = [];
-  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
-  while (cur <= to) {
-    months.push(new Date(cur));
-    cur.setMonth(cur.getMonth() + 1);
-  }
-
-  const inStay = (iso, anchor) => {
-    if (!anchor) return false;
-    return iso >= anchor && iso <= addDays(anchor, days - 1);
-  };
-
-  return (
-    <div className="ri-cal">
-      {months.map((m) => {
-        const y = m.getFullYear(), mo = m.getMonth();
-        const lead = (new Date(y, mo, 1).getDay() + 6) % 7;
-        const dim = new Date(y, mo + 1, 0).getDate();
-        const cells = [];
-        for (let i = 0; i < lead; i++) cells.push(null);
-        for (let d = 1; d <= dim; d++) cells.push(new Date(y, mo, d));
-        return (
-          <div className="ri-cal__month" key={`${y}-${mo}`}>
-            <div className="ri-cal__name">
-              {m.toLocaleDateString(lang === "en" ? "en-GB" : "pl-PL", { month: "long", year: "numeric" }).toUpperCase()}
-            </div>
-            <div className="ri-cal__wd">{WD[lang === "en" ? "en" : "pl"].map((w) => <span key={w}>{w}</span>)}</div>
-            <div className="ri-cal__grid">
-              {cells.map((d, i) => {
-                if (!d) return <span key={`e${i}`} className="ri-day ri-day--empty" />;
-                const iso = isoOf(d);
-                const ok = allowed.has(iso);
-                const sel = inStay(iso, start);
-                const pre = !start && inStay(iso, hover);
-                return (
-                  <button
-                    key={iso}
-                    className={`ri-day ${ok ? "is-free" : "is-off"} ${sel ? "is-sel" : ""} ${pre ? "is-pre" : ""}`}
-                    disabled={!ok}
-                    onMouseEnter={() => ok && setHover(iso)}
-                    onMouseLeave={() => setHover("")}
-                    onClick={() => ok && onPick(iso)}
-                  >
-                    {d.getDate()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }

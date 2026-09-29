@@ -83,3 +83,24 @@ test("gallery photos open fullscreen (products + cars)", async ({ page }) => {
   await page.locator(".lbx__x").click();
   await expect(page.locator(".lbx")).toHaveCount(0);
 });
+
+test("sold-out days (panel) are red on the product page and blocked in the configurator", async ({ page }) => {
+  // mock the season row — the live table is not touched
+  await page.route("**/rest/v1/ice_windows*", async (route) => {
+    const res = await route.fetch();
+    const rows = await res.json();
+    rows.forEach((r) => { r.sold_out = ["2027-02-24", "2027-03-03"]; });
+    await route.fulfill({ response: res, json: rows });
+  });
+  await page.goto("/produkty/ice-driving-laponia");
+  await page.waitForSelector(".lp-avail .ri-day.is-sold");
+  await expect(page.locator(".lp-avail .ri-day.is-sold")).toHaveCount(2);
+  await expect(page.locator(".lp-avail button")).toHaveCount(0);   // preview only
+
+  await page.locator(".lp-pkg__btn").first().click();                // 2-day package
+  await page.waitForSelector(".ri-cal .ri-day.is-sold");
+  await expect(page.locator(".ri-day.is-sold[disabled]")).toHaveCount(2);
+  // 23 Feb and 2 Mar would run into a sold-out day; 10 Mar leaves the window
+  for (const d of ["23", "2", "10"]) await expect(page.locator(".ri-day.is-nofit", { hasText: new RegExp(`^${d}$`) }).first()).toBeDisabled();
+  await expect(page.locator(".ri-legend")).toContainText("WYPRZEDANE");
+});

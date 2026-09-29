@@ -6,6 +6,7 @@ import UploadStatus from "../components/UploadStatus";
 import { MENU, MENU_HREF, hrefKey } from "../lib/menu";
 import { TRACKS, trackLabel, fmtZl } from "../lib/flota";
 import { TERM_TYPES } from "../lib/kalendarz";
+import { windowMonths, isoOf } from "../lib/ice";
 import "./admin.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
@@ -166,8 +167,8 @@ const CFG = {
       { k: "currency", t: "select", l: "Waluta", options: [{ value: "EUR", label: "EUR" }, { value: "PLN", label: "PLN" }] }, { k: "desc_pl", t: "textarea", l: "Opis pakietu" }],
     title: (r) => `${r.name_pl || ""} · ${r.days || 0} dni · ${r.price || 0} ${r.currency || "EUR"}` },
   ice_windows: { label: "Laponia — sezon", icon: "snow",
-    note: "Okno sezonu lodowego — klient może wybrać dowolny dzień startu, o ile cały pakiet mieści się w zakresie. Sezon automatycznie pokazuje się w kalendarzu i na głównej.",
-    fields: [{ k: "label_pl", t: "text", l: "Nazwa sezonu (np. Sezon lodowy 2027 · Kuusamo)" }, { k: "date_from", t: "date", l: "Data od" }, { k: "date_to", t: "date", l: "Data do" }, { k: "capacity", t: "number", l: "Liczba miejsc" }],
+    note: "Okno sezonu lodowego — klient może wybrać dowolny dzień startu, o ile cały pakiet mieści się w zakresie i nie trafia na dzień wyprzedany. Dni wyprzedane są czerwone w konfiguratorze i w kalendarzu na stronie Laponii. Sezon automatycznie pokazuje się w kalendarzu i na głównej.",
+    fields: [{ k: "label_pl", t: "text", l: "Nazwa sezonu (np. Sezon lodowy 2027 · Kuusamo)" }, { k: "date_from", t: "date", l: "Data od" }, { k: "date_to", t: "date", l: "Data do" }, { k: "capacity", t: "number", l: "Liczba miejsc" }, { k: "sold_out", t: "soldout", l: "Dni wyprzedane (kliknij dzień — czerwony = brak miejsc)" }],
     title: (r) => `${r.label_pl || "Sezon"} · ${r.date_from || "?"} → ${r.date_to || "?"}` },
   programs: { label: "Kafelki na głównej", icon: "grid", note: "Sześć kafelków „Poczuj się jak prawdziwy kierowca wyścigowy”. Link może być wewnętrzny (/voucher, /dla-firm, /produkty/stage-3) albo pełnym adresem.",
     fields: [{ k: "tag_pl", t: "text", l: "Etykieta (np. SZKOLENIA)" }, { k: "title_pl", t: "text", l: "Tytuł" }, { k: "desc_pl", t: "textarea", l: "Krótki opis" }, { k: "image", t: "image", l: "Zdjęcie (kafelek)" }, { k: "link", t: "text", l: "Link (np. /voucher)" }],
@@ -667,7 +668,7 @@ function EntityTab({ table }) {
   const [editing, setEditing] = useState(null);
   const blank = () => {
     const r = { visible: true, sort: (items.at(-1)?.sort || 0) + 1 };
-    cfg.fields.forEach((f) => { r[f.k] = f.t === "images" ? [] : f.t === "color" ? "#2b2b2b" : f.t === "select" ? (f.options?.[0]?.value ?? "") : f.t === "number" ? "" : ""; });
+    cfg.fields.forEach((f) => { r[f.k] = f.t === "images" || f.t === "soldout" ? [] : f.t === "color" ? "#2b2b2b" : f.t === "select" ? (f.options?.[0]?.value ?? "") : f.t === "number" ? "" : ""; });
     setEditing(r);
   };
   // optimistic: the row updates in the list at once, the server save runs in the background (sync indicator)
@@ -698,7 +699,7 @@ function EntityTab({ table }) {
           <div className="adm-form">
             <div className="adm-form__head"><h3>{editing.id ? "Edytuj" : "Nowy element"}</h3><button className="adm-x" onClick={() => setEditing(null)}>×</button></div>
             <div className="adm-form__body">
-              {cfg.fields.filter((f) => !f.trip || editing.theme === "wyprawa").map((f) => <Field key={f.k} f={f} value={editing[f.k]} onChange={(v) => setEditing((e) => ({ ...e, [f.k]: v }))} />)}
+              {cfg.fields.filter((f) => !f.trip || editing.theme === "wyprawa").map((f) => <Field key={f.k} f={f} row={editing} value={editing[f.k]} onChange={(v) => setEditing((e) => ({ ...e, [f.k]: v }))} />)}
               {table === "products" && editing.theme === "wyprawa" && <TripEditor slug={editing.slug} />}
             </div>
             <div className="adm-form__foot">
@@ -749,7 +750,7 @@ function TripEditor({ slug }) {
 }
 
 /* ============ FIELD ============ */
-function Field({ f, value, onChange }) {
+function Field({ f, value, onChange, row }) {
   const { adminCall } = useStore();
   const [st, setSt] = useState(null);     // upload status: convert → upload → done / error
   const up = !!st && (st.stage === "convert" || st.stage === "upload");
@@ -768,6 +769,7 @@ function Field({ f, value, onChange }) {
   if (f.t === "select") return (<label className="adm-f"><span>{f.l}</span><select className="adm-select" value={value || f.options?.[0]?.value || ""} onChange={(e) => onChange(e.target.value)}>{(f.options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>);
   if (f.t === "color") return (<label className="adm-f"><span>{f.l}</span><div className="adm-color"><input type="color" value={value || "#2b2b2b"} onChange={(e) => onChange(e.target.value)} /><input value={value || ""} onChange={(e) => onChange(e.target.value)} placeholder="#RRGGBB" /></div></label>);
   if (f.t === "image") return (<label className="adm-f"><span>{f.l}</span><div className="adm-img">{value && <img src={value} alt="" />}<input type="file" accept="image/*,video/*" onChange={async (e) => { const file = e.target.files?.[0]; if (!file) return; const url = await upload(file); if (url) onChange(url); }} /><UploadStatus st={st} />{value && <button type="button" className="adm-mini adm-mini--del" onClick={() => onChange("")}>Usuń</button>}</div></label>);
+  if (f.t === "soldout") return <SoldOutField f={f} value={value} onChange={onChange} row={row} />;
   if (f.t === "images") {
     const arr = Array.isArray(value) ? value : [];
     return (<label className="adm-f"><span>{f.l}</span><div className="adm-imgs">{arr.map((u, i) => <div className="adm-imgs__item" key={i}><img src={u} alt="" /><button type="button" onClick={() => onChange(arr.filter((_, j) => j !== i))}>×</button></div>)}
@@ -777,6 +779,45 @@ function Field({ f, value, onChange }) {
   return null;
 }
 
+
+/* Laponia season — click days to mark them sold out (stored as ISO dates in `ice_windows.sold_out`) */
+const SO_WD = ["PN", "WT", "ŚR", "CZ", "PT", "SB", "ND"];
+function SoldOutField({ f, value, onChange, row }) {
+  const arr = (Array.isArray(value) ? value : []).map((d) => String(d).slice(0, 10));
+  const set = new Set(arr);
+  const months = windowMonths(row);
+  const toggle = (iso) => onChange(set.has(iso) ? arr.filter((d) => d !== iso) : [...arr, iso].sort());
+  return (
+    <div className="adm-f"><span>{f.l}</span>
+      {!months.length ? <div className="adm-note">Najpierw ustaw „Data od” i „Data do”.</div> : (
+        <div className="adm-so">
+          {months.map((m) => {
+            const y = m.getFullYear(), mo = m.getMonth();
+            const lead = (new Date(y, mo, 1).getDay() + 6) % 7, dim = new Date(y, mo + 1, 0).getDate();
+            const cells = [...Array(lead).fill(null), ...Array.from({ length: dim }, (_, i) => new Date(y, mo, i + 1))];
+            return (
+              <div className="adm-so__m" key={`${y}-${mo}`}>
+                <b>{m.toLocaleDateString("pl-PL", { month: "long", year: "numeric" }).toUpperCase()}</b>
+                <div className="adm-so__g">
+                  {SO_WD.map((w) => <i key={w}>{w}</i>)}
+                  {cells.map((d, i) => {
+                    if (!d) return <span key={`e${i}`} />;
+                    const iso = isoOf(d), inWin = iso >= row.date_from && iso <= row.date_to;
+                    return <button type="button" key={iso} disabled={!inWin} className={`adm-so__d ${set.has(iso) ? "on" : ""}`} onClick={() => toggle(iso)} title={set.has(iso) ? "Wyprzedane — kliknij, aby zwolnić" : "Wolne — kliknij, aby oznaczyć jako wyprzedane"}>{d.getDate()}</button>;
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          <div className="adm-so__foot">
+            <span>Wyprzedane: <b>{arr.filter((d) => d >= row.date_from && d <= row.date_to).length}</b> dni</span>
+            {!!arr.length && <button type="button" className="adm-mini" onClick={() => onChange([])}>Wyczyść</button>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ============ ADMINS TAB ============ */
 function AdminsTab() {
