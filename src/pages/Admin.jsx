@@ -661,6 +661,18 @@ function SocialRow({ k, raw, saveContent }) {
 }
 
 /* ============ ENTITY TAB ============ */
+/* form values → column types: an empty input is "" but boolean / integer / date columns reject "" */
+const cleanRow = (fields, row) => {
+  const r = { ...row };
+  fields.forEach((f) => {
+    if (!(f.k in r)) return;
+    if (f.t === "check") r[f.k] = !!r[f.k];
+    else if (f.t === "number") r[f.k] = r[f.k] === "" || r[f.k] == null || Number.isNaN(Number(r[f.k])) ? null : Number(r[f.k]);
+    else if (f.t === "date") r[f.k] = r[f.k] ? r[f.k] : null;
+  });
+  return r;
+};
+
 function EntityTab({ table }) {
   const store = useStore();
   const items = store.getters[table] || [];
@@ -668,11 +680,11 @@ function EntityTab({ table }) {
   const [editing, setEditing] = useState(null);
   const blank = () => {
     const r = { visible: true, sort: (items.at(-1)?.sort || 0) + 1 };
-    cfg.fields.forEach((f) => { r[f.k] = f.t === "images" || f.t === "soldout" ? [] : f.t === "color" ? "#2b2b2b" : f.t === "select" ? (f.options?.[0]?.value ?? "") : f.t === "number" ? "" : ""; });
+    cfg.fields.forEach((f) => { r[f.k] = f.t === "images" || f.t === "soldout" ? [] : f.t === "check" ? false : f.t === "color" ? "#2b2b2b" : f.t === "select" ? (f.options?.[0]?.value ?? "") : f.t === "number" ? "" : ""; });
     setEditing(r);
   };
   // optimistic: the row updates in the list at once, the server save runs in the background (sync indicator)
-  const save = () => { store.upsertEntity(table, editing); setEditing(null); };
+  const save = () => { store.upsertEntity(table, cleanRow(cfg.fields, editing)); setEditing(null); };
   const remove = (id) => { if (!confirm("Usunąć ten element?")) return; store.deleteEntity(table, id); };
   const move = async (i, d) => { const arr = items.map((x) => x.id); const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; await store.reorderEntity(table, arr); };
 
@@ -725,8 +737,8 @@ function TripEditor({ slug }) {
   const [row, setRow] = useState(null);
   if (!slug) return <div className="adm-trip"><div className="adm-note">Najpierw wpisz „Adres podstrony” (slug) i zapisz produkt — potem dodasz tu pakiety, punkty trasy i atrakcje.</div></div>;
   const fields = cfg.fields.filter((f) => f.k !== "product_slug");
-  const blank = () => { const r = { product_slug: slug, visible: true, sort: (rows.at(-1)?.sort || 0) + 1 }; fields.forEach((f) => { r[f.k] = f.t === "images" ? [] : f.t === "select" ? (f.options?.[0]?.value ?? "") : ""; }); setRow(r); };
-  const save = () => { store.upsertEntity(tab, { ...row, product_slug: slug }); setRow(null); };
+  const blank = () => { const r = { product_slug: slug, visible: true, sort: (rows.at(-1)?.sort || 0) + 1 }; fields.forEach((f) => { r[f.k] = f.t === "images" ? [] : f.t === "check" ? false : f.t === "select" ? (f.options?.[0]?.value ?? "") : ""; }); setRow(r); };
+  const save = () => { store.upsertEntity(tab, cleanRow(fields, { ...row, product_slug: slug })); setRow(null); };
   const remove = (r) => { if (!confirm("Usunąć ten element?")) return; store.deleteEntity(tab, r.id); };
   const move = async (i, d) => { const j = i + d; if (j < 0 || j >= rows.length) return; const ids = rows.map((x) => x.id); [ids[i], ids[j]] = [ids[j], ids[i]]; await store.reorderEntity(tab, ids); };
   return (
