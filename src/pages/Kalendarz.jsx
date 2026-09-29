@@ -148,6 +148,8 @@ export default function Kalendarz() {
           <div className="tex" />
           <div className="container kal-grid">
             <div className="kal-main">
+              {/* month header + specials sit above the board only — the rail card lines up with the board itself */}
+              <div className="kal-top">
               {/* toolbar: month switch + type legend/filter */}
               <div className="kal-bar reveal-up">
                 <div className="kal-bar__month">
@@ -189,6 +191,7 @@ export default function Kalendarz() {
                   ))}
                 </div>
               )}
+              </div>
 
               {/* month board */}
               <div className="kal-board reveal-up rv-d1">

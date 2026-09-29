@@ -29,6 +29,15 @@
 .kal-wrap { padding-block: clamp(34px, 4vw, 60px) clamp(50px, 6vw, 90px); }
 .kal-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 26vw, 400px); gap: clamp(18px, 2.2vw, 32px); align-items: start; }
 .kal-main { min-width: 0; }
+/* desktop: the header row spans the left column only; the board and the rail card share the second row,
+   so the card starts exactly at the top edge of the board whatever the header height is */
+@media (min-width: 901px) {
+  .kal-grid { row-gap: 0; }
+  .kal-main { display: contents; }
+  .kal-top { grid-column: 1; grid-row: 1; min-width: 0; }
+  .kal-board { grid-column: 1; grid-row: 2; }
+  .kal-rail { grid-column: 2; grid-row: 2; }
+}
 
 /* ---------- toolbar ---------- */
 .kal-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
