@@ -12,6 +12,20 @@ function measureTextWidth(text, fontPx) {
   return ctx.measureText(text).width;
 }
 
+/* prev / next control: big chevrons + a thumbnail of the track it leads to + its name. Every part has a
+   fixed size, so the control never moves when the slide (and the neighbour's name) changes. */
+function TrackNav({ dir, track, label, onClick }) {
+  return (
+    <button type="button" className={`tnav tnav--${dir < 0 ? "prev" : "next"}`} onClick={onClick} aria-label={`${label}: ${track.name}`}>
+      <span className="tnav__ico">
+        <svg viewBox="0 0 24 24" aria-hidden="true">{dir < 0 ? <path d="M12 4l-8 8 8 8M20 4l-8 8 8 8" /> : <path d="M12 4l8 8-8 8M4 4l8 8-8 8" />}</svg>
+      </span>
+      <span className="tnav__thumb">{track.map && <img src={track.map} alt="" loading="lazy" decoding="async" />}</span>
+      <span className="tnav__txt"><small>{label}</small><b>{track.name}</b></span>
+    </button>
+  );
+}
+
 export default function Tracks() {
   const { tracks, L, t } = useStore();
   const [[idx, dir], setIdx] = useState([0, 0]);
@@ -48,14 +62,25 @@ export default function Tracks() {
   const prev = tracks[((idx - 1) % n + n) % n];
   const next = tracks[((idx + 1) % n + n) % n];
   const go = (d) => setIdx([idx + d, d]);
+  const desc = (x) => L(x, "description") || "Wymagający tor, który dostarczy Ci prawdziwych emocji z jazdy sportowej pod okiem naszych instruktorów.";
 
-  const longTurns = /[a-ząćęłńóśźż]/i.test(tr.turns || "");
-  const stats = [
-    { l: "tracks.l_country", v: L(tr, "country"), u: "" },
-    { l: "tracks.l_turns", v: tr.turns, u: "", small: longTurns },
-    { l: "tracks.l_length", v: tr.length, u: tr.length ? t("tracks.u_meters") : "" },
-    { l: "tracks.l_width", v: tr.width, u: tr.width ? t("tracks.u_meters") : "" },
+  const statsOf = (x) => [
+    { l: "tracks.l_country", v: L(x, "country"), u: "" },
+    { l: "tracks.l_turns", v: x.turns, u: "", small: /[a-ząćęłńóśźż]/i.test(x.turns || "") },
+    { l: "tracks.l_length", v: x.length, u: x.length ? t("tracks.u_meters") : "" },
+    { l: "tracks.l_width", v: x.width, u: x.width ? t("tracks.u_meters") : "" },
   ];
+  const statList = (x, ghost) => (
+    <div className={`tracks__stats ${ghost ? "tracks__stats--ghost" : ""}`} key={ghost ? x.id : "live"} aria-hidden={ghost ? "true" : undefined}>
+      {statsOf(x).map((s, i) => (
+        <div className="tstat" key={i}>
+          <div className="tstat__l">{t(s.l)}</div>
+          <div className={`tstat__v ${s.small ? "tstat__v--sm" : ""}`}>{s.v || "—"}</div>
+          {s.u && <div className="tstat__u">{s.u}</div>}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <section className="section section--paper tracks" id="tory">
@@ -66,33 +91,34 @@ export default function Tracks() {
           <div className={`tracks__left reveal ${headIn ? "in" : ""}`} ref={headRef}>
             <EText id="tracks.title" as="h2" className="tracks__title" />
             <div className="tracks__ctrl">
-              <span className="tracks__neighbor">/// {prev.name}</span>
-              <button className="tracks__arrow" onClick={() => go(-1)} aria-label="prev">«</button>
+              <TrackNav dir={-1} track={prev} label={t("tracks.prev")} onClick={() => go(-1)} />
             </div>
-            <AnimatePresence mode="wait">
-              <motion.p key={tr.id} className="tracks__desc"
-                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}>
-                {L(tr, "description") || "Wymagający tor, który dostarczy Ci prawdziwych emocji z jazdy sportowej pod okiem naszych instruktorów."}
-              </motion.p>
-            </AnimatePresence>
+            {/* every description sits (invisibly) in the same grid cell, so the box is always as tall as
+                the longest one and nothing below it moves when the slide changes */}
+            <div className="tracks__descbox">
+              {tracks.map((x) => <p key={x.id} className="tracks__desc tracks__desc--ghost" aria-hidden="true">{desc(x)}</p>)}
+              <AnimatePresence mode="wait">
+                <motion.p key={tr.id} className="tracks__desc"
+                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}>
+                  {desc(tr)}
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* center: name + map */}
           <div className="tracks__center">
             <div className="tracks__name" ref={nameBoxRef}>
               <EText id="tracks.pre" as="span" className="tracks__pre" />
-              <span className="tracks__main">
+              <span className="tracks__main" style={{ height: Math.ceil(idealMax * 0.9) }}>
                 <span className="tracks__maintxt" style={{ fontSize: nameFs }}>{main}</span>
               </span>
             </div>
             {/* phones: both arrows in one row under the name (the column controls are hidden there) */}
             <div className="tracks__mctrl">
-              <button className="tracks__arrow" onClick={() => go(-1)} aria-label="prev">«</button>
-              <span className="tracks__neighbor">/// {prev.name}</span>
-              <span className="tracks__mctrl__sp" />
-              <span className="tracks__neighbor">{next.name} ///</span>
-              <button className="tracks__arrow" onClick={() => go(1)} aria-label="next">»</button>
+              <TrackNav dir={-1} track={prev} label={t("tracks.prev")} onClick={() => go(-1)} />
+              <TrackNav dir={1} track={next} label={t("tracks.next")} onClick={() => go(1)} />
             </div>
             <div className="tracks__mapbox">
               <AnimatePresence custom={dir} mode="wait">
@@ -107,18 +133,13 @@ export default function Tracks() {
 
           {/* right: next arrow + stats */}
           <div className="tracks__right">
-            <div className="tracks__ctrl tracks__ctrl--r">
-              <span className="tracks__neighbor">/// {next.name}</span>
-              <button className="tracks__arrow" onClick={() => go(1)} aria-label="next">»</button>
+            <div className="tracks__ctrl">
+              <TrackNav dir={1} track={next} label={t("tracks.next")} onClick={() => go(1)} />
             </div>
-            <div className="tracks__stats">
-              {stats.map((s, i) => (
-                <div className="tstat" key={i}>
-                  <div className="tstat__l">{t(s.l)}</div>
-                  <div className={`tstat__v ${s.small ? "tstat__v--sm" : ""}`}>{s.v || "—"}</div>
-                  {s.u && <div className="tstat__u">{s.u}</div>}
-                </div>
-              ))}
+            {/* same trick as the description: the box is as tall as the tallest track's figures */}
+            <div className="tracks__statbox">
+              {tracks.map((x) => statList(x, true))}
+              {statList(tr, false)}
             </div>
           </div>
         </div>

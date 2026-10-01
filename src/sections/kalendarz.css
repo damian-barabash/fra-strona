@@ -54,6 +54,11 @@
 .kal-chip:hover { transform: translateY(-2px); border-color: var(--tc); }
 .kal-chip.on { background: var(--tc); border-color: var(--tc); color: #fff; }
 .kal-chip.on i { background: #fff; }
+/* a type shown as a light pill (individual training): its legend marker is the same tint with a coloured edge */
+.kal-chip--tint i { background: color-mix(in srgb, var(--tc) 16%, #fff); box-shadow: inset 3px 0 0 var(--tc); }
+.kal-chip--tint.on i { background: rgba(255,255,255,.35); box-shadow: inset 3px 0 0 #fff; }
+/* month switch: big chevrons */
+.kal-arrow { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: square; stroke-linejoin: miter; display: block; }
 .kal-bar__next { font: 700 11px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; color: var(--red); padding: 10px 2px; }
 .kal-bar__next:hover { text-decoration: underline; }
 
@@ -139,19 +144,21 @@
   padding: 5px 7px; border-left: 3px solid var(--tc); background: color-mix(in srgb, var(--tc) 9%, #fff);
   transition: background .18s ease, transform .18s ease;
 }
-.kal-pill:hover, .kal-pill.on { background: var(--tc); transform: translateX(2px); }
+/* light pill (individual, ice): hover / selected only deepens the tint — it never turns into a filled one */
+.kal-pill:hover, .kal-pill.on { background: color-mix(in srgb, var(--tc) 24%, #fff); transform: translateX(2px); }
 .kal-pill__time { font: 800 10px/1.2 var(--font-display); letter-spacing: .05em; color: var(--tc); }
-.kal-pill:hover .kal-pill__time, .kal-pill.on .kal-pill__time { color: #fff; }
 .kal-pill__ttl {
   font: 700 10px/1.2 var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: var(--text);
   overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
 .kal-pill__short { display: none; font: 800 8.5px/1.2 var(--font-display); letter-spacing: .04em; color: var(--text); }
 .kal-pill__start { display: none; font: 800 10px/1.2 var(--font-display); color: var(--tc); }
-.kal-pill:hover .kal-pill__start, .kal-pill.on .kal-pill__start { color: #fff; }
-.kal-pill:hover .kal-pill__ttl, .kal-pill.on .kal-pill__ttl, .kal-pill:hover .kal-pill__short, .kal-pill.on .kal-pill__short { color: #fff; }
 .kal-pill__loc { font: 500 9.5px/1.2 var(--font-body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kal-pill:hover .kal-pill__loc, .kal-pill.on .kal-pill__loc { color: rgba(255,255,255,.85); }
+/* filled types (Sport Driving, Heels): the type colour as background, white text; hover / selected = a shade darker */
+.kal-pill--solid { background: var(--tc); }
+.kal-pill--solid .kal-pill__time, .kal-pill--solid .kal-pill__start, .kal-pill--solid .kal-pill__ttl, .kal-pill--solid .kal-pill__short { color: #fff; }
+.kal-pill--solid .kal-pill__loc { color: rgba(255,255,255,.85); }
+.kal-pill--solid:hover, .kal-pill--solid.on { background: color-mix(in srgb, var(--tc) 80%, #000); }
 
 .kal-board__empty {
   position: relative; z-index: 1; margin-top: 10px; padding: 26px 18px;
@@ -264,6 +271,7 @@
   .kal-bar__label { min-width: 0; flex: 1; text-align: center; }
   .kal-bar__month { width: 100%; justify-content: space-between; }
   .kal-bar__month .navbtn { width: 46px; height: 46px; }
+  .kal-arrow { width: 26px; height: 26px; }
   .kal-legend { width: 100%; justify-content: space-between; }
 }
 

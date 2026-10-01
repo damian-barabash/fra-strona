@@ -153,15 +153,15 @@ export default function Kalendarz() {
               {/* toolbar: month switch + type legend/filter */}
               <div className="kal-bar reveal-up">
                 <div className="kal-bar__month">
-                  <button className="navbtn" onClick={() => step(-1)} aria-label={t("kal.prev")}>‹</button>
+                  <button className="navbtn" onClick={() => step(-1)} aria-label={t("kal.prev")}><svg className="kal-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg></button>
                   <span className="kal-bar__label">{monthLabel(cur.y, cur.m, lang)}</span>
-                  <button className="navbtn navbtn--red" onClick={() => step(1)} aria-label={t("kal.next")}>›</button>
+                  <button className="navbtn navbtn--red" onClick={() => step(1)} aria-label={t("kal.next")}><svg className="kal-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l8 8-8 8" /></svg></button>
                 </div>
                 <div className="kal-legend">
                   {TERM_TYPES.map((ty) => (
                     <button
                       key={ty.slug}
-                      className={`kal-chip ${typeFilter === ty.slug ? "on" : ""}`}
+                      className={`kal-chip ${ty.solid ? "" : "kal-chip--tint"} ${typeFilter === ty.slug ? "on" : ""}`}
                       style={{ ["--tc"]: ty.color }}
                       onClick={() => setTypeFilter((f) => (f === ty.slug ? null : ty.slug))}
                     >
@@ -235,7 +235,7 @@ export default function Kalendarz() {
                               return (
                                 <button
                                   key={e.id}
-                                  className={`kal-pill ${sel?.id === e.id ? "on" : ""}`}
+                                  className={`kal-pill ${ty.solid ? "kal-pill--solid" : ""} ${sel?.id === e.id ? "on" : ""}`}
                                   style={{ ["--tc"]: ty.color }}
                                   onClick={(ev) => { ev.stopPropagation(); pick(e, iso); }}
                                 >
@@ -244,7 +244,7 @@ export default function Kalendarz() {
                                   <span className="kal-pill__start">{String(e.time || "").split(/\s*[–-]\s*/)[0]}</span>
                                   <span className="kal-pill__ttl">{L(e, "title") || typeName(e, lang)}</span>
                                   {/* phones are too narrow for the full name — show the type instead */}
-                                  <span className="kal-pill__short">{lang === "en" ? ty.short_en : ty.short_pl}</span>
+                                  <span className="kal-pill__short">{lang === "en" ? ty.mini_en || ty.short_en : ty.mini_pl || ty.short_pl}</span>
                                   <span className="kal-pill__loc">{e.location_pl ? L(e, "location") : trackLabel(e.track, lang)}</span>
                                 </button>
                               );

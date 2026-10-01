@@ -3,8 +3,11 @@
 import { carPrice } from "./flota";
 
 export const TERM_TYPES = [
-  { slug: "sport", pl: "SPORT DRIVING EXPERIENCE", en: "SPORT DRIVING EXPERIENCE", short_pl: "SPORT", short_en: "SPORT", color: "#e30613" },
-  { slug: "heels", pl: "HEELS ON THE TRACK", en: "HEELS ON THE TRACK", short_pl: "HEELS", short_en: "HEELS", color: "#d81b8c" },
+  // `solid` — the day pill is filled with the type colour (white text); without it the pill is a light
+  // tint with a coloured edge. `mini_*` — the label that fits a phone-sized day cell.
+  { slug: "sport", pl: "SPORT DRIVING EXPERIENCE", en: "SPORT DRIVING EXPERIENCE", short_pl: "SPORT", short_en: "SPORT", color: "#e30613", solid: true },
+  { slug: "indiv", pl: "SZKOLENIE INDYWIDUALNE", en: "INDIVIDUAL TRAINING", short_pl: "INDYWIDUALNE", short_en: "INDIVIDUAL", mini_pl: "INDYW.", mini_en: "INDIV.", color: "#e30613" },
+  { slug: "heels", pl: "HEELS ON THE TRACK", en: "HEELS ON THE TRACK", short_pl: "HEELS", short_en: "HEELS", color: "#ab153a", solid: true },
   { slug: "ice", pl: "ICE DRIVING EXPERIENCE", en: "ICE DRIVING EXPERIENCE", short_pl: "ICE", short_en: "ICE", color: "#2f9fe0" },
 ];
 export const typeOf = (term) => TERM_TYPES.find((x) => x.slug === (term?.type || "sport")) || TERM_TYPES[0];

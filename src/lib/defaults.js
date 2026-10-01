@@ -72,6 +72,8 @@ export const DEFAULTS = {
   // --- tracks ---
   "tracks.title": { pl: "WYBIERZ TOR", en: "CHOOSE A TRACK", kind: "text" },
   "tracks.pre": { pl: "TOR", en: "TRACK", kind: "text" },
+  "tracks.prev": { pl: "POPRZEDNI", en: "PREVIOUS", kind: "text" },
+  "tracks.next": { pl: "NASTĘPNY", en: "NEXT", kind: "text" },
   "tracks.l_country": { pl: "PAŃSTWO", en: "COUNTRY", kind: "text" },
   "tracks.l_turns": { pl: "LICZBA ZAKRĘTÓW", en: "NUMBER OF TURNS", kind: "text" },
   "tracks.l_length": { pl: "DŁUGOŚĆ", en: "LENGTH", kind: "text" },
