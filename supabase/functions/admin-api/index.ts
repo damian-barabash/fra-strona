@@ -78,6 +78,10 @@ const PL_FIELDS: Record<string, string[]> = {
 };
 const TABLES = Object.keys(PL_FIELDS);
 
+// rows with their own public page: the address (slug) is normalised and must be free — same rule as src/lib/slug.js
+const SLUG_TABLES: Record<string, { label: string; required: boolean }> = { products: { label: "title_pl", required: true }, cars: { label: "name", required: false } };
+const slugify = (v: unknown) => String(v ?? "").toLowerCase().replace(/ł/g, "l").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+
 /* ---------------- auth ---------------- */
 type Admin = { id: string; login: string; name: string | null; role: string; perms: Record<string, boolean> | null; position?: string | null };
 async function auth(req: Request): Promise<Admin | null> {
@@ -427,6 +431,16 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
 
     if (action === "stats") return await stats();
 
+    // the panel's lists: every row of the tables this admin may edit — hidden ones included
+    // (the public site reads visible rows only, so a hidden row would otherwise be unreachable)
+    if (action === "tables.all") {
+      const names = TABLES.filter((t) => can(me, TABLE_PERM[t]));
+      const res = await Promise.all(names.map((t) => db.from(t).select("*").order("sort")));
+      const tables: Record<string, unknown[]> = {};
+      names.forEach((t, i) => { if (!res[i].error) tables[t] = res[i].data ?? []; });
+      return json({ ok: true, tables });
+    }
+
     // ---- admins (accounts + permissions) ----
     if (action === "admins.list") {
       const { data } = await db.from("admins").select(ADMIN_SELECT).order("created_at");
@@ -570,11 +584,22 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
     if (TABLES.includes(table)) {
       if (op === "upsert") {
         let row = { ...payload };
+        const sl = SLUG_TABLES[table];
+        if (sl && (!row.id || "slug" in row)) {
+          row.slug = slugify(row.slug) || null;
+          if (!row.slug && sl.required) return json({ ok: false, error: "Wpisz adres podstrony (slug)." }, 400);
+          if (row.slug) {
+            const { data: same } = await db.from(table).select(`id, ${sl.label}, visible`).eq("slug", row.slug);
+            const other = (same ?? []).find((x: any) => String(x.id) !== String(row.id ?? ""));
+            if (other) return json({ ok: false, error: `Adres „${row.slug}” jest już zajęty: „${(other as any)[sl.label] ?? ""}”${(other as any).visible === false ? " (ukryty)" : ""}.` }, 409);
+          }
+        }
         const fields = (PL_FIELDS[table] ?? []).filter((f) => row[f] != null);
         if (fields.length) row = await autoTranslate(row, fields);
         let res;
         if (row.id) { const id = row.id; delete row.created_at; res = await db.from(table).update(row).eq("id", id).select().single(); }
         else { delete row.id; res = await db.from(table).insert(row).select().single(); }
+        if (res.error && /duplicate key|unique constraint/i.test(res.error.message)) return json({ ok: false, error: "Taki adres podstrony (slug) już istnieje." }, 409);
         return res.error ? json({ ok: false, error: res.error.message }, 500) : json({ ok: true, row: res.data });
       }
       if (op === "delete") {

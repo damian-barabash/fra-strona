@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../lib/store";
 import { processUpload } from "../lib/api";
+import { supabase } from "../lib/supabase";
+import { SLUG_TABLES, slugify, slugTyping } from "../lib/slug";
 import UploadStatus from "../components/UploadStatus";
 import { MENU, MENU_HREF, hrefKey } from "../lib/menu";
 import { TRACKS, trackLabel, fmtZl } from "../lib/flota";
@@ -673,18 +675,80 @@ const cleanRow = (fields, row) => {
   return r;
 };
 
+/* Is this page address free? Checked as it is typed: at once against the panel's list (hidden rows
+   included) and, a moment later, against the database — another admin may have just added the same one.
+   → "empty" | "checking" | "free" | "taken" (+ the row that holds it) */
+function useSlugCheck(table, row, items) {
+  const cfg = SLUG_TABLES[table];
+  const slug = cfg && row ? slugify(row.slug) : "";
+  const id = row?.id;
+  const [remote, setRemote] = useState(null);   // { slug, rows } — the last answer of the database
+  useEffect(() => {
+    if (!slug) return;
+    let off = false;
+    const tm = setTimeout(async () => {
+      const { data } = await supabase.from(table).select(`id, ${cfg.from}, visible`).eq("slug", slug).limit(3).then((r) => r, () => ({ data: null }));
+      if (!off) setRemote({ slug, rows: data || [] });
+    }, 300);
+    return () => { off = true; clearTimeout(tm); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table, slug]);
+  if (!cfg || !row) return { state: "free" };
+  if (!slug) return { state: "empty" };
+  const local = items.find((x) => x.slug === slug && x.id !== id);
+  if (local) return { state: "taken", by: local, local: true };
+  if (id && items.find((x) => x.id === id)?.slug === slug) return { state: "free" };   // unchanged address of a saved row
+  if (remote?.slug !== slug) return { state: "checking" };
+  // a row saved a moment ago may still carry its temporary id here — the database row is then its own
+  const other = String(id || "").startsWith("tmp-") ? null : remote.rows.find((x) => x.id !== id);
+  if (other) return { state: "taken", by: other };
+  return { state: "free" };
+}
+
+function SlugField({ f, table, value, onChange, check, onOpen }) {
+  const cfg = SLUG_TABLES[table];
+  const who = check.by ? `„${check.by[cfg.from] || check.by.slug || "inny element"}”${check.by.visible === false ? " (ukryty)" : ""}` : "";
+  return (
+    <div className={`adm-f adm-slug adm-slug--${check.state}`}>
+      <span>{f.l}{cfg.required && <b className="adm-slug__req"> *</b>}</span>
+      <label className="adm-slug__in"><i>{cfg.base}</i><input value={value || ""} spellCheck={false} autoCapitalize="none" autoCorrect="off" onChange={(e) => onChange(slugTyping(e.target.value))} placeholder="np. race-taxi" /></label>
+      <div className="adm-slug__st" role="status">
+        {check.state === "empty" && (cfg.required ? "Wpisz adres podstrony — bez niego elementu nie da się zapisać." : "Bez adresu element nie będzie miał własnej podstrony.")}
+        {check.state === "checking" && "Sprawdzam, czy adres jest wolny…"}
+        {check.state === "free" && <>Adres wolny — <b>{cfg.base}{slugify(value)}</b></>}
+        {check.state === "taken" && <>Ten adres jest już zajęty: {who}. Wpisz inny{check.local && <> albo <button type="button" className="adm-slug__open" onClick={() => onOpen(check.by)}>otwórz istniejący element</button></>}.</>}
+      </div>
+    </div>
+  );
+}
+
 function EntityTab({ table }) {
   const store = useStore();
   const items = store.getters[table] || [];
   const cfg = CFG[table];
   const [editing, setEditing] = useState(null);
+  const slugCfg = SLUG_TABLES[table];
+  const slugTouched = useRef(false);            // a new row's address follows its name until it is typed by hand
+  const check = useSlugCheck(table, editing, items);
+  const slugBad = !!slugCfg && !!editing && (check.state === "taken" || check.state === "checking" || (check.state === "empty" && slugCfg.required));
+  const change = (k, v) => setEditing((e) => {
+    const n = { ...e, [k]: v };
+    if (slugCfg && !e.id && !slugTouched.current && k === slugCfg.from) n.slug = slugify(v);
+    return n;
+  });
   const blank = () => {
+    slugTouched.current = false;
     const r = { visible: true, sort: (items.at(-1)?.sort || 0) + 1 };
     cfg.fields.forEach((f) => { r[f.k] = f.t === "images" || f.t === "soldout" ? [] : f.t === "check" ? false : f.t === "color" ? "#2b2b2b" : f.t === "select" ? (f.options?.[0]?.value ?? "") : f.t === "number" ? "" : ""; });
     setEditing(r);
   };
   // optimistic: the row updates in the list at once, the server save runs in the background (sync indicator)
-  const save = () => { store.upsertEntity(table, cleanRow(cfg.fields, editing)); setEditing(null); };
+  const save = () => {
+    if (slugBad) return;
+    const row = cleanRow(cfg.fields, editing);
+    if (slugCfg) row.slug = slugify(row.slug) || (slugCfg.required ? "" : null);
+    store.upsertEntity(table, row); setEditing(null);
+  };
   const remove = (id) => { if (!confirm("Usunąć ten element?")) return; store.deleteEntity(table, id); };
   const move = async (i, d) => { const arr = items.map((x) => x.id); const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; await store.reorderEntity(table, arr); };
 
@@ -711,14 +775,16 @@ function EntityTab({ table }) {
           <div className="adm-form">
             <div className="adm-form__head"><h3>{editing.id ? "Edytuj" : "Nowy element"}</h3><button className="adm-x" onClick={() => setEditing(null)}>×</button></div>
             <div className="adm-form__body">
-              {cfg.fields.filter((f) => !f.trip || editing.theme === "wyprawa").map((f) => <Field key={f.k} f={f} row={editing} value={editing[f.k]} onChange={(v) => setEditing((e) => ({ ...e, [f.k]: v }))} />)}
+              {cfg.fields.filter((f) => !f.trip || editing.theme === "wyprawa").map((f) => (f.k === "slug" && slugCfg
+                ? <SlugField key={f.k} f={f} table={table} value={editing.slug} check={check} onChange={(v) => { slugTouched.current = true; change("slug", v); }} onOpen={(r) => setEditing({ ...r })} />
+                : <Field key={f.k} f={f} row={editing} value={editing[f.k]} onChange={(v) => change(f.k, v)} />))}
               {table === "products" && editing.theme === "wyprawa" && <TripEditor slug={editing.slug} />}
             </div>
             <div className="adm-form__foot">
               <label className="adm-check"><input type="checkbox" checked={editing.visible !== false} onChange={(e) => setEditing((x) => ({ ...x, visible: e.target.checked }))} />Widoczne na stronie</label>
               <div style={{ flex: 1 }} />
               <button className="adm-btn" onClick={() => setEditing(null)}>Anuluj</button>
-              <button className="adm-btn adm-btn--red" onClick={save}>Zapisz</button>
+              <button className="adm-btn adm-btn--red" onClick={save} disabled={slugBad} title={slugBad ? "Najpierw popraw adres podstrony" : undefined}>Zapisz</button>
             </div>
           </div>
         </div>

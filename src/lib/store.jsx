@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { supabase } from "./supabase";
 import { DEFAULTS } from "./defaults";
 import { authLogin, authVerify, adminCall } from "./api";
@@ -10,6 +10,10 @@ export const useStore = () => useContext(Ctx);
 const LS_LANG = "fra_lang";
 const LS_TOKEN = "fra_admin_token";
 
+const bySort = (a, b) => (a.sort ?? 0) - (b.sort ?? 0);
+// the site shows visible rows only; the lists themselves also hold the hidden ones once an admin is in
+const useVisible = (list) => useMemo(() => (list.some((x) => x.visible === false) ? list.filter((x) => x.visible !== false) : list), [list]);
+
 const ACTION_LABEL = (a) => ({
   "config.set": "Ustawienia", "media.upload": "Wysyłka pliku", "admins.create": "Nowe konto", "admins.update": "Konto administratora",
   "admins.delete": "Usunięcie konta", "bookings.markPaid": "Oznaczenie jako opłacone", "bookings.resendMail": "Ponowna wysyłka e-maili",
@@ -19,21 +23,22 @@ const ACTION_LABEL = (a) => ({
 export function StoreProvider({ children }) {
   const [lang, setLang] = useState(() => localStorage.getItem(LS_LANG) || "pl");
   const [content, setContent] = useState({}); // key -> {pl,en,kind}
-  const [allCars, setCars] = useState([]);   // every car (sport + race) — the admin edits this list
-  const [instructors, setInstructors] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [programs, setPrograms] = useState([]);
-  const [banners, setBanners] = useState([]);
-  const [tracks, setTracks] = useState([]);
-  const [terms, setTerms] = useState([]); // available booking dates
-  const [mediaList, setMediaList] = useState([]); // press / "Media o nas"
-  const [products, setProducts] = useState([]); // offer: STAGE 1-3, S&S, SIM, Heels…
-  const [icePackages, setIcePackages] = useState([]); // Laponia packages (price + days)
-  const [iceWindows, setIceWindows] = useState([]);   // Laponia date windows
-  const [tripPackages, setTripPackages] = useState([]);     // trip packages (Monaco…)
-  const [tripAttractions, setTripAttractions] = useState([]); // "W programie" of a trip
-  const [tripPoints, setTripPoints] = useState([]);           // pins on the trip map (route)
+  const [allCarsRaw, setCars] = useState([]);   // every car (sport + race) — the admin edits this list
+  const [instructorsRaw, setInstructors] = useState([]);
+  const [eventsRaw, setEvents] = useState([]);
+  const [programsRaw, setPrograms] = useState([]);
+  const [bannersRaw, setBanners] = useState([]);
+  const [tracksRaw, setTracks] = useState([]);
+  const [termsRaw, setTerms] = useState([]); // available booking dates
+  const [mediaListRaw, setMediaList] = useState([]); // press / "Media o nas"
+  const [productsRaw, setProducts] = useState([]); // offer: STAGE 1-3, S&S, SIM, Heels…
+  const [icePackagesRaw, setIcePackages] = useState([]); // Laponia packages (price + days)
+  const [iceWindowsRaw, setIceWindows] = useState([]);   // Laponia date windows
+  const [tripPackagesRaw, setTripPackages] = useState([]);     // trip packages (Monaco…)
+  const [tripAttractionsRaw, setTripAttractions] = useState([]); // "W programie" of a trip
+  const [tripPointsRaw, setTripPoints] = useState([]);           // pins on the trip map (route)
   const [ready, setReady] = useState(false);
+  const setters = { cars: setCars, instructors: setInstructors, events: setEvents, programs: setPrograms, banners: setBanners, tracks: setTracks, media: setMediaList, terms: setTerms, products: setProducts, ice_packages: setIcePackages, ice_windows: setIceWindows, trip_packages: setTripPackages, trip_attractions: setTripAttractions, trip_points: setTripPoints };
 
   // admin
   const [token, setToken] = useState(() => localStorage.getItem(LS_TOKEN) || "");
@@ -83,6 +88,19 @@ export function StoreProvider({ children }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // The public load above only brings visible rows. The panel needs the hidden ones as well — otherwise
+  // a hidden product vanishes from its list while still holding its slug. Rows still being saved stay.
+  const loadAdmin = useCallback(async (tok) => {
+    const r = await adminCall(tok, "tables.all").catch(() => null);
+    if (!r?.ok || !r.tables) return;
+    Object.entries(r.tables).forEach(([table, rows]) => setters[table]?.((list) => {
+      const pending = list.filter((x) => x._pending);
+      const keep = new Set(pending.map((x) => x.id));
+      return [...rows.filter((x) => !keep.has(x.id)), ...pending].sort(bySort);
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // verify existing admin token
   useEffect(() => {
     if (!token) return;
@@ -91,6 +109,8 @@ export function StoreProvider({ children }) {
       else { setToken(""); localStorage.removeItem(LS_TOKEN); }
     });
   }, [token]);
+
+  useEffect(() => { if (admin && ready) loadAdmin(token); /* eslint-disable-next-line */ }, [admin?.id, ready]);
 
   // ---- content getters ----
   const raw = useCallback((key) => content[key] || DEFAULTS[key] || { pl: "", en: "", kind: "text" }, [content]);
@@ -138,11 +158,15 @@ export function StoreProvider({ children }) {
 
   // configurators, price board and the home slider only ever see the sport cars; the race cars
   // (Mini Cup, GT3 Cup, Super Trofeo) are shown for reading on the Flota tab and their own pages
+  const allCars = useVisible(allCarsRaw), instructors = useVisible(instructorsRaw), events = useVisible(eventsRaw), programs = useVisible(programsRaw),
+    banners = useVisible(bannersRaw), tracks = useVisible(tracksRaw), terms = useVisible(termsRaw), mediaList = useVisible(mediaListRaw),
+    products = useVisible(productsRaw), icePackages = useVisible(icePackagesRaw), iceWindows = useVisible(iceWindowsRaw),
+    tripPackages = useVisible(tripPackagesRaw), tripAttractions = useVisible(tripAttractionsRaw), tripPoints = useVisible(tripPointsRaw);
   const cars = allCars.filter((c) => (c.category || "sport") === "sport");
   const raceCars = allCars.filter((c) => c.category === "race");
 
-  const setters = { cars: setCars, instructors: setInstructors, events: setEvents, programs: setPrograms, banners: setBanners, tracks: setTracks, media: setMediaList, terms: setTerms, products: setProducts, ice_packages: setIcePackages, ice_windows: setIceWindows, trip_packages: setTripPackages, trip_attractions: setTripAttractions, trip_points: setTripPoints };
-  const getters = { cars: allCars, instructors, events, programs, banners, tracks, media: mediaList, terms, products, ice_packages: icePackages, ice_windows: iceWindows, trip_packages: tripPackages, trip_attractions: tripAttractions, trip_points: tripPoints };
+  // the panel edits the full lists (hidden rows included)
+  const getters = { cars: allCarsRaw, instructors: instructorsRaw, events: eventsRaw, programs: programsRaw, banners: bannersRaw, tracks: tracksRaw, media: mediaListRaw, terms: termsRaw, products: productsRaw, ice_packages: icePackagesRaw, ice_windows: iceWindowsRaw, trip_packages: tripPackagesRaw, trip_attractions: tripAttractionsRaw, trip_points: tripPointsRaw };
 
   // public checkout: the edge function creates the pending booking + the Tpay transaction and
   // answers with payment_url; the browser only ever sends ids (prices are computed server-side)
@@ -165,7 +189,6 @@ export function StoreProvider({ children }) {
   const isTmp = (id) => typeof id === "string" && id.startsWith("tmp-");
   const created = useRef(new Map()); // tmp id → Promise<real id | null>
   const realId = async (id) => (isTmp(id) ? await (created.current.get(id) || Promise.resolve(null)) : id);
-  const bySort = (a, b) => (a.sort ?? 0) - (b.sort ?? 0);
   const clean = (row) => { const { _pending, _rev, ...rest } = row; return rest; };
 
   const rev = useRef(0);
@@ -233,7 +256,7 @@ export function StoreProvider({ children }) {
   const value = {
     lang, setLang, ready,
     content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints,
-    raw, t, media, L, reload: load,
+    raw, t, media, L, reload: async () => { await load(); if (admin) await loadAdmin(token); },
     token, admin, isAdmin: !!admin,
     // permissions: the owner (moderator) can do everything, an admin only what its perms allow
     isOwner: admin?.role === "owner",

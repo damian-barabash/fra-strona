@@ -182,6 +182,17 @@
 .adm-imgs__add { width: 78px; height: 78px; border: 1.5px dashed var(--muted-2); display: grid; place-items: center; cursor: pointer; font-size: 26px; color: var(--muted); }
 .adm-imgs__add:hover { border-color: var(--red); color: var(--red); }
 .adm-check { display: flex; align-items: center; gap: 8px; font: 600 13px var(--font-body); color: #2c2f36; }
+/* page address (slug) with a live "is it free?" line */
+.adm-slug__req { color: var(--red); }
+.adm-slug__in { display: flex; align-items: stretch; border: 1px solid var(--line, #dfe2e6); background: #fff; }
+.adm-slug__in i { display: flex; align-items: center; padding: 0 10px; background: var(--bg); color: var(--muted); font: 600 13px var(--font-body); font-style: normal; white-space: nowrap; border-right: 1px solid var(--line, #dfe2e6); }
+.adm-slug .adm-slug__in input { flex: 1; min-width: 0; border: 0; }
+.adm-slug__st { font: 500 12.5px/1.45 var(--font-body); color: var(--muted); }
+.adm-slug__st b { font-weight: 700; word-break: break-all; }
+.adm-slug--free .adm-slug__in { border-color: #178a52; } .adm-slug--free .adm-slug__st { color: #178a52; }
+.adm-slug--taken .adm-slug__in, .adm-slug--empty .adm-slug__in { border-color: var(--red); }
+.adm-slug--taken .adm-slug__st { color: var(--red); font-weight: 600; }
+.adm-slug__open { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; }
 .adm-f--check { flex-direction: row; align-items: center; gap: 10px; cursor: pointer; }
 .adm-f--check input { width: 18px; height: 18px; accent-color: #e30613; }
 .adm-f--check span { font: 600 13px var(--font-body); color: #2c2f36; text-transform: none; letter-spacing: 0; }
