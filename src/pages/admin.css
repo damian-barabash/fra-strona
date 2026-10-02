@@ -201,6 +201,8 @@
 .adm-menu { display: flex; flex-direction: column; gap: 10px; }
 .adm-menu__row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; background: #fff; border: 1px solid var(--line); padding: 12px 14px; }
 .adm-menu__f { margin: 0; }
+.adm-menu__row--move { grid-template-columns: auto 1fr 1.4fr; align-items: end; }
+.adm-menu__ord { display: flex; gap: 4px; padding-bottom: 4px; }
 
 /* ---- settings ---- */
 .adm-settings { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }

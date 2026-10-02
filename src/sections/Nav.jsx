@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../lib/store";
 import { EText } from "../components/Editable";
-import { MENU, MENU_A, MENU_B, MENU_CTA, MENU_CTA2, MENU_HREF, hrefKey, ABOUT_ITEMS } from "../lib/menu";
+import { MENU_A, MENU_CTA, MENU_CTA2, MENU_HREF, hrefKey, ABOUT_ITEMS, ORDER_KEY, menuOrder } from "../lib/menu";
 
 import Social from "../components/Social";
 
 export default function Nav() {
-  const { lang, setLang, t, cmsMode, isAdmin } = useStore();
+  const { lang, setLang, t, cmsMode, isAdmin, raw } = useStore();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const editing = cmsMode && isAdmin;
@@ -22,6 +22,8 @@ export default function Nav() {
 
   // resolve href from content (admin "Menu" tab), fall back to default
   const hrefOf = (id) => t(hrefKey(id)) || MENU_HREF[id] || "#";
+  // link order comes from the CMS (admin "Menu" tab)
+  const order = menuOrder(raw(ORDER_KEY).pl);
   // in inline-edit mode don't navigate on click — let the label be edited in place
   const navGuard = (e) => { if (editing) e.preventDefault(); };
   const NavLink = ({ id }) => {
@@ -55,7 +57,7 @@ export default function Nav() {
             </Link>
             {MENU_A.map((id) => <NavLink key={id} id={id} />)}
             <span className="nav__div" />
-            {MENU_B.map((id) => <NavLink key={id} id={id} />)}
+            {order.map((id) => <NavLink key={id} id={id} />)}
           </nav>
 
           <div className="nav__right">
@@ -75,7 +77,7 @@ export default function Nav() {
         style={{ backgroundImage: "linear-gradient(rgba(13,13,13,.82),rgba(13,13,13,.92)), url(/assets/ui/menu_back.webp)" }}
         onClick={() => setOpen(false)}>
         <button className="mobile-menu__close" aria-label="close">×</button>
-        {MENU.map((id) =>
+        {[MENU_CTA, MENU_CTA2, ...MENU_A, ...order].map((id) =>
           id === MENU_CTA || id === MENU_CTA2 ? (
             <Link key={id} to={hrefOf(id).startsWith("/") ? hrefOf(id) : (id === MENU_CTA ? "/rezerwacja" : "/voucher")} className={`mobile-menu__cta ${id === MENU_CTA2 ? "mobile-menu__cta--dark" : ""}`}
               onClick={(e) => { if (editing) { e.preventDefault(); return; } setOpen(false); window.scrollTo({ top: 0 }); }}>{id === MENU_CTA2 && <svg className="nav__gift" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg>}<EText id={id} /> ›</Link>

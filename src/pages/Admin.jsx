@@ -5,7 +5,7 @@ import { processUpload } from "../lib/api";
 import { supabase } from "../lib/supabase";
 import { SLUG_TABLES, slugify, slugTyping } from "../lib/slug";
 import UploadStatus from "../components/UploadStatus";
-import { MENU, MENU_HREF, hrefKey } from "../lib/menu";
+import { MENU, MENU_A, MENU_CTA, MENU_CTA2, MENU_HREF, hrefKey, ORDER_KEY, menuOrder } from "../lib/menu";
 import { TRACKS, trackLabel, fmtZl } from "../lib/flota";
 import { TERM_TYPES } from "../lib/kalendarz";
 import { windowMonths, isoOf } from "../lib/ice";
@@ -629,23 +629,30 @@ function SettingsTab() {
 /* ============ MENU TAB ============ */
 function MenuTab() {
   const { raw, saveContent } = useStore();
+  // order of the plain links — stored in the database (content key nav.order), read by the site's Nav
+  const order = menuOrder(raw(ORDER_KEY).pl);
+  const move = (i, d) => { const a = [...order]; [a[i], a[i + d]] = [a[i + d], a[i]]; saveContent(ORDER_KEY, a.join(","), "url"); };
   return (
     <div>
       <div className="adm-head"><div><h2>Menu <span className="adm-count">{MENU.length}</span></h2>
-        <p className="adm-sub">Pozycje górnej nawigacji. Pierwsza pozycja („KUP SZKOLENIE”) jest czerwonym przyciskiem. „Etykieta” to tekst PL (EN tłumaczy się automatycznie), „Adres” — dokąd prowadzi link.</p></div></div>
-      <div className="adm-menu">{MENU.map((id) => <MenuRow key={id} id={id} raw={raw} saveContent={saveContent} />)}</div>
+        <p className="adm-sub">Pozycje górnej nawigacji. Pierwsza pozycja („KUP SZKOLENIE”) jest czerwonym przyciskiem. „Etykieta” to tekst PL (EN tłumaczy się automatycznie), „Adres” — dokąd prowadzi link. Strzałkami ↑ ↓ zmienisz kolejność linków w menu.</p></div></div>
+      <div className="adm-menu">
+        {[MENU_CTA, MENU_CTA2, ...MENU_A].map((id) => <MenuRow key={id} id={id} raw={raw} saveContent={saveContent} />)}
+        {order.map((id, i) => <MenuRow key={id} id={id} raw={raw} saveContent={saveContent} onUp={i > 0 ? () => move(i, -1) : null} onDown={i < order.length - 1 ? () => move(i, 1) : null} movable />)}
+      </div>
       <div className="adm-head" style={{ marginTop: 30 }}><div><h2>Social media</h2><p className="adm-sub">Linki do profili (ikony w nagłówku i stopce). Pusty adres = ikona znika.</p></div></div>
       <div className="adm-menu">{["facebook", "instagram", "linkedin", "youtube", "tiktok"].map((k) => <SocialRow key={k} k={k} raw={raw} saveContent={saveContent} />)}</div>
     </div>
   );
 }
-function MenuRow({ id, raw, saveContent }) {
+function MenuRow({ id, raw, saveContent, onUp, onDown, movable }) {
   const [label, setLabel] = useState(raw(id).pl || "");
   const [href, setHref] = useState(raw(hrefKey(id)).pl || MENU_HREF[id] || "");
   const commitLabel = () => { const v = label.trim(); if (v && v !== raw(id).pl) saveContent(id, v, "text"); };
   const commitHref = () => { const v = href.trim(); if (v && v !== (raw(hrefKey(id)).pl || MENU_HREF[id])) saveContent(hrefKey(id), v, "url"); };
   return (
-    <div className="adm-menu__row">
+    <div className={`adm-menu__row ${movable ? "adm-menu__row--move" : ""}`}>
+      {movable && <div className="adm-menu__ord"><button type="button" className="adm-mini" onClick={onUp} disabled={!onUp} aria-label="Wyżej">↑</button><button type="button" className="adm-mini" onClick={onDown} disabled={!onDown} aria-label="Niżej">↓</button></div>}
       <label className="adm-f adm-menu__f"><span>Etykieta (PL)</span><input value={label} onChange={(e) => setLabel(e.target.value)} onBlur={commitLabel} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} /></label>
       <label className="adm-f adm-menu__f"><span>Adres (link)</span><input value={href} onChange={(e) => setHref(e.target.value)} onBlur={commitHref} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} placeholder="/oferta lub https://…" /></label>
     </div>

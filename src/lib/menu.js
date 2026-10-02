@@ -3,7 +3,14 @@
 // in the admin "Menu" tab; labels are also inline-editable on the page.
 // "nav.forYou" is rendered as the red KUP SZKOLENIE button (see Nav.jsx).
 export const MENU_A = ["nav.forBiz"];
-export const MENU_B = ["nav.products", "nav.calendar", "nav.pricing", "nav.about", "nav.fleet", "nav.contact"];
+export const MENU_B = ["nav.products", "nav.fleet", "nav.about", "nav.pricing", "nav.calendar", "nav.contact"];
+// The order of these links is kept in the database: content key "nav.order" (comma-separated ids,
+// changed with the arrows in the admin "Menu" tab). MENU_B is only the fallback order.
+export const ORDER_KEY = "nav.order";
+export const menuOrder = (saved) => {
+  const ids = String(saved || "").split(",").map((x) => x.trim()).filter((x, i, a) => MENU_B.includes(x) && a.indexOf(x) === i);
+  return [...ids, ...MENU_B.filter((x) => !ids.includes(x))];
+};
 export const MENU_CTA = "nav.forYou";
 // "nav.gift" is the second (black) button — KUP PREZENT → voucher configurator
 export const MENU_CTA2 = "nav.gift";
