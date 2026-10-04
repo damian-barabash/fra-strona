@@ -89,7 +89,9 @@ export default function Rezerwacja() {
     }
     setErr(""); setStepIdx((i) => Math.min(stepKeys.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const goPrev = () => { setErr(""); if (stepIdx === 0) { nav(-1); return; } setStepIdx((i) => Math.max(0, i - 1)); };
+  // first step → back to where the visitor came from; opened straight from a link (no history) → the calendar / home
+  const leave = () => (window.history.state?.idx > 0 ? nav(-1) : nav(termIdQ ? "/kalendarz" : "/"));
+  const goPrev = () => { setErr(""); if (stepIdx === 0) { leave(); return; } setStepIdx((i) => Math.max(0, i - 1)); };
 
   const gauge = stepKeys.length > 1 ? stepIdx / (stepKeys.length - 1) : 1;
   const STEP_LABEL = { auto: t("flota.bk.sAuto"), termin: t("flota.bk.s2"), pakiet: t("flota.bk.s1"), produkt: t("card.step"), dane: t("flota.bk.s3"), platnosc: t("flota.bk.s4") };

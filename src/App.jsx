@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { motion } from "./lib/motion";
 import Home from "./pages/Home";
 import { Pages, preloadRoute } from "./lib/routes";
@@ -37,6 +37,32 @@ function AnimatedRoutes() {
   const [anim, setAnim] = useState("idle"); // idle | cover | reveal
   const first = useRef(true);
 
+  // Going back (browser button or WSTECZ) lands where the visitor left that page, not at its top:
+  // the scroll offset is remembered per history entry and put back once the page is rendered again.
+  const navType = useNavigationType();
+  const scrolls = useRef(new Map());
+  const shown = useRef(displayed);
+  shown.current = displayed;
+  useEffect(() => {
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+    // the URL changes before the curtain swaps pages — from then on the old page's offset is frozen
+    const save = () => { if (window.location.pathname === shown.current.pathname) scrolls.current.set(shown.current.key, window.scrollY); };
+    window.addEventListener("scroll", save, { passive: true });
+    return () => window.removeEventListener("scroll", save);
+  }, []);
+  const restoreScroll = (y) => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (!y) return;
+    let n = 0;
+    const tick = () => {
+      // wait until the page is tall enough (content lands a frame or two after the route swap)
+      const ok = document.documentElement.scrollHeight - window.innerHeight >= y;
+      if (ok || n > 60) window.scrollTo({ top: y, behavior: "instant" });
+      if ((!ok && n <= 60) || n < 3) { n += 1; requestAnimationFrame(tick); }
+    };
+    requestAnimationFrame(tick);
+  };
+
   // Reconciles on every change of location/displayed/anim, so a click that lands *while* the
   // curtain is still flying off can't strand the app on the previous route: whenever the URL
   // and the rendered route disagree and we're not already covering, we cover again.
@@ -53,7 +79,8 @@ function AnimatedRoutes() {
     // the curtain stays down until the next page's chunk is in (usually already prefetched)
     if (def === "cover") {
       const target = location;
-      preloadRoute(target.pathname).then(() => { setDisplayed(target); window.scrollTo(0, 0); setAnim("reveal"); });
+      const y = navType === "POP" ? scrolls.current.get(target.key) : 0;
+      preloadRoute(target.pathname).then(() => { setDisplayed(target); restoreScroll(y); setAnim("reveal"); });
     }
     else if (def === "reveal") setAnim("idle");                    // the effect re-covers if the URL moved on
   };

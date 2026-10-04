@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useNavigationType } from "react-router-dom";
 import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
@@ -17,6 +17,9 @@ import {
 import "../sections/kalendarz.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
+const KEPT = "fra_kal";
+const readKept = () => { try { return JSON.parse(sessionStorage.getItem(KEPT)); } catch { return null; } };
+
 /* The calendar runs on the CMS "Terminy" table: every term is one training day.
    Picking one jumps straight into the booking flow (car → sessions → details → payment). */
 export default function Kalendarz() {
@@ -31,6 +34,7 @@ export default function Kalendarz() {
     ],
   });
   const nav = useNavigate();
+  const navType = useNavigationType();
   const editing = cmsMode && isAdmin;
 
   // Laponia seasons + trips (wyprawy) — shown on the board as coloured multi-day bands
@@ -41,7 +45,9 @@ export default function Kalendarz() {
     () => terms.filter((x) => x.date).slice().sort((a, b) => a.date.localeCompare(b.date)),
     [terms],
   );
-  const [typeFilter, setTypeFilter] = useState(null);
+  // coming back from a booking (history "back") reopens the board as it was left: month, picked term, filter
+  const kept = useMemo(() => (navType === "POP" ? readKept() : null), []); // eslint-disable-line
+  const [typeFilter, setTypeFilter] = useState(kept?.typeFilter || null);
   const shown = useMemo(
     () => (typeFilter ? entries.filter((e) => (e.type || "sport") === typeFilter) : entries),
     [entries, typeFilter],
@@ -54,9 +60,9 @@ export default function Kalendarz() {
   }, [shown]);
 
   // month cursor — starts on the month of the first upcoming term (once data lands)
-  const [cur, setCur] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const [cur, setCur] = useState(() => { const d = new Date(); return kept?.cur || { y: d.getFullYear(), m: d.getMonth() }; });
   const [dir, setDir] = useState(1);
-  const moved = useRef(false);
+  const moved = useRef(!!kept?.cur);
   useEffect(() => {
     if (moved.current || !upcoming.length) return;
     const d = parseDate(upcoming[0].date);
@@ -80,7 +86,8 @@ export default function Kalendarz() {
     setSelId(upcoming[0].id);
   };
 
-  const [selId, setSelId] = useState(null);
+  const [selId, setSelId] = useState(kept?.selId || null);
+  useEffect(() => { try { sessionStorage.setItem(KEPT, JSON.stringify({ cur, selId, typeFilter })); } catch {} }, [cur, selId, typeFilter]);
   const sel = shown.find((e) => e.id === selId) || upcoming[0] || shown[0] || null;
 
   // mobile: tapping a day opens a bottom sheet instead of the side rail
