@@ -29,11 +29,12 @@
 .bl-feat:hover .bl-feat__media img { transform: scale(1.05); }
 .bl-feat__media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(13, 13, 13, .28), transparent 45%); }
 .bl-feat__flag { position: absolute; left: clamp(16px, 2vw, 26px); top: clamp(16px, 2vw, 26px); z-index: 2; background: var(--red); color: #fff; font: 800 10.5px/1 var(--font-display); letter-spacing: .18em; padding: 10px 13px; }
+.bl-feat__body > :not(.bl-feat__no) { position: relative; z-index: 1; }
 .bl-feat__body { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 14px; padding: clamp(24px, 3.4vw, 54px); }
-.bl-feat__no { position: absolute; right: 14px; top: 2px; font: 900 clamp(70px, 8vw, 132px)/1 var(--font-display); color: transparent; -webkit-text-stroke: 1.5px rgba(0, 0, 0, .08); pointer-events: none; }
+.bl-feat__no { position: absolute; right: clamp(14px, 2vw, 30px); bottom: clamp(4px, 1vw, 16px); font: 900 clamp(70px, 8vw, 132px)/1 var(--font-display); color: transparent; -webkit-text-stroke: 1.5px rgba(0, 0, 0, .08); pointer-events: none; }
 .bl-feat__title { position: relative; font-size: clamp(24px, 2.7vw, 42px); line-height: 1.04; text-transform: uppercase; letter-spacing: -.01em; }
-.bl-feat__title a { background: linear-gradient(var(--red), var(--red)) no-repeat 0 100% / 0 3px; transition: background-size .45s cubic-bezier(.16, .8, .3, 1); padding-bottom: 3px; }
-.bl-feat:hover .bl-feat__title a { background-size: 100% 3px; }
+.bl-feat__title a { transition: color .25s ease; }
+.bl-feat:hover .bl-feat__title a { color: var(--red); }
 .bl-feat__exc { color: var(--muted); font-size: clamp(14.5px, 1.1vw, 16.5px); line-height: 1.7; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .bl-feat .btn { align-self: flex-start; margin-top: 6px; }
 
@@ -174,3 +175,14 @@
 @media (prefers-reduced-motion: reduce) {
   .bl-head__streaks span, .bp-hero__media img { animation: none; }
 }
+
+/* ---------------- LIST: red header ---------------- */
+.bl-head { background: var(--red); background-image: linear-gradient(120deg, #e30613 0%, #c80511 100%); }
+.bl-head__flag { opacity: .2; filter: brightness(0) invert(1); }
+.bl-head__streaks span { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .85), transparent); opacity: .4; }
+.bl-head__ghost { -webkit-text-stroke-color: rgba(255, 255, 255, .16); }
+.bl-head .eyebrow { color: rgba(255, 255, 255, .85); }
+.bl-head__title::after { background: var(--ink); }
+.bl-head__sub { color: rgba(255, 255, 255, .9); }
+.bl-stat b { color: #fff; }
+.bl-stat i { color: rgba(255, 255, 255, .7); }
