@@ -58,7 +58,7 @@ test("admin login works", async ({ page, isMobile }) => {
   await expect(page.locator(".adm-admin").first()).toContainText("admin");
   await expect(page.locator(".adm-admin").first()).toContainText(/pełne uprawnienia/i);
   await page.locator(".adm-btn--red", { hasText: "Dodaj administratora" }).click();
-  await expect(page.locator(".adm-perms__row")).toHaveCount(10);   // one checkbox per permission
+  await expect(page.locator(".adm-perms__row")).toHaveCount(11);   // one checkbox per permission (incl. Blog)
   await page.locator(".adm-form .adm-btn", { hasText: "Anuluj" }).click();
   await side("Dziennik zdarzeń");
   await expect(page.locator(".adm-log").nth(1)).toContainText(/logowanie do panelu/i);   // this very login is already logged

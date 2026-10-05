@@ -33,6 +33,8 @@ export const Pages = {
   Platnosc: page(() => import("../pages/Platnosc")),
   Voucher: page(() => import("../pages/Voucher")),
   DlaFirm: page(() => import("../pages/DlaFirm")),
+  Blog: page(() => import("../pages/Blog")),
+  BlogPost: page(() => import("../pages/BlogPost")),
   Admin: page(() => import("../pages/Admin")),
 };
 
@@ -56,6 +58,8 @@ const TABLE = [
   [/^\/zakup\/?$/, "Zakup"],
   [/^\/zakup-wyprawa\/?$/, "ZakupWyprawa"],
   [/^\/(polityka-prywatnosci|regulamin-platnosci)\/?$/, "Legal"],
+  [/^\/blog\/?$/, "Blog"],
+  [/^\/blog\/[^/]+\/?$/, "BlogPost"],
   [/^\/admin/, "Admin"],
 ];
 

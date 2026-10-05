@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # nightly rebuild (03:20 UTC): blog posts published or scheduled in the panel get their static page,
+  # sitemap entry and RSS item even when nobody pushed; the calendar in llms.txt stays fresh too
+  schedule:
+    - cron: "20 3 * * *"
 
 permissions:
   contents: read

@@ -25,7 +25,7 @@ async function getAiKey() {
   _aiKey = await cfg("barabash_ai_key");
   return _aiKey;
 }
-async function translateBatch(texts: string[]) {
+async function translateBatch(texts: string[], timeoutMs = 20000) {
   const key = await getAiKey();
   const url = Deno.env.get("BARABASH_AI_URL") ?? "https://barabash-ai.tailcd3444.ts.net/v1/chat/completions";
   const model = Deno.env.get("BARABASH_AI_MODEL") ?? "qwen3.5:9b";
@@ -37,7 +37,7 @@ async function translateBatch(texts: string[]) {
       "Zachowaj ton, wielkosc liter naglowkow (jesli CAPS to CAPS), tagi HTML i jednostki. " +
       "Zwroc WYLACZNIE tablice JSON stringow w tej samej kolejnosci, bez zadnych komentarzy.\n\n" + JSON.stringify(clean);
     const ctl = new AbortController();
-    const to = setTimeout(() => ctl.abort(), 20000);
+    const to = setTimeout(() => ctl.abort(), timeoutMs);
     const r = await fetch(url, {
       method: "POST", signal: ctl.signal,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
@@ -49,7 +49,7 @@ async function translateBatch(texts: string[]) {
     const m = txt.match(/\[[\s\S]*\]/);
     if (m) txt = m[0];
     const arr = JSON.parse(txt);
-    if (Array.isArray(arr)) return clean.map((_, i) => arr[i] ?? null);
+    if (Array.isArray(arr)) return clean.map((_, i) => (typeof arr[i] === "string" && arr[i].trim() ? arr[i] : null));
   } catch (_) { /* translation is best-effort */ }
   return clean.map(() => null);
 }
@@ -75,12 +75,84 @@ const PL_FIELDS: Record<string, string[]> = {
   trip_packages: ["name_pl", "includes_pl", "note_pl"],
   trip_attractions: ["title_pl", "short_pl", "body_pl"],
   trip_points: ["title_pl", "note_pl"],
+  posts: [],   // a post is translated after its save has been answered (translatePost) — writing stays fast
 };
 const TABLES = Object.keys(PL_FIELDS);
 
 // rows with their own public page: the address (slug) is normalised and must be free — same rule as src/lib/slug.js
-const SLUG_TABLES: Record<string, { label: string; required: boolean }> = { products: { label: "title_pl", required: true }, cars: { label: "name", required: false } };
+const SLUG_TABLES: Record<string, { label: string; required: boolean }> = { products: { label: "title_pl", required: true }, cars: { label: "name", required: false }, posts: { label: "title_pl", required: true } };
 const slugify = (v: unknown) => String(v ?? "").toLowerCase().replace(/ł/g, "l").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+
+/* ---------------- blog ----------------
+   The editor stores an article as HTML with one block (paragraph, heading, list, figure…) per line.
+   The English version is produced after the save has been answered: title, category and lead in one
+   request, the body block by block in small groups; the result is written only if the post has not
+   been saved again in the meantime. */
+const textOf = (html: unknown) => String(html ?? "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+const readingMin = (html: unknown) => Math.max(1, Math.round(textOf(html).split(" ").filter(Boolean).length / 200));
+// The translator may only change the words. Every tag of a translated block is put back exactly as it was
+// written (links, classes, image addresses — a model happily "translates" /kalendarz into /calendar); only
+// an image's alt text keeps its translation. A block whose structure came back different stays Polish.
+const OPEN_TAG = /<[a-zA-Z][^>]*>/g;
+function lockTags(pl: string, en: string): string | null {
+  const a = pl.match(OPEN_TAG) ?? [], b = en.match(OPEN_TAG) ?? [];
+  const name = (t: string) => (t.match(/^<([a-zA-Z0-9]+)/)?.[1] ?? "").toLowerCase();
+  if (a.length !== b.length || a.some((t, i) => name(t) !== name(b[i]))) return null;
+  if ((pl.match(/<\//g) ?? []).length !== (en.match(/<\//g) ?? []).length) return null;
+  let i = 0;
+  return en.replace(OPEN_TAG, (t) => {
+    const src = a[i++];
+    const alt = t.match(/\salt="([^"]*)"/);
+    return alt && /\salt="/.test(src) ? src.replace(/\salt="[^"]*"/, () => ` alt="${alt[1]}"`) : src;
+  });
+}
+const POST_SHORT = ["title_pl", "tag_pl", "excerpt_pl"];
+async function translatePost(post: any, short: string[], body: boolean) {
+  try {
+    const patch: Record<string, string> = {};
+    const jobs: Promise<void>[] = [];
+    if (short.length) jobs.push((async () => {
+      const en = await translateBatch(short.map((f) => String(post[f] ?? "")), 40000);
+      short.forEach((f, i) => { if (en[i]) patch[f.replace(/_pl$/, "_en")] = en[i] as string; });
+    })());
+    if (body && post.body_pl) {
+      const blocks = String(post.body_pl).split("\n");
+      const groups: number[][] = [];
+      let cur: number[] = [], size = 0;
+      blocks.forEach((b, i) => {
+        if (!textOf(b)) return;                                 // images, dividers, embeds — nothing to translate
+        if (cur.length && size + b.length > 1800) { groups.push(cur); cur = []; size = 0; }
+        cur.push(i); size += b.length;
+      });
+      if (cur.length) groups.push(cur);
+      const out = [...blocks];
+      let done = 0;
+      groups.forEach((g) => jobs.push((async () => {
+        const en = await translateBatch(g.map((i) => blocks[i]), 60000);
+        g.forEach((i, k) => { const ok = en[k] ? lockTags(blocks[i], en[k] as string) : null; if (ok) { out[i] = ok; done++; } });
+      })()));
+      await Promise.all(jobs);
+      if (done) patch.body_en = out.join("\n");
+    } else await Promise.all(jobs);
+    // a newer save of the same post wins — its own translation is already on the way
+    if (Object.keys(patch).length) await db.from("posts").update(patch).eq("id", post.id).eq("updated_at", post.updated_at);
+  } catch (_) { /* best-effort: the page falls back to the Polish text */ }
+}
+// A new or changed post needs a fresh build (prerendered page, sitemap, RSS). With a GitHub token in the
+// function secrets the deploy workflow is started right away; without one the nightly build picks it up.
+async function triggerDeploy() {
+  const token = Deno.env.get("GITHUB_DEPLOY_TOKEN");
+  if (!token) return;
+  const repo = Deno.env.get("GITHUB_REPO") ?? "damian-barabash/fra-strona";
+  try {
+    await fetch(`https://api.github.com/repos/${repo}/actions/workflows/deploy.yml/dispatches`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "fra-admin-api" },
+      body: JSON.stringify({ ref: "main" }),
+    });
+  } catch (_) { /* the nightly build still publishes it */ }
+}
+const background = (p: Promise<unknown>) => { try { (globalThis as any).EdgeRuntime.waitUntil(p); } catch (_) { /* local run: let it float */ } };
 
 /* ---------------- auth ---------------- */
 type Admin = { id: string; login: string; name: string | null; role: string; perms: Record<string, boolean> | null; position?: string | null };
@@ -96,7 +168,7 @@ async function auth(req: Request): Promise<Admin | null> {
 /* ---------------- permissions ----------------
    'owner' (the moderator) can do everything; an 'admin' only what its perms jsonb allows.
    PERM_KEYS is the catalogue the panel shows as checkboxes. */
-const PERM_KEYS = ["orders", "messages", "settings", "content", "products", "cars", "terms", "tracks", "instructors", "admins"];
+const PERM_KEYS = ["orders", "messages", "settings", "content", "products", "cars", "terms", "tracks", "instructors", "blog", "admins"];
 const isOwner = (a: Admin) => a.role === "owner";
 const can = (a: Admin, perm: string) => isOwner(a) || !!a.perms?.[perm];
 // which permission a table's CRUD needs
@@ -104,12 +176,13 @@ const TABLE_PERM: Record<string, string> = {
   cars: "cars", instructors: "instructors", tracks: "tracks", terms: "terms",
   events: "content", programs: "content", banners: "content", media: "content",
   products: "products", ice_packages: "products", ice_windows: "products", trip_packages: "products", trip_attractions: "products", trip_points: "products",
+  posts: "blog",
 };
 // which permission a named action needs (prefix match); actions missing here are open to every admin (reads)
 const ACTION_PERM: [RegExp, string][] = [
   [/^config\./, "settings"], [/^bookings\./, "orders"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
 ];
-const UPLOAD_PERMS = ["content", "products", "cars", "terms", "tracks", "instructors"];
+const UPLOAD_PERMS = ["content", "products", "cars", "terms", "tracks", "instructors", "blog"];
 function allowed(a: Admin, action: string, table: string): boolean {
   if (isOwner(a)) return true;
   if (action === "stats") return true;
@@ -596,14 +669,34 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
         }
         const fields = (PL_FIELDS[table] ?? []).filter((f) => row[f] != null);
         if (fields.length) row = await autoTranslate(row, fields);
+        let postShort: string[] = [], bodyChanged = false;
+        if (table === "posts") {
+          // the panel never sends English texts back — they may be older than what the translator wrote meanwhile
+          for (const k of Object.keys(row)) if (k.endsWith("_en")) delete row[k];
+          row.updated_at = new Date().toISOString();
+          if ("body_pl" in row) row.reading_min = readingMin(row.body_pl);
+          const { data: old } = row.id ? await db.from("posts").select("title_pl, tag_pl, excerpt_pl, body_pl, title_en, tag_en, excerpt_en, body_en").eq("id", row.id).maybeSingle() : { data: null };
+          const changed = (f: string) => f in row && String((old as any)?.[f] ?? "") !== String(row[f] ?? "");
+          // also texts whose translation never arrived (an earlier save was overtaken, the translator was down)
+          const untranslated = (f: string) => f in row && !!String(row[f] ?? "").trim() && !(old as any)?.[f.replace(/_pl$/, "_en")];
+          // a changed text shows in Polish until its new translation lands
+          [...POST_SHORT, "body_pl"].filter(changed).forEach((f) => { row[f.replace(/_pl$/, "_en")] = null; });
+          postShort = POST_SHORT.filter((f) => changed(f) || untranslated(f));
+          bodyChanged = changed("body_pl") || untranslated("body_pl");
+        }
         let res;
         if (row.id) { const id = row.id; delete row.created_at; res = await db.from(table).update(row).eq("id", id).select().single(); }
         else { delete row.id; res = await db.from(table).insert(row).select().single(); }
         if (res.error && /duplicate key|unique constraint/i.test(res.error.message)) return json({ ok: false, error: "Taki adres podstrony (slug) już istnieje." }, 409);
+        if (table === "posts" && !res.error) {
+          if (postShort.length || bodyChanged) background(translatePost(res.data, postShort, bodyChanged));
+          background(triggerDeploy());
+        }
         return res.error ? json({ ok: false, error: res.error.message }, 500) : json({ ok: true, row: res.data });
       }
       if (op === "delete") {
         const { error } = await db.from(table).delete().eq("id", payload.id);
+        if (table === "posts" && !error) background(triggerDeploy());
         return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
       }
       if (op === "reorder") {

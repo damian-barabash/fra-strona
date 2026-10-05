@@ -11,6 +11,9 @@ const LS_LANG = "fra_lang";
 const LS_TOKEN = "fra_admin_token";
 
 const bySort = (a, b) => (a.sort ?? 0) - (b.sort ?? 0);
+// blog cards: everything but the article body
+const POST_CARD = "id,slug,title_pl,title_en,tag_pl,tag_en,excerpt_pl,excerpt_en,cover,cover_alt,author,published_at,reading_min,visible,sort,created_at,updated_at";
+const isoToday = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 // the site shows visible rows only; the lists themselves also hold the hidden ones once an admin is in
 const useVisible = (list) => useMemo(() => (list.some((x) => x.visible === false) ? list.filter((x) => x.visible !== false) : list), [list]);
 
@@ -37,8 +40,9 @@ export function StoreProvider({ children }) {
   const [tripPackagesRaw, setTripPackages] = useState([]);     // trip packages (Monaco…)
   const [tripAttractionsRaw, setTripAttractions] = useState([]); // "W programie" of a trip
   const [tripPointsRaw, setTripPoints] = useState([]);           // pins on the trip map (route)
+  const [postsRaw, setPosts] = useState([]);                     // blog (public load: cards only, the article body comes with its page)
   const [ready, setReady] = useState(false);
-  const setters = { cars: setCars, instructors: setInstructors, events: setEvents, programs: setPrograms, banners: setBanners, tracks: setTracks, media: setMediaList, terms: setTerms, products: setProducts, ice_packages: setIcePackages, ice_windows: setIceWindows, trip_packages: setTripPackages, trip_attractions: setTripAttractions, trip_points: setTripPoints };
+  const setters = { posts: setPosts, cars: setCars, instructors: setInstructors, events: setEvents, programs: setPrograms, banners: setBanners, tracks: setTracks, media: setMediaList, terms: setTerms, products: setProducts, ice_packages: setIcePackages, ice_windows: setIceWindows, trip_packages: setTripPackages, trip_attractions: setTripAttractions, trip_points: setTripPoints };
 
   // admin
   const [token, setToken] = useState(() => localStorage.getItem(LS_TOKEN) || "");
@@ -49,7 +53,7 @@ export function StoreProvider({ children }) {
 
   // initial data load
   const load = useCallback(async () => {
-    const [c, cr, ins, ev, pr, bn, tr, md, tm, pd, ip, iw, tp, ta, tpt] = await Promise.all([
+    const [c, cr, ins, ev, pr, bn, tr, md, tm, pd, ip, iw, tp, ta, tpt, po] = await Promise.all([
       supabase.from("content").select("*"),
       supabase.from("cars").select("*").eq("visible", true).order("sort"),
       supabase.from("instructors").select("*").eq("visible", true).order("sort"),
@@ -65,6 +69,7 @@ export function StoreProvider({ children }) {
       supabase.from("trip_packages").select("*").eq("visible", true).order("sort"),
       supabase.from("trip_attractions").select("*").eq("visible", true).order("sort"),
       supabase.from("trip_points").select("*").eq("visible", true).order("sort"),
+      supabase.from("posts").select(POST_CARD).eq("visible", true).order("published_at", { ascending: false }),
     ]);
     const map = {};
     (c.data || []).forEach((r) => { map[r.key] = { pl: r.pl, en: r.en, kind: r.kind }; });
@@ -83,6 +88,9 @@ export function StoreProvider({ children }) {
     setTripPackages(tp.data || []);
     setTripAttractions(ta.data || []);
     setTripPoints(tpt.data || []);
+    // an article opened meanwhile may already have brought its full row — keep the fuller one
+    // …and once the panel's list is in (drafts, scheduled posts), a late public answer must not replace it
+    setPosts((cur) => (adminRows.current ? cur : (po.data || []).map((r) => cur.find((x) => x.id === r.id && x.body_pl != null) || r)));
     setReady(true);
   }, []);
 
@@ -90,9 +98,11 @@ export function StoreProvider({ children }) {
 
   // The public load above only brings visible rows. The panel needs the hidden ones as well — otherwise
   // a hidden product vanishes from its list while still holding its slug. Rows still being saved stay.
+  const adminRows = useRef(false);
   const loadAdmin = useCallback(async (tok) => {
     const r = await adminCall(tok, "tables.all").catch(() => null);
     if (!r?.ok || !r.tables) return;
+    adminRows.current = !!r.tables.posts;
     Object.entries(r.tables).forEach(([table, rows]) => setters[table]?.((list) => {
       const pending = list.filter((x) => x._pending);
       const keep = new Set(pending.map((x) => x.id));
@@ -137,7 +147,8 @@ export function StoreProvider({ children }) {
   };
   const logout = () => {
     if (hasUnsaved() && !confirm("Nie wszystkie zmiany zostały jeszcze zapisane na serwerze. Wylogować mimo to? Te zmiany mogą nie zostać zastosowane.")) return;
-    setToken(""); setAdmin(null); setCmsMode(false); localStorage.removeItem(LS_TOKEN); };
+    adminRows.current = false;
+    setToken(""); setAdmin(null); setCmsMode(false); localStorage.removeItem(LS_TOKEN); load(); };
 
   // optimistic content edit
   const setContentLocal = (key, pl, kind) =>
@@ -162,11 +173,24 @@ export function StoreProvider({ children }) {
     banners = useVisible(bannersRaw), tracks = useVisible(tracksRaw), terms = useVisible(termsRaw), mediaList = useVisible(mediaListRaw),
     products = useVisible(productsRaw), icePackages = useVisible(icePackagesRaw), iceWindows = useVisible(iceWindowsRaw),
     tripPackages = useVisible(tripPackagesRaw), tripAttractions = useVisible(tripAttractionsRaw), tripPoints = useVisible(tripPointsRaw);
+  // the blog shows published posts, newest first (a future date = scheduled, an unchecked box = draft)
+  const posts = useMemo(() => {
+    const today = isoToday();
+    return postsRaw.filter((p) => p.visible !== false && String(p.published_at || "") <= today)
+      .sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)) || String(b.created_at || "").localeCompare(String(a.created_at || "")));
+  }, [postsRaw]);
+  // the article page asks for the whole post (body included) once and keeps it here
+  const loadPost = useCallback(async (slug) => {
+    const { data } = await supabase.from("posts").select("*").eq("slug", slug).limit(1).then((r) => r, () => ({ data: null }));
+    const row = data?.[0] || null;
+    if (row) setPosts((list) => (list.some((x) => x.id === row.id) ? list.map((x) => (x.id === row.id && !x._pending ? row : x)) : [...list, row]));
+    return row;
+  }, []);
   const cars = allCars.filter((c) => (c.category || "sport") === "sport");
   const raceCars = allCars.filter((c) => c.category === "race");
 
   // the panel edits the full lists (hidden rows included)
-  const getters = { cars: allCarsRaw, instructors: instructorsRaw, events: eventsRaw, programs: programsRaw, banners: bannersRaw, tracks: tracksRaw, media: mediaListRaw, terms: termsRaw, products: productsRaw, ice_packages: icePackagesRaw, ice_windows: iceWindowsRaw, trip_packages: tripPackagesRaw, trip_attractions: tripAttractionsRaw, trip_points: tripPointsRaw };
+  const getters = { posts: postsRaw, cars: allCarsRaw, instructors: instructorsRaw, events: eventsRaw, programs: programsRaw, banners: bannersRaw, tracks: tracksRaw, media: mediaListRaw, terms: termsRaw, products: productsRaw, ice_packages: icePackagesRaw, ice_windows: iceWindowsRaw, trip_packages: tripPackagesRaw, trip_attractions: tripAttractionsRaw, trip_points: tripPointsRaw };
 
   // public checkout: the edge function creates the pending booking + the Tpay transaction and
   // answers with payment_url; the browser only ever sends ids (prices are computed server-side)
@@ -184,7 +208,7 @@ export function StoreProvider({ children }) {
      edits of one row can't overtake each other). A new row gets a temporary id until the server
      answers — editing, deleting or reordering it meanwhile waits for the real id. On failure the
      change is rolled back and listed in the sync indicator with a retry. */
-  const TABLE_LABEL = { cars: "Samochód", instructors: "Instruktor", events: "Wydarzenie", programs: "Kafelek", banners: "Baner", tracks: "Tor", media: "Media o nas", terms: "Termin", products: "Produkt", ice_packages: "Laponia — pakiet", ice_windows: "Laponia — termin", trip_packages: "Wyprawa — pakiet", trip_attractions: "Wyprawa — atrakcja", trip_points: "Wyprawa — punkt" };
+  const TABLE_LABEL = { posts: "Wpis na blogu", cars: "Samochód", instructors: "Instruktor", events: "Wydarzenie", programs: "Kafelek", banners: "Baner", tracks: "Tor", media: "Media o nas", terms: "Termin", products: "Produkt", ice_packages: "Laponia — pakiet", ice_windows: "Laponia — termin", trip_packages: "Wyprawa — pakiet", trip_attractions: "Wyprawa — atrakcja", trip_points: "Wyprawa — punkt" };
   const labelOf = (table, row) => `${TABLE_LABEL[table] || table}: ${row?.name || row?.title_pl || row?.label_pl || row?.label || row?.date || row?.id || "nowy"}`;
   const isTmp = (id) => typeof id === "string" && id.startsWith("tmp-");
   const created = useRef(new Map()); // tmp id → Promise<real id | null>
@@ -255,7 +279,7 @@ export function StoreProvider({ children }) {
 
   const value = {
     lang, setLang, ready,
-    content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints,
+    content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints, posts, loadPost,
     raw, t, media, L, reload: async () => { await load(); if (admin) await loadAdmin(token); },
     token, admin, isAdmin: !!admin,
     // permissions: the owner (moderator) can do everything, an admin only what its perms allow

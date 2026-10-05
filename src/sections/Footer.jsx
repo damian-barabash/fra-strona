@@ -12,6 +12,7 @@ const PAGES = [
   { key: "nav.fleet", to: "/flota" },
   { key: "about.szkola.label", to: "/o-szkole" },
   { key: "about.media.label", to: "/media-o-nas" },
+  { key: "nav.blog", to: "/blog" },
   { key: "nav.contact", to: "/kontakt" },
 ];
 

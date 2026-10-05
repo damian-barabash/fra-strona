@@ -65,16 +65,18 @@ export function breadcrumbs(items) {
 }
 
 /**
- * useSeo({ title, description, path, image, type, lang, noindex, jsonld })
+ * useSeo({ title, description, path, image, type, lang, noindex, jsonld, article })
  *  - title: page title without the brand (brand appended); description: ≤160 chars
  *  - jsonld: object or array of schema.org nodes (the Organization node is always included)
+ *  - article: { published, modified, section, author } → article:* meta of a blog post (removed on other pages)
  */
-export function useSeo({ title, description, path, image, type = "website", lang = "pl", noindex = false, jsonld } = {}) {
+export function useSeo({ title, description, path, image, type = "website", lang = "pl", noindex = false, jsonld, article } = {}) {
   const fullTitle = title ? `${title} | ${BRAND}` : `${BRAND} — szkolenia jazdy sportowej i wyścigowej`;
   const desc = clip(description || "Poczuj się jak prawdziwy kierowca wyścigowy. Szkolenia na torze 1:1 z instruktorem, Laponia, wyprawy, vouchery i eventy firmowe.");
   const url = `${SITE}${path || window.location.pathname}`.replace(/\/+$/, "") || SITE;
   const img = abs(image);
   const ldKey = JSON.stringify(jsonld || null);
+  const artKey = JSON.stringify(article || null);
 
   useEffect(() => {
     document.title = fullTitle;
@@ -93,10 +95,16 @@ export function useSeo({ title, description, path, image, type = "website", lang
     meta('meta[name="twitter:description"]', { name: "twitter:description", content: desc });
     meta('meta[name="twitter:image"]', { name: "twitter:image", content: img });
 
+    const art = article || {};
+    [["article:published_time", art.published], ["article:modified_time", art.modified], ["article:section", art.section], ["article:author", art.author]].forEach(([prop, val]) => {
+      if (val) meta(`meta[property="${prop}"]`, { property: prop, content: String(val) });
+      else document.head.querySelector(`meta[property="${prop}"]`)?.remove();
+    });
+
     let ld = document.getElementById("ld-page");
     if (!ld) { ld = document.createElement("script"); ld.type = "application/ld+json"; ld.id = "ld-page"; document.head.appendChild(ld); }
     const nodes = [ORG, { "@type": "WebPage", "@id": `${url}#webpage`, url, name: fullTitle, description: desc, inLanguage: lang, isPartOf: { "@id": `${SITE}/#website` }, primaryImageOfPage: img }];
     const extra = jsonld ? (Array.isArray(jsonld) ? jsonld : [jsonld]) : [];
     ld.textContent = JSON.stringify({ "@context": "https://schema.org", "@graph": [...nodes, ...extra] });
-  }, [fullTitle, desc, url, img, type, lang, noindex, ldKey]);
+  }, [fullTitle, desc, url, img, type, lang, noindex, ldKey, artKey]);
 }

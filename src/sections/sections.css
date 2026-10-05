@@ -417,6 +417,28 @@
 .footer__legal a:hover { color: var(--red); }
 
 /* ============================ RESPONSIVE ============================ */
+/* desktop: the page container is at most 1440 px wide at any window size, so the full menu (with BLOG)
+   is set a little tighter to stay in one row down to the burger breakpoint */
+@media (min-width: 1201px) {
+  .nav__inner { gap: 12px; }
+  .nav__menu { gap: 11px; }
+  .nav__menu a, .nav__menu .nav__droptrig { font-size: 10.5px; letter-spacing: .06em; }
+  .nav__menu a.nav__cta, .nav__cta { padding: 12px 13px; margin-right: 2px; gap: 6px; }
+  .nav__right { gap: 12px; }
+  .nav__logo img { max-height: 40px; }
+  /* the links (DLA FIRM … KONTAKT) sit centred in the room between the two buttons and the icons:
+     the menu takes all the free width and the spare space is split evenly on both sides of the links */
+  .nav__menu { flex: 1 1 auto; }
+  .nav .nav__menu a.nav__cta--dark { margin-right: auto; }
+  .nav .nav__menu > :last-child { margin-right: auto; }
+}
+@media (min-width: 1400px) {
+  .nav__menu { gap: 14px; }
+  .nav__menu a, .nav__menu .nav__droptrig { font-size: 11.5px; letter-spacing: .08em; }
+}
+@media (min-width: 1201px) and (max-width: 1300px) {
+  .nav__socials, .nav__div--r { display: none; }
+}
 @media (max-width: 1200px) {
   .nav__menu, .nav__div { display: none; }
   .nav__burger { display: grid; }

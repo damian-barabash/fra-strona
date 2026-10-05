@@ -5,6 +5,10 @@
  *                      crawlers that do not run JavaScript (most AI bots, link previews) still get
  *                      the full page: text, headings, per-page meta and JSON-LD. React boots on top.
  *   4. llms-full.txt — the readable text of every prerendered page in one file
+ *   5. rss.xml       — feed of the blog posts
+ * Blog posts are written in the panel, so the site is rebuilt after a post changes (admin-api starts the
+ * deploy workflow when it has a GitHub token) and once a night — that is when a new post gets its static
+ * page, its sitemap entry and its place in the feed.
  * Anything that fails (no Supabase, no Chromium) degrades to the plain SPA build — never breaks CI. */
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
@@ -29,6 +33,7 @@ const STATIC = [
   { path: "/mariusz-miekos-racing", priority: 0.7, freq: "monthly" },
   { path: "/o-szkole", priority: 0.6, freq: "monthly" },
   { path: "/media-o-nas", priority: 0.5, freq: "monthly" },
+  { path: "/blog", priority: 0.8, freq: "daily" },
   { path: "/kontakt", priority: 0.6, freq: "yearly" },
   { path: "/rezerwacja-ice", priority: 0.6, freq: "monthly" },
   { path: "/polityka-prywatnosci", priority: 0.2, freq: "yearly" },
@@ -41,7 +46,7 @@ async function sb(table, query) {
   return r.json();
 }
 
-let products = [], cars = [], terms = [], custom = {};
+let products = [], cars = [], terms = [], custom = {}, posts = [];
 try {
   let content;
   [products, cars, terms, content] = await Promise.all([
@@ -51,7 +56,9 @@ try {
     sb("content", "select=key,pl&key=like.flota.custom.p*"),
   ]);
   content.forEach((r) => { custom[r.key.replace("flota.custom.", "")] = Number(r.pl) || 0; });
-  console.log(`[seo] supabase: ${products.length} products, ${cars.length} cars, ${terms.length} terms`);
+  // row-level security only hands out published posts (visible, publication date reached)
+  posts = await sb("posts", "select=slug,title_pl,excerpt_pl,tag_pl,cover,author,published_at,updated_at&order=published_at.desc,created_at.desc").catch(() => []);
+  console.log(`[seo] supabase: ${products.length} products, ${cars.length} cars, ${terms.length} terms, ${posts.length} posts`);
 } catch (e) {
   console.warn(`[seo] supabase unavailable (${e.message}) — static routes only`);
 }
@@ -60,12 +67,14 @@ const routes = [
   ...STATIC,
   ...products.filter((p) => !p.external_url).map((p) => ({ path: `/produkty/${p.slug}`, priority: 0.8, freq: "monthly" })),
   ...cars.map((c) => ({ path: `/flota/${c.slug}`, priority: 0.7, freq: "monthly" })),
+  ...posts.map((p) => ({ path: `/blog/${p.slug}`, priority: 0.7, freq: "monthly", lastmod: String(p.updated_at || p.published_at || TODAY).slice(0, 10) })),
 ];
+const xml = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /* ---------- 1. sitemap ---------- */
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${routes.map((r) => `  <url><loc>${SITE}${r.path === "/" ? "/" : r.path}</loc><lastmod>${TODAY}</lastmod><changefreq>${r.freq}</changefreq><priority>${r.priority}</priority></url>`).join("\n")}
+${routes.map((r) => `  <url><loc>${SITE}${r.path === "/" ? "/" : r.path}</loc><lastmod>${r.lastmod || TODAY}</lastmod><changefreq>${r.freq}</changefreq><priority>${r.priority}</priority></url>`).join("\n")}
 </urlset>
 `;
 writeFileSync(join(DIST, "sitemap.xml"), sitemap);
@@ -101,6 +110,9 @@ ${race.map((c) => `- [${c.name}](${SITE}/flota/${c.slug})`).join("\n")}
 ## Najbliższe terminy
 ${terms.length ? terms.slice(0, 12).map((x) => `- ${x.date}${x.time ? ` ${x.time}` : ""} — ${x.title_pl || "Sport Driving Experience"}, ${x.location_pl}${x.address ? ` (${x.address})` : ""}`).join("\n") : `- aktualny kalendarz: ${SITE}/kalendarz`}
 
+## Blog (najnowsze wpisy)
+${posts.length ? posts.slice(0, 20).map((p) => `- [${p.title_pl}](${SITE}/blog/${p.slug}) — ${p.published_at}${p.tag_pl ? `, ${p.tag_pl}` : ""}${p.excerpt_pl ? `: ${p.excerpt_pl}` : ""}`).join("\n") : `- wszystkie wpisy: ${SITE}/blog`}
+
 ## Strony
 - [Strona główna](${SITE}/)
 - [Oferta](${SITE}/oferta)
@@ -114,6 +126,7 @@ ${terms.length ? terms.slice(0, 12).map((x) => `- ${x.date}${x.time ? ` ${x.time
 - [Mariusz Miękoś — założyciel](${SITE}/mariusz-miekos-racing)
 - [O szkole](${SITE}/o-szkole)
 - [Media o nas](${SITE}/media-o-nas)
+- [Blog](${SITE}/blog)
 - [Kontakt](${SITE}/kontakt)
 - [Polityka prywatności](${SITE}/polityka-prywatnosci)
 - [Regulamin płatności](${SITE}/regulamin-platnosci)
@@ -121,9 +134,34 @@ ${terms.length ? terms.slice(0, 12).map((x) => `- ${x.date}${x.time ? ` ${x.time
 ## Optional
 - [Pełna treść wszystkich stron w jednym pliku](${SITE}/llms-full.txt)
 - [Sitemap](${SITE}/sitemap.xml)
+- [Blog — kanał RSS](${SITE}/rss.xml)
 `;
 writeFileSync(join(DIST, "llms.txt"), llms);
-console.log(`[seo] sitemap.xml (${routes.length} urls) + llms.txt written`);
+
+/* ---------- 2b. rss.xml (blog) ---------- */
+const absUrl = (u) => (/^https?:/i.test(u) ? u : `${SITE}${u.startsWith("/") ? "" : "/"}${u}`);
+const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>Blog — Fastline Racing Academy</title>
+  <link>${SITE}/blog</link>
+  <atom:link href="${SITE}/rss.xml" rel="self" type="application/rss+xml" />
+  <description>Technika jazdy sportowej, porady instruktorów i relacje z toru.</description>
+  <language>pl</language>
+${posts.slice(0, 50).map((p) => `  <item>
+    <title>${xml(p.title_pl)}</title>
+    <link>${SITE}/blog/${p.slug}</link>
+    <guid isPermaLink="true">${SITE}/blog/${p.slug}</guid>
+    <pubDate>${new Date(`${p.published_at}T08:00:00Z`).toUTCString()}</pubDate>
+    ${p.tag_pl ? `<category>${xml(p.tag_pl)}</category>` : ""}
+    <description>${xml(p.excerpt_pl || "")}</description>
+    ${p.cover ? `<enclosure url="${xml(absUrl(p.cover))}" type="image/webp" length="0" />` : ""}
+  </item>`).join("\n")}
+</channel>
+</rss>
+`;
+writeFileSync(join(DIST, "rss.xml"), rss);
+console.log(`[seo] sitemap.xml (${routes.length} urls) + llms.txt + rss.xml written`);
 
 /* ---------- 3. prerender ---------- */
 const pristine = readFileSync(join(DIST, "index.html"), "utf8");
@@ -137,6 +175,8 @@ if (!chromium || process.env.SEO_PRERENDER === "0") {
 }
 
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".woff": "font/woff", ".mp4": "video/mp4", ".webm": "video/webm", ".json": "application/json", ".txt": "text/plain", ".xml": "application/xml" };
+// an article shows its lead at once and the body a request later — wait for the body before the snapshot
+const settled = (path) => (path.startsWith("/blog/") ? ".bp-body, .bp-404" : null);
 const server = createServer((req, res) => {
   const url = decodeURIComponent(req.url.split("?")[0]);
   let file = join(DIST, url);
@@ -168,6 +208,7 @@ for (const r of routes) {
     await page.goto(`http://127.0.0.1:${port}${r.path}`, { waitUntil: "networkidle", timeout: 45000 });
     // wait for the CMS data to land (the store renders defaults first, then Supabase content)
     await page.waitForFunction(() => document.querySelector("#root main") && document.querySelector("#root main").innerText.trim().length > 200, null, { timeout: 15000 }).catch(() => {});
+    if (settled(r.path)) await page.waitForSelector(settled(r.path), { timeout: 15000 }).catch(() => {});
     await page.waitForTimeout(1200);
     const { html, text, title } = await page.evaluate(() => {
       document.querySelectorAll(".reveal, .reveal-up, .reveal-left, .reveal-right, .reveal-scale").forEach((el) => el.classList.add("in"));

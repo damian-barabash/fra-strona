@@ -10,4 +10,5 @@ export const slugify = (s) => base(s).replace(/-+$/, "");
 export const SLUG_TABLES = {
   products: { base: "/produkty/", from: "title_pl", required: true },
   cars: { base: "/flota/", from: "name", required: false },
+  posts: { base: "/blog/", from: "title_pl", required: true },
 };

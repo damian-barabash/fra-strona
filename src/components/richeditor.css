@@ -1,0 +1,48 @@
+/* ============ RICH EDITOR (panel) ============ */
+.rte { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line, #e4e6ea); min-height: 0; }
+.rte:focus-within { border-color: var(--ink, #14161a); }
+.rte__bar { position: sticky; top: 0; z-index: 4; background: #fafbfc; border-bottom: 1px solid var(--line, #e4e6ea); }
+.rte__row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px 8px; }
+.rte__b { min-width: 32px; height: 32px; padding: 0 7px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 600 14px/1 var(--font-body); color: #2c2f36; background: transparent; border: 1px solid transparent; cursor: pointer; transition: background .12s, color .12s; }
+.rte__b:hover { background: #eceef1; }
+.rte__b.on { background: var(--ink, #14161a); color: #fff; }
+.rte__b svg { width: 17px; height: 17px; }
+.rte__b--t { font: 800 10.5px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; padding: 0 9px; }
+.rte__b--w span { font: 700 10.5px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; }
+.rte__b--w { padding: 0 10px; background: #fff; border-color: var(--line, #e4e6ea); }
+.rte__b--c { min-width: 24px; padding: 0 4px; }
+.rte__b--c span { width: 15px; height: 15px; display: block; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); }
+.rte__sep { width: 1px; height: 20px; margin: 0 5px; background: var(--line, #e4e6ea); }
+.rte.is-src .rte__b:not(.rte__b--src) { opacity: .35; pointer-events: none; }
+
+.rte__dlg { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 9px 10px; background: #fff; border-top: 1px solid var(--line, #e4e6ea); border-left: 3px solid var(--red); }
+.rte__dlg--fig { border-left-color: var(--ink, #14161a); }
+.rte__dlg-t { font: 800 10.5px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.rte__in { flex: 1 1 200px; min-width: 0; height: 34px; padding: 0 10px; border: 1px solid var(--line, #e4e6ea); background: #fff; font: 500 13px var(--font-body); color: var(--ink, #14161a); }
+.rte__in:focus { outline: none; border-color: var(--ink, #14161a); }
+.rte__in--url { flex-basis: 260px; }
+.rte__in--sel { flex: 0 0 auto; }
+.rte__chk { display: inline-flex; align-items: center; gap: 6px; font: 600 12.5px var(--font-body); color: #2c2f36; white-space: nowrap; cursor: pointer; }
+.rte__chk input { width: 16px; height: 16px; accent-color: #e30613; }
+.rte__dlg .adm-btn { display: inline-flex; align-items: center; gap: 6px; }
+.rte__dlg .adm-btn svg { width: 14px; height: 14px; }
+.rte__err { flex-basis: 100%; font: 600 12.5px var(--font-body); color: var(--red); }
+
+.rte__area { position: relative; flex: 1; min-height: 420px; padding: 28px clamp(18px, 4vw, 54px) 60px; outline: none; cursor: text; }
+.rte__area[hidden] { display: none; }
+.rte__area.is-empty::before { content: attr(data-ph); position: absolute; left: clamp(18px, 4vw, 54px); top: 28px; color: var(--muted-2, #9aa0a6); pointer-events: none; }
+.rte__area figure { cursor: pointer; outline: 2px solid transparent; outline-offset: 4px; transition: outline-color .15s; }
+.rte__area figure:hover { outline-color: rgba(227, 6, 19, .35); }
+.rte__area figure.rte-sel { outline-color: var(--red); }
+.rte__area iframe { pointer-events: none; }
+.rte__area .rt-fig--wide { margin-inline: clamp(-40px, -3vw, 0px); }
+.rte__area a.rt-btn { cursor: pointer; }
+.rte__src { flex: 1; min-height: 480px; padding: 18px; border: 0; outline: none; resize: vertical; background: #14161a; color: #e6e8ec; font: 500 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; }
+
+.rte__foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--line, #e4e6ea); background: #fafbfc; font: 500 12px var(--font-body); color: var(--muted); }
+.rte__hint { margin-left: auto; color: var(--muted-2, #9aa0a6); }
+@media (max-width: 760px) {
+  .rte__b--w span { display: none; }
+  .rte__hint { display: none; }
+  .rte__area { min-height: 320px; }
+}

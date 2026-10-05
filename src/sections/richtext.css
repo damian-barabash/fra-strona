@@ -1,0 +1,64 @@
+/* ============ RICH TEXT (.rt) ============
+   Typography of a blog article. The same rules style the article page and the panel's editor,
+   so the editor shows a post the way the site will. */
+.rt { font: 400 clamp(16px, 1.12vw, 18px)/1.82 var(--font-body); color: #2a2d33; overflow-wrap: break-word; }
+.rt > * + * { margin-top: 1.15em; }
+.rt::after { content: ""; display: block; clear: both; }
+
+.rt h2, .rt h3, .rt h4 { font-family: var(--font-display); color: var(--text); clear: both; }
+.rt h2 { position: relative; margin-top: 1.9em; padding-top: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: -.005em; font-size: clamp(23px, 2.2vw, 34px); line-height: 1.06; }
+.rt h2::before { content: ""; position: absolute; left: 0; top: 0; width: 46px; height: 4px; background: var(--red); transform: skewX(-22deg); }
+.rt h2[style*="center"]::before { left: 50%; margin-left: -23px; }
+.rt h2[style*="right"]::before { left: auto; right: 0; }
+.rt h3 { margin-top: 1.7em; font-weight: 800; font-size: clamp(19px, 1.55vw, 24px); line-height: 1.18; }
+.rt h4 { margin-top: 1.5em; font-weight: 700; font-size: 12.5px; line-height: 1.3; letter-spacing: .18em; text-transform: uppercase; color: var(--red); }
+.rt > :first-child { margin-top: 0; }
+
+.rt strong, .rt b { font-weight: 700; color: var(--text); }
+.rt a:not(.rt-btn) { color: var(--red); text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; transition: color .15s, background .15s; }
+.rt a:not(.rt-btn):hover { color: #fff; background: var(--red); text-decoration-color: transparent; }
+
+.rt ul, .rt ol { padding: 0; list-style: none; display: flex; flex-direction: column; gap: .5em; }
+.rt li { position: relative; padding-left: 32px; }
+.rt ul > li::before { content: ""; position: absolute; left: 4px; top: .68em; width: 12px; height: 5px; background: var(--red); transform: skewX(-22deg); }
+.rt ol { counter-reset: rt; }
+.rt ol > li { counter-increment: rt; }
+.rt ol > li::before { content: counter(rt, decimal-leading-zero); position: absolute; left: 0; top: .32em; font: 800 12.5px/1.6 var(--font-display); color: var(--red); letter-spacing: .02em; }
+.rt li > ul, .rt li > ol { margin-top: .5em; }
+
+.rt blockquote { position: relative; margin-left: 0; margin-right: 0; margin-block: 1.7em; padding: clamp(20px, 2.4vw, 32px) clamp(20px, 2.6vw, 38px) clamp(20px, 2.4vw, 32px) clamp(26px, 3.2vw, 48px); background: var(--paper); border-left: 5px solid var(--red); font: 700 clamp(17px, 1.5vw, 23px)/1.42 var(--font-display); color: var(--text); clear: both; }
+.rt blockquote::before { content: "“"; position: absolute; right: 16px; top: -6px; font: 900 96px/1 var(--font-display); color: rgba(227, 6, 19, .14); pointer-events: none; }
+
+.rt hr { border: 0; height: 12px; margin-block: 2.3em; clear: both; opacity: .5;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 12px, transparent 12px 24px) 0 0 / 100% 6px no-repeat,
+              repeating-linear-gradient(90deg, transparent 0 12px, var(--ink) 12px 24px) 0 6px / 100% 6px no-repeat; }
+
+/* ---- figures ---- */
+.rt figure { margin: 2em 0; clear: both; }
+.rt figure img { width: 100%; height: auto; display: block; background: var(--paper-2); }
+.rt figcaption { margin-top: 10px; padding-left: 12px; border-left: 3px solid var(--red); font: 500 13px/1.5 var(--font-body); color: var(--muted); }
+.rt .rt-fig--wide { margin-inline: clamp(-140px, -9vw, 0px); }
+.rt .rt-fig--left { float: left; clear: left; width: min(46%, 340px); margin: .4em 1.8em 1em 0; }
+.rt .rt-fig--right { float: right; clear: right; width: min(46%, 340px); margin: .4em 0 1em 1.8em; }
+.rt .rt-video { position: relative; aspect-ratio: 16 / 9; background: var(--ink); }
+.rt .rt-video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+/* ---- buttons ---- */
+.rt .rt-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 1.8em; clear: both; }
+.rt .rt-cta[style*="center"] { justify-content: center; }
+.rt .rt-cta[style*="right"] { justify-content: flex-end; }
+.rt .rt-btn { position: relative; display: inline-flex; align-items: center; gap: 12px; padding: 17px 26px; border-radius: 2px; background: var(--red); color: #fff; font: 700 13px/1.2 var(--font-display); letter-spacing: .14em; text-transform: uppercase; text-decoration: none; transition: transform .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease, border-color .18s ease; }
+.rt .rt-btn::after { content: "›"; font-size: 17px; line-height: 0; transition: transform .2s ease; }
+.rt .rt-btn:hover { background: var(--red-dark); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(227, 6, 19, .28); }
+.rt .rt-btn:hover::after { transform: translateX(4px); }
+.rt .rt-btn--dark { background: var(--ink); }
+.rt .rt-btn--dark:hover { background: #000; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+.rt .rt-btn--ghost { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .22); }
+.rt .rt-btn--ghost:hover { background: transparent; box-shadow: inset 0 0 0 1.5px var(--text); }
+
+@media (max-width: 700px) {
+  .rt .rt-fig--wide { margin-inline: calc(var(--gut) * -1); }
+  .rt .rt-fig--left, .rt .rt-fig--right { float: none; width: 100%; margin: 1.6em 0; }
+  .rt .rt-btn { width: 100%; justify-content: center; padding: 16px 18px; }
+  .rt blockquote::before { font-size: 70px; }
+}

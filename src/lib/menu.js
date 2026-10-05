@@ -3,13 +3,21 @@
 // in the admin "Menu" tab; labels are also inline-editable on the page.
 // "nav.forYou" is rendered as the red KUP SZKOLENIE button (see Nav.jsx).
 export const MENU_A = ["nav.forBiz"];
-export const MENU_B = ["nav.products", "nav.fleet", "nav.about", "nav.pricing", "nav.calendar", "nav.contact"];
+export const MENU_B = ["nav.products", "nav.fleet", "nav.about", "nav.pricing", "nav.calendar", "nav.blog", "nav.contact"];
 // The order of these links is kept in the database: content key "nav.order" (comma-separated ids,
 // changed with the arrows in the admin "Menu" tab). MENU_B is only the fallback order.
 export const ORDER_KEY = "nav.order";
 export const menuOrder = (saved) => {
   const ids = String(saved || "").split(",").map((x) => x.trim()).filter((x, i, a) => MENU_B.includes(x) && a.indexOf(x) === i);
-  return [...ids, ...MENU_B.filter((x) => !ids.includes(x))];
+  // a link the saved order does not know yet (added to the site later) takes its default place:
+  // right before the link that follows it in MENU_B
+  const out = [...ids];
+  MENU_B.forEach((x, i) => {
+    if (out.includes(x)) return;
+    const after = MENU_B.slice(i + 1).find((y) => out.includes(y));
+    if (after) out.splice(out.indexOf(after), 0, x); else out.push(x);
+  });
+  return out;
 };
 export const MENU_CTA = "nav.forYou";
 // "nav.gift" is the second (black) button — KUP PREZENT → voucher configurator
@@ -26,6 +34,7 @@ export const MENU_HREF = {
   "nav.pricing": "/cennik",
   "nav.about": "#instruktorzy",
   "nav.fleet": "/flota",
+  "nav.blog": "/blog",
   "nav.contact": "/kontakt",
 };
 

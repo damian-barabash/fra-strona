@@ -8,7 +8,7 @@ import WhatsAppFab from "./components/WhatsAppFab";
 import SyncIndicator from "./components/SyncIndicator";
 
 const { Mariusz, MediaPage, Szkola, Flota, Auto, Rezerwacja, Kalendarz, Produkty, Produkt, RezerwacjaIce,
-  Cennik, Kontakt, Zakup, ZakupWyprawa, Legal, Platnosc, Voucher, DlaFirm, Admin } = Pages;
+  Cennik, Kontakt, Zakup, ZakupWyprawa, Legal, Platnosc, Voucher, DlaFirm, Blog, BlogPost, Admin } = Pages;
 
 /* Old WordPress paths (still in Google and in old links) land on the matching new page; anything
    else that does not exist goes to the home page instead of a blank screen. */
@@ -21,6 +21,7 @@ const OLD_PATHS = [
   [/^\/instruktorzy/, "/"],
   [/^\/o-nas/, "/o-szkole"],
   [/^\/voucher(y)?/, "/voucher"],
+  [/^\/(aktualnosci|news|category|tag|author)(\/|$)/, "/blog"],
 ];
 function NotFound() {
   const { pathname } = useLocation();
@@ -113,6 +114,8 @@ function AnimatedRoutes() {
         {/* legal docs — kept under the exact old-site paths so links survive the domain switch */}
         <Route path="/polityka-prywatnosci" element={<Legal slug="polityka-prywatnosci" />} />
         <Route path="/regulamin-platnosci" element={<Legal slug="regulamin-platnosci" />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

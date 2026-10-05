@@ -9,6 +9,9 @@ import { MENU, MENU_A, MENU_CTA, MENU_CTA2, MENU_HREF, hrefKey, ORDER_KEY, menuO
 import { TRACKS, trackLabel, fmtZl } from "../lib/flota";
 import { TERM_TYPES } from "../lib/kalendarz";
 import { windowMonths, isoOf } from "../lib/ice";
+import RichEditor from "../components/RichEditor";
+import { postDate, postState, todayIso } from "../lib/blog";
+import { plainText, wordCount } from "../lib/richtext";
 import "./admin.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
@@ -40,6 +43,7 @@ const I = {
   user: <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>,
   tag: <svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V3h8z" /><circle cx="7.5" cy="7.5" r="1.5" /></svg>,
   logout: <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>,
+  blog: <svg viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5z" /><path d="M14 3v5h5M8.5 13h7M8.5 17h4.5" /></svg>,
   ext: <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" /></svg>,
 };
 
@@ -193,7 +197,7 @@ const GROUPS = [
     { t: "wiadomosci", l: "Wiadomości", i: "mail", p: "messages" }, { t: "firmy", l: "Zapytania firmowe", i: "biz", p: "messages" }, { t: "ustawienia", l: "Ustawienia", i: "cog", p: "settings" },
   ] },
   { id: "oferta", label: "Oferta", tabs: [{ t: "products", l: "Produkty", i: "box", p: "products" }, { t: "ice_packages", l: "Laponia — pakiety", i: "snow", p: "products" }, { t: "ice_windows", l: "Laponia — sezon", i: "snow", p: "products" }, { t: "programs", l: "Kafelki na głównej", i: "grid", p: "content" }] },
-  { id: "strona", label: "Strona", tabs: [{ t: "inline", l: "Edycja wizualna", i: "edit", link: "/", p: "content" }, { t: "menu", l: "Menu (nawigacja)", i: "menu", p: "content" }, { t: "banners", l: "Banery", i: "image", p: "content" }, { t: "media", l: "Media o nas", i: "news", p: "content" }] },
+  { id: "strona", label: "Strona", tabs: [{ t: "inline", l: "Edycja wizualna", i: "edit", link: "/", p: "content" }, { t: "menu", l: "Menu (nawigacja)", i: "menu", p: "content" }, { t: "banners", l: "Banery", i: "image", p: "content" }, { t: "media", l: "Media o nas", i: "news", p: "content" }, { t: "posts", l: "Blog", i: "blog", p: "blog" }] },
   { id: "tor", label: "Tor i zespół", tabs: [{ t: "cars", l: "Samochody i ceny", i: "car", p: "cars" }, { t: "terms", l: "Terminy (kalendarz)", i: "cal", p: "terms" }, { t: "tracks", l: "Tory", i: "track", p: "tracks" }, { t: "instructors", l: "Instruktorzy", i: "user", p: "instructors" }] },
   { id: "adm", label: "Administracja", tabs: [{ t: "admins", l: "Administratorzy", i: "users", p: "admins" }, { t: "logs", l: "Dziennik zdarzeń", i: "log", owner: true }] },
 ];
@@ -203,6 +207,7 @@ const PERMS = [
   { k: "messages", l: "Wiadomości i zapytania firmowe", d: "Skrzynka z formularza kontaktowego i briefy od firm" },
   { k: "settings", l: "Ustawienia", d: "Adresy e-mail powiadomień, nadawca, kurs EUR" },
   { k: "content", l: "Edycja strony", d: "Edycja wizualna tekstów i zdjęć, menu, banery, media o nas, kafelki na głównej" },
+  { k: "blog", l: "Blog", d: "Pisanie, edycja i publikowanie wpisów na blogu (teksty, zdjęcia, przyciski, wideo)" },
   { k: "products", l: "Produkty i oferta", d: "Dodawanie i zmiana produktów, pakiety i sezon Laponii, wyprawy" },
   { k: "cars", l: "Samochody i ceny", d: "Flota i ceny pakietów" },
   { k: "terms", l: "Terminy (kalendarz)", d: "Daty szkoleń na torach" },
@@ -294,6 +299,7 @@ function Shell() {
           : tab === "firmy" ? <MessagesTab kind="firma" />
           : tab === "ustawienia" ? <SettingsTab />
           : tab === "menu" ? <MenuTab />
+          : tab === "posts" ? <BlogTab />
           : <EntityTab key={tab} table={tab} />}
       </main>
     </div>
@@ -800,6 +806,188 @@ function EntityTab({ table }) {
   );
 }
 
+/* ============ BLOG ============
+   Posts are written here: a title, the rich editor (text, photos, links, buttons, video) and a side
+   column with everything around the text — address, cover, category, lead, date and how the post
+   looks in Google. Saving keeps the editor open; a new post gets its real id from the first save. */
+const POST_STATE = { live: ["Opublikowany", "ok"], scheduled: ["Zaplanowany", "info"], draft: ["Szkic", "off"] };
+const POST_FILTERS = [["", "Wszystkie"], ["live", "Opublikowane"], ["scheduled", "Zaplanowane"], ["draft", "Szkice"]];
+const POST_KEYS = ["title_pl", "slug", "tag_pl", "excerpt_pl", "body_pl", "cover", "cover_alt", "author", "published_at", "seo_title", "seo_desc", "visible"];
+const postSnap = (r) => JSON.stringify(POST_KEYS.map((k) => r?.[k] ?? ""));
+
+function BlogTab() {
+  const store = useStore();
+  const all = store.getters.posts || [];
+  const items = useMemo(() => [...all].sort((a, b) => String(b.published_at || "").localeCompare(String(a.published_at || "")) || String(b.created_at || "").localeCompare(String(a.created_at || ""))), [all]);
+  const [editing, setEditing] = useState(null);
+  const [filter, setFilter] = useState("");
+  const [q, setQ] = useState("");
+  const counts = useMemo(() => { const c = { live: 0, scheduled: 0, draft: 0 }; items.forEach((p) => { c[postState(p)] += 1; }); return c; }, [items]);
+  const tags = useMemo(() => [...new Set(items.map((p) => (p.tag_pl || "").trim()).filter(Boolean))], [items]);
+
+  if (editing) return <PostEditor row={editing} items={all} tags={tags} onClose={() => setEditing(null)} />;
+
+  const blank = () => setEditing({ title_pl: "", slug: "", tag_pl: tags[0] || "", excerpt_pl: "", body_pl: "", cover: "", cover_alt: "", author: store.admin?.name || "", published_at: todayIso(), seo_title: "", seo_desc: "", visible: false, sort: 0 });
+  const remove = (r) => { if (!confirm(`Usunąć wpis „${r.title_pl || r.slug}”? Tej operacji nie da się cofnąć.`)) return; store.deleteEntity("posts", r.id); };
+  const needle = q.trim().toLowerCase();
+  const list = items.filter((p) => (!filter || postState(p) === filter) && (!needle || `${p.title_pl} ${p.tag_pl} ${p.slug} ${p.author}`.toLowerCase().includes(needle)));
+
+  return (
+    <div>
+      <div className="adm-head"><div><h2>Blog <span className="adm-count">{items.length}</span></h2>
+        <p className="adm-sub">Wpisy na stronie <b>/blog</b>. Szkic widzisz tylko Ty; wpis z datą w przyszłości opublikuje się sam tego dnia. Wersja angielska tłumaczy się automatycznie po zapisie. Nowy wpis trafia do Google przy najbliższej publikacji strony (automatycznie, najpóźniej następnej nocy).</p></div>
+        <button className="adm-btn adm-btn--red" onClick={blank}>+ Nowy wpis</button></div>
+      <div className="adm-filters blg-filters">
+        <div className="adm-chips">{POST_FILTERS.map(([k, l]) => <button key={k} className={`adm-chip ${filter === k ? "on" : ""}`} onClick={() => setFilter(k)}>{l} {k ? counts[k] : items.length}</button>)}</div>
+        <input className="adm-search" placeholder="Szukaj po tytule, kategorii, autorze…" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      <div className="adm-list">
+        {list.map((r) => {
+          const stt = postState(r);
+          return (
+            <div className="adm-row blg-row" key={r.id}>
+              <div className="adm-row__thumb blg-row__thumb" style={{ background: "#e9eaec" }}>{r.cover && <img src={r.cover} alt="" />}</div>
+              <div className="adm-row__title blg-row__main">
+                <button type="button" className="blg-row__ttl" onClick={() => setEditing({ ...r })}>{r.title_pl || "(bez tytułu)"}</button>
+                <small className="blg-row__meta">{postDate(r.published_at)}{r.tag_pl ? ` · ${r.tag_pl}` : ""}{r.author ? ` · ${r.author}` : ""}{r.reading_min ? ` · ${r.reading_min} min` : ""}</small>
+              </div>
+              <span className={`adm-badge adm-badge--${POST_STATE[stt][1]}`}>{POST_STATE[stt][0]}</span>
+              {r._pending && <span className="adm-badge adm-badge--sync">zapisuję…</span>}
+              <div className="adm-row__ops">
+                <a className="adm-mini" href={`/blog/${r.slug}`} target="_blank" rel="noreferrer">{stt === "live" ? "Zobacz" : "Podgląd"}</a>
+                <button className="adm-mini adm-mini--dark" onClick={() => setEditing({ ...r })}>Edytuj</button>
+                <button className="adm-mini adm-mini--del" onClick={() => remove(r)}>Usuń</button>
+              </div>
+            </div>
+          );
+        })}
+        {!list.length && <div className="adm-empty">{items.length ? "Brak wpisów dla tego filtra." : "Nie ma jeszcze żadnego wpisu. Kliknij „+ Nowy wpis”."}</div>}
+      </div>
+    </div>
+  );
+}
+
+function PostEditor({ row, items, tags, onClose }) {
+  const store = useStore();
+  const [e, setE] = useState(row);
+  const [savedSnap, setSavedSnap] = useState(() => (row.id ? postSnap(row) : ""));
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [flash, setFlash] = useState(false);
+  const slugTouched = useRef(!!row.id);
+  const check = useSlugCheck("posts", e, items);
+  const dirty = postSnap(e) !== savedSnap;
+  const slugBad = check.state === "taken" || check.state === "checking" || check.state === "empty";
+  const set = (k, v) => { setErr(""); setE((x) => { const n = { ...x, [k]: v }; if (k === "title_pl" && !slugTouched.current) n.slug = slugify(v); return n; }); };
+
+  // leaving with unsaved text asks first (the browser's own prompt covers closing the tab)
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (ev) => { ev.preventDefault(); ev.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const close = () => { if (dirty && !confirm("Masz niezapisane zmiany we wpisie. Wyjść bez zapisywania?")) return; onClose(); };
+
+  const save = async (patch = {}) => {
+    const r = { ...e, ...patch };
+    if (!String(r.title_pl || "").trim()) { setErr("Wpisz tytuł wpisu."); return; }
+    if (slugBad) { setErr("Popraw adres wpisu (pole „Adres wpisu” po prawej)."); return; }
+    if (r.visible !== false && !plainText(r.body_pl) && !/<(img|iframe)/i.test(r.body_pl || "")) { setErr("Wpis jest pusty — napisz treść albo zapisz go jako szkic."); return; }
+    const payload = { ...r, title_pl: r.title_pl.trim(), slug: slugify(r.slug), tag_pl: (r.tag_pl || "").trim(), published_at: r.published_at || todayIso(), visible: r.visible !== false, sort: r.sort ?? 0 };
+    setE(payload); setBusy(true); setErr("");
+    const res = await store.upsertEntity("posts", payload);
+    setBusy(false);
+    if (!res?.ok) { setErr(res?.error || "Nie udało się zapisać wpisu — spróbuj ponownie."); return; }
+    // text typed while the request was on its way stays; only the id and the "saved" mark are taken over
+    if (res.row?.id) setE((x) => ({ ...x, id: res.row.id }));
+    slugTouched.current = true;
+    setSavedSnap(postSnap(payload));
+    setFlash(true); setTimeout(() => setFlash(false), 2600);
+  };
+
+  const stt = postState(e);
+  const gTitle = `${(e.seo_title || e.title_pl || "Tytuł wpisu").trim()} | Fastline Racing Academy`;
+  const gDesc = clip(e.seo_desc || e.excerpt_pl || plainText(e.body_pl) || "Opis wpisu — pojawi się tutaj zajawka albo początek tekstu.", 158);
+  const words = wordCount(e.body_pl);
+
+  return (
+    <div className="blg">
+      <div className="blg-top">
+        <button type="button" className="adm-btn adm-btn--sm" onClick={close}>‹ Lista wpisów</button>
+        <h2>{e.id ? "Edycja wpisu" : "Nowy wpis"}</h2>
+        <span className={`adm-badge adm-badge--${POST_STATE[stt][1]}`}>{POST_STATE[stt][0]}</span>
+        {flash && !dirty && <span className="blg-saved">✓ Zapisano</span>}
+        {dirty && !busy && <span className="blg-dirty">● niezapisane zmiany</span>}
+        <div style={{ flex: 1 }} />
+        {e.id && e.slug && <a className="adm-btn adm-btn--sm" href={`/blog/${slugify(e.slug)}`} target="_blank" rel="noreferrer">{stt === "live" ? "Zobacz na stronie" : "Podgląd"} ↗</a>}
+        {e.visible === false
+          ? <><button type="button" className="adm-btn" onClick={() => save()} disabled={busy}>{busy ? "Zapisuję…" : "Zapisz szkic"}</button>
+            <button type="button" className="adm-btn adm-btn--red" onClick={() => save({ visible: true })} disabled={busy}>{String(e.published_at || "") > todayIso() ? "Zaplanuj publikację" : "Opublikuj"}</button></>
+          : <button type="button" className="adm-btn adm-btn--red" onClick={() => save()} disabled={busy || (!dirty && !!e.id)}>{busy ? "Zapisuję…" : "Zapisz zmiany"}</button>}
+      </div>
+      {err && <div className="adm-note blg-err" role="alert">{err}</div>}
+
+      <div className="blg-grid">
+        <div className="blg-main">
+          <textarea className="blg-title" rows={1} placeholder="Tytuł wpisu" value={e.title_pl || ""} aria-label="Tytuł wpisu"
+            onChange={(ev) => set("title_pl", ev.target.value.replace(/\n/g, " "))}
+            ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; } }} />
+          <RichEditor value={e.body_pl || ""} onChange={(html) => set("body_pl", html)} placeholder="Zacznij pisać… Nagłówki, zdjęcia, linki, przyciski i wideo dodasz z paska powyżej." />
+        </div>
+
+        <aside className="blg-side">
+          <div className="blg-card">
+            <h4>Publikacja</h4>
+            <label className="adm-f adm-f--check"><input type="checkbox" checked={e.visible !== false} onChange={(ev) => set("visible", ev.target.checked)} /><span>Widoczny na stronie (odznacz = szkic)</span></label>
+            <label className="adm-f"><span>Data publikacji</span><input type="date" value={e.published_at || ""} onChange={(ev) => set("published_at", ev.target.value)} /></label>
+            {String(e.published_at || "") > todayIso() && e.visible !== false && <p className="blg-hint">Data w przyszłości — wpis pojawi się na stronie sam, {postDate(e.published_at)}.</p>}
+            <label className="adm-f"><span>Autor</span><input value={e.author || ""} placeholder="np. Mariusz Miękoś" onChange={(ev) => set("author", ev.target.value)} /></label>
+          </div>
+
+          <div className="blg-card">
+            <h4>Adres i kategoria</h4>
+            <SlugField f={{ l: "Adres wpisu" }} table="posts" value={e.slug} check={check} onChange={(v) => { slugTouched.current = true; set("slug", v); }} onOpen={() => {}} />
+            <label className="adm-f"><span>Kategoria</span><input list="blg-tags" value={e.tag_pl || ""} placeholder="np. TECHNIKA JAZDY" onChange={(ev) => set("tag_pl", ev.target.value)} /></label>
+            <datalist id="blg-tags">{tags.map((x) => <option key={x} value={x} />)}</datalist>
+            <p className="blg-hint">Kategorie tworzą filtr na stronie bloga. Wpisz istniejącą albo nową.</p>
+          </div>
+
+          <div className="blg-card">
+            <h4>Okładka</h4>
+            <Field f={{ k: "cover", t: "image", l: "Zdjęcie główne (poziome, min. 1600 px szerokości)" }} value={e.cover} onChange={(v) => set("cover", v)} />
+            <label className="adm-f"><span>Opis zdjęcia (alt)</span><input value={e.cover_alt || ""} placeholder="Co widać na zdjęciu" onChange={(ev) => set("cover_alt", ev.target.value)} /></label>
+          </div>
+
+          <div className="blg-card">
+            <h4>Zajawka</h4>
+            <label className="adm-f"><span>Krótki wstęp — na kafelku i pod tytułem <em className={`blg-cnt ${(e.excerpt_pl || "").length > 220 ? "bad" : ""}`}>{(e.excerpt_pl || "").length}/220</em></span>
+              <textarea rows={4} value={e.excerpt_pl || ""} placeholder="1–2 zdania, które zachęcą do przeczytania." onChange={(ev) => set("excerpt_pl", ev.target.value)} /></label>
+          </div>
+
+          <div className="blg-card">
+            <h4>Google (SEO)</h4>
+            <div className="blg-google" aria-label="Podgląd wyniku w Google">
+              <span className="blg-google__url">fastlineracingacademy.pl › blog › {slugify(e.slug) || "adres-wpisu"}</span>
+              <span className="blg-google__ttl">{gTitle.length > 62 ? `${gTitle.slice(0, 61)}…` : gTitle}</span>
+              <span className="blg-google__desc">{gDesc}</span>
+            </div>
+            <label className="adm-f"><span>Tytuł w Google <em className={`blg-cnt ${(e.seo_title || "").length > 60 ? "bad" : ""}`}>{(e.seo_title || "").length}/60</em></span><input value={e.seo_title || ""} placeholder="Puste = tytuł wpisu" onChange={(ev) => set("seo_title", ev.target.value)} /></label>
+            <label className="adm-f"><span>Opis w Google <em className={`blg-cnt ${(e.seo_desc || "").length > 160 ? "bad" : ""}`}>{(e.seo_desc || "").length}/160</em></span><textarea rows={3} value={e.seo_desc || ""} placeholder="Puste = zajawka" onChange={(ev) => set("seo_desc", ev.target.value)} /></label>
+            <ul className="blg-tips">
+              <li className={words >= 300 ? "ok" : ""}>Tekst ma {words} słów{words < 300 ? " — Google lubi wpisy od ok. 300 słów" : ""}</li>
+              <li className={/<h2/i.test(e.body_pl || "") ? "ok" : ""}>Śródtytuły (H2) dzielą tekst na części</li>
+              <li className={e.cover ? "ok" : ""}>Okładka — pokazuje się przy udostępnianiu linku</li>
+              <li className={!/<img(?![^>]*alt="[^"]+")/i.test(e.body_pl || "") ? "ok" : ""}>Każde zdjęcie w tekście ma opis (alt)</li>
+              <li className={/<a [^>]*href="\//i.test(e.body_pl || "") ? "ok" : ""}>Link do naszej oferty, kalendarza albo floty</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
 /* ============ TRIP EDITOR (inside the product form) ============ */
 const TRIP_TABS = [{ t: "trip_points", l: "Punkty na mapie" }, { t: "trip_packages", l: "Pakiety" }, { t: "trip_attractions", l: "Atrakcje" }];
 function TripEditor({ slug }) {
@@ -1034,7 +1222,7 @@ const ACTION_LABEL = (a, tgt) => {
   if (op === "reorder") return [`Zmiana kolejności: ${tl}`, "info"];
   return [a, "off"];
 };
-const ACTION_FILTERS = [["", "Wszystkie"], ["login", "Logowania"], ["content", "Treść"], ["media", "Pliki"], ["config", "Ustawienia"], ["bookings", "Zamówienia"], ["messages", "Wiadomości"], ["products", "Produkty"], ["cars", "Samochody"], ["terms", "Terminy"], ["admins", "Administratorzy"]];
+const ACTION_FILTERS = [["", "Wszystkie"], ["login", "Logowania"], ["content", "Treść"], ["media", "Pliki"], ["config", "Ustawienia"], ["bookings", "Zamówienia"], ["messages", "Wiadomości"], ["products", "Produkty"], ["posts", "Blog"], ["cars", "Samochody"], ["terms", "Terminy"], ["admins", "Administratorzy"]];
 function LogsTab() {
   const { adminCall } = useStore();
   const [rows, setRows] = useState(null);
