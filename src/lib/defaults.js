@@ -459,6 +459,11 @@ export const DEFAULTS = {
   "cen.boardTitle": { pl: "CENY SESJI NA TORZE", en: "TRACK SESSION PRICES", kind: "text" },
   "cen.lodz": { pl: "TOR ŁÓDŹ", en: "ŁÓDŹ CIRCUIT", kind: "text" },
   "cen.poznan": { pl: "TOR POZNAŃ", en: "POZNAŃ CIRCUIT", kind: "text" },
+  // price-list switch: two price groups, the hint names example tracks of each group
+  "cen.sport": { pl: "TORY SPORTOWE", en: "SPORT TRACKS", kind: "text" },
+  "cen.sportHint": { pl: "np. Tor Łódź, Tor Modlin", en: "e.g. Tor Łódź, Tor Modlin", kind: "text" },
+  "cen.race": { pl: "TORY WYŚCIGOWE", en: "RACING CIRCUITS", kind: "text" },
+  "cen.raceHint": { pl: "np. Tor Poznań, Tor Silesia", en: "e.g. Tor Poznań, Tor Silesia", kind: "text" },
   "cen.car": { pl: "SAMOCHÓD", en: "CAR", kind: "text" },
   "cen.book": { pl: "REZERWUJ", en: "BOOK", kind: "text" },
   "cen.ownSub": { pl: "Przyjeżdżasz swoim autem", en: "You bring your own car", kind: "text" },

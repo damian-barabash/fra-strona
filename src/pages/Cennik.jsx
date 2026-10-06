@@ -74,10 +74,11 @@ export default function Cennik() {
               <div className="cn-board__right reveal-up rv-d2">
               <span className="cn-netto">{lang === "en" ? "ALL PRICES NET" : "WSZYSTKIE CENY NETTO"}</span>
               <div className="cn-switch" role="tablist">
-                {[{ k: "lodz", l: t("cen.lodz") }, { k: "poznan", l: t("cen.poznan") }].map((x) => (
+                {[{ k: "lodz", l: t("cen.sport"), h: t("cen.sportHint") }, { k: "poznan", l: t("cen.race"), h: t("cen.raceHint") }].map((x) => (
                   <button key={x.k} role="tab" aria-selected={track === x.k}
-                    className={`cn-switch__b ${track === x.k ? "on" : ""}`} onClick={() => setTrack(x.k)}>
-                    {x.l}
+                    className={`cn-switch__b cn-switch__b--hint ${track === x.k ? "on" : ""}`} onClick={() => setTrack(x.k)}>
+                    <span>{x.l}</span>
+                    <small>{x.h}</small>
                   </button>
                 ))}
               </div>

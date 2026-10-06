@@ -24,6 +24,8 @@
 }
 .cn-switch__b:hover { color: var(--text); }
 .cn-switch__b.on { background: var(--ink); color: #fff; }
+.cn-switch__b--hint { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 11px 22px; }
+.cn-switch__b--hint small { font: 500 10.5px/1 var(--font-body); letter-spacing: .02em; text-transform: none; opacity: .72; white-space: nowrap; }
 
 /* the board itself — a timing sheet */
 .cn-table { position: relative; z-index: 1; background: #fff; border: 1px solid var(--line); overflow-x: auto; }
@@ -114,3 +116,11 @@
 .cn-list b .cn-net { font-size: 9px; }
 .cn-board__right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .cn-netto { font: 800 10px/1 var(--font-display); letter-spacing: .2em; color: var(--red); padding: 8px 10px; border: 1px solid rgba(227,6,19,.35); }
+
+/* track-group switch with a hint line: on a phone both halves share the full width */
+.cn-switch__b--hint span { white-space: nowrap; }
+@media (max-width: 560px) {
+  .cn-board__right, .cn-board__right .cn-switch { width: 100%; }
+  .cn-switch__b--hint { flex: 1 1 0; min-width: 0; padding: 11px 6px; letter-spacing: .08em; font-size: 10.5px; }
+  .cn-switch__b--hint small { font-size: 9.5px; }
+}

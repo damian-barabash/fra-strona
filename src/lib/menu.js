@@ -2,8 +2,8 @@
 // hrefs in content keys `nav.*.href` (kind "url", NOT translated). Both are editable
 // in the admin "Menu" tab; labels are also inline-editable on the page.
 // "nav.forYou" is rendered as the red KUP SZKOLENIE button (see Nav.jsx).
-export const MENU_A = ["nav.forBiz"];
-export const MENU_B = ["nav.products", "nav.fleet", "nav.about", "nav.pricing", "nav.calendar", "nav.blog", "nav.contact"];
+export const MENU_A = ["nav.products"];
+export const MENU_B = ["nav.forBiz", "nav.fleet", "nav.about", "nav.pricing", "nav.calendar", "nav.blog", "nav.contact"];
 // The order of these links is kept in the database: content key "nav.order" (comma-separated ids,
 // changed with the arrows in the admin "Menu" tab). MENU_B is only the fallback order.
 export const ORDER_KEY = "nav.order";
