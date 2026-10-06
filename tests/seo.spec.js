@@ -40,7 +40,7 @@ test("car page carries Product schema with a PLN offer and the car photo as og:i
   const graph = (await ld(page))["@graph"];
   const product = graph.find((n) => n["@type"] === "Product");
   expect(product.offers.priceCurrency).toBe("PLN");
-  expect(product.offers.lowPrice).toBe(2980);
+  expect(product.offers.lowPrice).toBe(3400);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /bmw-m2/);
   expect(graph.find((n) => n["@type"] === "BreadcrumbList").itemListElement).toHaveLength(3);
 });

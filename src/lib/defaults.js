@@ -325,16 +325,16 @@ export const DEFAULTS = {
   "flota.customBtn": { pl: "WYBIERAM SWOJE AUTO", en: "I CHOOSE MY OWN CAR", kind: "text" },
   // custom-car package prices (kind url -> numbers, not translated). p1/p5 derived, p3/p6/p9 z cennika
   "flota.custom.p1": { pl: "550", en: null, kind: "url" },
-  "flota.custom.p3": { pl: "1500", en: null, kind: "url" },
+  "flota.custom.p3": { pl: "1650", en: null, kind: "url" },
   "flota.custom.p5": { pl: "2050", en: null, kind: "url" },
-  "flota.custom.p6": { pl: "2400", en: null, kind: "url" },
-  "flota.custom.p9": { pl: "3350", en: null, kind: "url" },
+  "flota.custom.p6": { pl: "2700", en: null, kind: "url" },
+  "flota.custom.p9": { pl: "3600", en: null, kind: "url" },
   // custom-car Poznań prices (own vehicle Łódź + 1200 zł Poznań surcharge)
   "flota.custom.p1_pozn": { pl: "1750", en: null, kind: "url" },
-  "flota.custom.p3_pozn": { pl: "2700", en: null, kind: "url" },
+  "flota.custom.p3_pozn": { pl: "2850", en: null, kind: "url" },
   "flota.custom.p5_pozn": { pl: "3250", en: null, kind: "url" },
-  "flota.custom.p6_pozn": { pl: "3600", en: null, kind: "url" },
-  "flota.custom.p9_pozn": { pl: "4550", en: null, kind: "url" },
+  "flota.custom.p6_pozn": { pl: "3900", en: null, kind: "url" },
+  "flota.custom.p9_pozn": { pl: "4800", en: null, kind: "url" },
 
   // booking flow (fuel-fill wizard)
   "flota.bk.title": { pl: "REZERWACJA", en: "BOOKING", kind: "text" },
