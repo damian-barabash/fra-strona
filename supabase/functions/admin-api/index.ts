@@ -75,7 +75,8 @@ const PL_FIELDS: Record<string, string[]> = {
   trip_packages: ["name_pl", "includes_pl", "note_pl"],
   trip_attractions: ["title_pl", "short_pl", "body_pl"],
   trip_points: ["title_pl", "note_pl"],
-  posts: [],   // a post is translated after its save has been answered (translatePost) — writing stays fast
+  posts: [],   // a post is translated after its save has been answered (translateRich) — writing stays fast
+  popups: [],  // same: the rich text of a pop-up is translated in the background
 };
 const TABLES = Object.keys(PL_FIELDS);
 
@@ -106,8 +107,13 @@ function lockTags(pl: string, en: string): string | null {
     return alt && /\salt="/.test(src) ? src.replace(/\salt="[^"]*"/, () => ` alt="${alt[1]}"`) : src;
   });
 }
+// What goes to the translator carries bare tags (<a>, <span>…): the attributes come back from the Polish
+// block anyway (lockTags), and their quotes are what most often breaks the JSON the model answers with.
+const bare = (html: string) => html.replace(/<([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (t, n) => (n.toLowerCase() === "img" ? t : `<${n}>`));
 const POST_SHORT = ["title_pl", "tag_pl", "excerpt_pl"];
-async function translatePost(post: any, short: string[], body: boolean) {
+// tables whose rows carry a rich `body_pl` next to a few short texts — all translated after the save
+const RICH: Record<string, string[]> = { posts: POST_SHORT, popups: ["eyebrow_pl", "title_pl", "btn_label_pl"] };
+async function translateRich(table: string, post: any, short: string[], body: boolean) {
   try {
     const patch: Record<string, string> = {};
     const jobs: Promise<void>[] = [];
@@ -128,14 +134,14 @@ async function translatePost(post: any, short: string[], body: boolean) {
       const out = [...blocks];
       let done = 0;
       groups.forEach((g) => jobs.push((async () => {
-        const en = await translateBatch(g.map((i) => blocks[i]), 60000);
+        const en = await translateBatch(g.map((i) => bare(blocks[i])), 60000);
         g.forEach((i, k) => { const ok = en[k] ? lockTags(blocks[i], en[k] as string) : null; if (ok) { out[i] = ok; done++; } });
       })()));
       await Promise.all(jobs);
       if (done) patch.body_en = out.join("\n");
     } else await Promise.all(jobs);
     // a newer save of the same post wins — its own translation is already on the way
-    if (Object.keys(patch).length) await db.from("posts").update(patch).eq("id", post.id).eq("updated_at", post.updated_at);
+    if (Object.keys(patch).length) await db.from(table).update(patch).eq("id", post.id).eq("updated_at", post.updated_at);
   } catch (_) { /* best-effort: the page falls back to the Polish text */ }
 }
 // A new or changed post needs a fresh build (prerendered page, sitemap, RSS). With a GitHub token in the
@@ -174,7 +180,7 @@ const can = (a: Admin, perm: string) => isOwner(a) || !!a.perms?.[perm];
 // which permission a table's CRUD needs
 const TABLE_PERM: Record<string, string> = {
   cars: "cars", instructors: "instructors", tracks: "tracks", terms: "terms",
-  events: "content", programs: "content", banners: "content", media: "content",
+  events: "content", programs: "content", banners: "content", media: "content", popups: "content",
   products: "products", ice_packages: "products", ice_windows: "products", trip_packages: "products", trip_attractions: "products", trip_points: "products",
   posts: "blog",
 };
@@ -670,27 +676,38 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
         const fields = (PL_FIELDS[table] ?? []).filter((f) => row[f] != null);
         if (fields.length) row = await autoTranslate(row, fields);
         let postShort: string[] = [], bodyChanged = false;
-        if (table === "posts") {
+        const rich = RICH[table];
+        if (rich) {
           // the panel never sends English texts back — they may be older than what the translator wrote meanwhile
           for (const k of Object.keys(row)) if (k.endsWith("_en")) delete row[k];
           row.updated_at = new Date().toISOString();
-          if ("body_pl" in row) row.reading_min = readingMin(row.body_pl);
-          const { data: old } = row.id ? await db.from("posts").select("title_pl, tag_pl, excerpt_pl, body_pl, title_en, tag_en, excerpt_en, body_en").eq("id", row.id).maybeSingle() : { data: null };
+          if (table === "posts" && "body_pl" in row) row.reading_min = readingMin(row.body_pl);
+          const all = [...rich, "body_pl"];
+          const { data: old } = row.id ? await db.from(table).select(all.flatMap((f) => [f, f.replace(/_pl$/, "_en")]).join(", ")).eq("id", row.id).maybeSingle() : { data: null };
           const changed = (f: string) => f in row && String((old as any)?.[f] ?? "") !== String(row[f] ?? "");
           // also texts whose translation never arrived (an earlier save was overtaken, the translator was down)
           const untranslated = (f: string) => f in row && !!String(row[f] ?? "").trim() && !(old as any)?.[f.replace(/_pl$/, "_en")];
           // a changed text shows in Polish until its new translation lands
-          [...POST_SHORT, "body_pl"].filter(changed).forEach((f) => { row[f.replace(/_pl$/, "_en")] = null; });
-          postShort = POST_SHORT.filter((f) => changed(f) || untranslated(f));
+          all.filter(changed).forEach((f) => { row[f.replace(/_pl$/, "_en")] = null; });
+          postShort = rich.filter((f) => changed(f) || untranslated(f));
           bodyChanged = changed("body_pl") || untranslated("body_pl");
+        }
+        if (table === "popups") {
+          // the counters belong to the site, not to the form; and only one pop-up may be on at a time
+          delete row.views; delete row.clicks;
+          if ("delay_sec" in row) row.delay_sec = Math.min(600, Math.max(0, Math.round(Number(row.delay_sec) || 0)));
+          if (row.active === true) {
+            const off = await db.from("popups").update({ active: false }).eq("active", true).neq("id", row.id ?? "00000000-0000-0000-0000-000000000000");
+            if (off.error) return json({ ok: false, error: off.error.message }, 500);
+          }
         }
         let res;
         if (row.id) { const id = row.id; delete row.created_at; res = await db.from(table).update(row).eq("id", id).select().single(); }
         else { delete row.id; res = await db.from(table).insert(row).select().single(); }
         if (res.error && /duplicate key|unique constraint/i.test(res.error.message)) return json({ ok: false, error: "Taki adres podstrony (slug) już istnieje." }, 409);
-        if (table === "posts" && !res.error) {
-          if (postShort.length || bodyChanged) background(translatePost(res.data, postShort, bodyChanged));
-          background(triggerDeploy());
+        if (rich && !res.error) {
+          if (postShort.length || bodyChanged) background(translateRich(table, res.data, postShort, bodyChanged));
+          if (table === "posts") background(triggerDeploy());
         }
         return res.error ? json({ ok: false, error: res.error.message }, 500) : json({ ok: true, row: res.data });
       }

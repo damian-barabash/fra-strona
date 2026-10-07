@@ -119,3 +119,5 @@ export function sanitizeRich(html) {
 export const plainText = (html) => String(html || "").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 export const wordCount = (html) => plainText(html).split(" ").filter(Boolean).length;
 export const readingMinutes = (html) => Math.max(1, Math.round(wordCount(html) / 200));
+/** How much text a rich block holds: characters and lines (paragraphs, headings, list items) — for editors with a limit. */
+export const richStats = (html) => ({ chars: plainText(html).length, blocks: (String(html || "").match(/<(p|h2|h3|h4|li|blockquote)[\s>]/gi) || []).length });

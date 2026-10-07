@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "../lib/store";
 import { processUpload } from "../lib/api";
-import { sanitizeRich, embedUrl, plainText, wordCount, readingMinutes } from "../lib/richtext";
+import { sanitizeRich, embedUrl, plainText, wordCount, readingMinutes, richStats } from "../lib/richtext";
 import UploadStatus from "./UploadStatus";
 import "../sections/richtext.css";
 import "./richeditor.css";
@@ -9,7 +9,12 @@ import "./richeditor.css";
 /* Rich content editor of the panel (blog posts). A contentEditable area styled exactly like the
    article page (.rt), with a toolbar: headings, bold / italic / underline / strike, lists, quote,
    alignment, accent colour, links, photos (converted to WebP and uploaded), buttons, YouTube / Vimeo
-   video, divider, undo / redo and an HTML view. Whatever leaves the editor went through sanitizeRich. */
+   video, divider, undo / redo and an HTML view. Whatever leaves the editor went through sanitizeRich.
+
+   `compact` is the same editor for a short text in a block of fixed size (the advertising pop-up):
+   no photos, video, buttons or big headings, and a `limit` ({ chars, blocks }) — typing stops at the
+   limit, a longer paste is flagged in the counter (the form refuses to save it). `areaClass` /
+   `areaStyle` dress the writing area like the block the text will sit in. */
 
 const ic = (d) => <svg viewBox="0 0 24 24" aria-hidden="true">{d}</svg>;
 const IC = {
@@ -51,7 +56,7 @@ function B({ on, title, onHit, children, cls = "" }) {
 }
 const isBlank = (el) => !el.textContent.replace(/[\s ​]/g, "") && !el.querySelector("img, iframe");
 
-export default function RichEditor({ value, onChange, placeholder = "Zacznij pisać…" }) {
+export default function RichEditor({ value, onChange, placeholder = "Zacznij pisać…", compact = false, limit = null, colors = COLORS, areaClass = "rt", areaStyle, label = "Treść wpisu" }) {
   const { adminCall } = useStore();
   const area = useRef(null);
   const last = useRef(null);       // the HTML last handed to onChange
@@ -120,6 +125,23 @@ export default function RichEditor({ value, onChange, placeholder = "Zacznij pis
     document.execCommand(cmd, false, val);
     emit(); refresh();
   };
+  // a text with a limit: the next character or line is simply not taken once the limit is reached
+  useEffect(() => {
+    const el = area.current;
+    if (!limit || !el) return;
+    const guard = (e) => {
+      const type = e.inputType || "";
+      if (!type.startsWith("insert") || type === "insertFromPaste" || type === "insertFromDrop") return;
+      const st = richStats(el.innerHTML);
+      const sel = window.getSelection();
+      const replacing = sel && sel.rangeCount && !sel.isCollapsed;
+      if (type === "insertParagraph" || type === "insertLineBreak") { if (limit.blocks && st.blocks >= limit.blocks) e.preventDefault(); return; }
+      if (!replacing && limit.chars && st.chars >= limit.chars) e.preventDefault();
+    };
+    el.addEventListener("beforeinput", guard);
+    return () => el.removeEventListener("beforeinput", guard);
+  }, [limit?.chars, limit?.blocks]);
+
   const setBlock = (tag) => exec("formatBlock", act.block === tag ? "p" : tag);
   const hit = (fn) => (e) => { e.preventDefault(); fn(); };   // mousedown: the selection stays in the text
 
@@ -248,7 +270,7 @@ export default function RichEditor({ value, onChange, placeholder = "Zacznij pis
   const onPaste = (e) => {
     const cd = e.clipboardData; if (!cd) return;
     const files = [...cd.files].filter((f) => f.type.startsWith("image/"));
-    if (files.length) { e.preventDefault(); addImages(files); return; }
+    if (files.length) { e.preventDefault(); if (!compact) addImages(files); return; }
     const html = cd.getData("text/html");
     if (!html) return;                                       // plain text: the browser's own paste is fine
     e.preventDefault();
@@ -258,7 +280,7 @@ export default function RichEditor({ value, onChange, placeholder = "Zacznij pis
   const onDrop = (e) => {
     const files = [...(e.dataTransfer?.files || [])].filter((f) => f.type.startsWith("image/"));
     if (!files.length) return;
-    e.preventDefault(); addImages(files);
+    e.preventDefault(); if (!compact) addImages(files);
   };
   const onKeyDown = (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openLink(); }
@@ -271,27 +293,29 @@ export default function RichEditor({ value, onChange, placeholder = "Zacznij pis
     last.current = html; onChange(html); setSource(false);
   };
 
+  const stats = limit ? richStats(value) : null;
+  const over = !!limit && ((limit.chars && stats.chars > limit.chars) || (limit.blocks && stats.blocks > limit.blocks));
   const empty = !plainText(value) && !/<(img|iframe|hr)/i.test(value || "");
   const dlgKey = (e) => { if (e.key === "Enter") { e.preventDefault(); apply(); } else if (e.key === "Escape") { e.preventDefault(); setDlg(null); } };
 
   return (
-    <div className={`rte ${source ? "is-src" : ""}`}>
+    <div className={`rte ${source ? "is-src" : ""} ${compact ? "rte--compact" : ""} ${over ? "is-over" : ""}`}>
       <div className="rte__bar">
         <div className="rte__row">
           <B title="Akapit" on={act.block === "p" || act.block === "div" || !act.block} onHit={() => exec("formatBlock", "p")} cls="rte__b--t">Akapit</B>
-          <B title="Nagłówek duży (H2)" on={act.block === "h2"} onHit={() => setBlock("h2")} cls="rte__b--t">H2</B>
-          <B title="Nagłówek mniejszy (H3)" on={act.block === "h3"} onHit={() => setBlock("h3")} cls="rte__b--t">H3</B>
-          <B title="Nadtytuł (mały, czerwony)" on={act.block === "h4"} onHit={() => setBlock("h4")} cls="rte__b--t">H4</B>
+          {!compact && <B title="Nagłówek duży (H2)" on={act.block === "h2"} onHit={() => setBlock("h2")} cls="rte__b--t">H2</B>}
+          <B title={compact ? "Śródtytuł" : "Nagłówek mniejszy (H3)"} on={act.block === "h3"} onHit={() => setBlock("h3")} cls="rte__b--t">{compact ? "Śródtytuł" : "H3"}</B>
+          {!compact && <B title="Nadtytuł (mały, czerwony)" on={act.block === "h4"} onHit={() => setBlock("h4")} cls="rte__b--t">H4</B>}
           <i className="rte__sep" />
           <B title="Pogrubienie (Ctrl+B)" on={act.bold} onHit={() => exec("bold")}><b>B</b></B>
           <B title="Kursywa (Ctrl+I)" on={act.italic} onHit={() => exec("italic")}><em>I</em></B>
           <B title="Podkreślenie (Ctrl+U)" on={act.underline} onHit={() => exec("underline")}><u>U</u></B>
           <B title="Przekreślenie" on={act.strike} onHit={() => exec("strikeThrough")}><s>S</s></B>
-          {COLORS.map(([c, l]) => <B key={c} title={`Kolor tekstu: ${l}`} onHit={() => exec("foreColor", c, true)} cls="rte__b--c"><span style={{ background: c }} /></B>)}
+          {colors.map(([c, l]) => <B key={c} title={`Kolor tekstu: ${l}`} onHit={() => exec("foreColor", c, true)} cls="rte__b--c"><span style={{ background: c }} /></B>)}
           <i className="rte__sep" />
           <B title="Lista punktowana" on={act.ul} onHit={() => exec("insertUnorderedList")}>{IC.ul}</B>
           <B title="Lista numerowana" on={act.ol} onHit={() => exec("insertOrderedList")}>{IC.ol}</B>
-          <B title="Cytat / wyróżnienie" on={act.block === "blockquote"} onHit={() => setBlock("blockquote")}>{IC.quote}</B>
+          {!compact && <B title="Cytat / wyróżnienie" on={act.block === "blockquote"} onHit={() => setBlock("blockquote")}>{IC.quote}</B>}
           <i className="rte__sep" />
           <B title="Do lewej" onHit={() => exec("justifyLeft", null, true)}>{IC.left}</B>
           <B title="Wyśrodkuj" on={act.center} onHit={() => exec("justifyCenter", null, true)}>{IC.center}</B>
@@ -299,16 +323,18 @@ export default function RichEditor({ value, onChange, placeholder = "Zacznij pis
           <i className="rte__sep" />
           <B title="Link (Ctrl+K)" on={act.link} onHit={openLink}>{IC.link}</B>
           <B title="Usuń link" onHit={() => exec("unlink")}>{IC.unlink}</B>
+          {!compact && <>
           <i className="rte__sep" />
           <B title="Wstaw zdjęcie" onHit={() => { grab(); fileRef.current?.click(); }} cls="rte__b--w">{IC.image}<span>Zdjęcie</span></B>
           <B title="Wstaw przycisk" onHit={() => openButton()} cls="rte__b--w">{IC.button}<span>Przycisk</span></B>
           <B title="Wstaw film (YouTube / Vimeo)" onHit={() => { grab(); setDlg({ type: "video", url: "" }); }} cls="rte__b--w">{IC.video}<span>Wideo</span></B>
           <B title="Linia oddzielająca" onHit={() => insertBlock(document.createElement("hr"))}>{IC.hr}</B>
+          </>}
           <i className="rte__sep" />
           <B title="Cofnij (Ctrl+Z)" onHit={() => exec("undo")}>{IC.undo}</B>
           <B title="Ponów" onHit={() => exec("redo")}>{IC.redo}</B>
           <B title="Wyczyść formatowanie zaznaczenia" onHit={() => exec("removeFormat")}>{IC.clear}</B>
-          <button type="button" className={`rte__b rte__b--src ${source ? "on" : ""}`} title="Widok HTML" aria-label="Widok HTML" onMouseDown={hit(toggleSource)}>{IC.code}</button>
+          {!compact && <button type="button" className={`rte__b rte__b--src ${source ? "on" : ""}`} title="Widok HTML" aria-label="Widok HTML" onMouseDown={hit(toggleSource)}>{IC.code}</button>}
         </div>
 
         {dlg && (
@@ -339,16 +365,18 @@ export default function RichEditor({ value, onChange, placeholder = "Zacznij pis
       </div>
 
       <div
-        ref={area} className={`rt rte__area ${empty ? "is-empty" : ""}`} data-ph={placeholder} hidden={source}
-        contentEditable suppressContentEditableWarning spellCheck role="textbox" aria-multiline="true" aria-label="Treść wpisu"
+        ref={area} className={`${areaClass} rte__area ${empty ? "is-empty" : ""}`} style={areaStyle} data-ph={placeholder} hidden={source}
+        contentEditable suppressContentEditableWarning spellCheck role="textbox" aria-multiline="true" aria-label={label}
         onInput={emit} onBlur={emit} onKeyUp={() => { grab(); refresh(); }} onMouseUp={() => { grab(); refresh(); }} onClick={onClick} onPaste={onPaste} onDrop={onDrop} onKeyDown={onKeyDown}
       />
       {source && <textarea className="rte__src" value={src} onChange={(e) => setSrc(e.target.value)} spellCheck={false} aria-label="Kod HTML wpisu" />}
 
       <div className="rte__foot">
-        <span>{wordCount(value)} słów · ok. {readingMinutes(value)} min czytania</span>
+        {limit
+          ? <span className={`rte__limit ${over ? "bad" : ""}`}>{limit.chars ? <b className={stats.chars > limit.chars ? "bad" : ""}>{stats.chars}/{limit.chars} znaków</b> : null}{limit.blocks ? <b className={stats.blocks > limit.blocks ? "bad" : ""}>{stats.blocks}/{limit.blocks} linii</b> : null}{over && <em>Za długi tekst — nie zmieści się w bloku. Skróć go.</em>}</span>
+          : <span>{wordCount(value)} słów · ok. {readingMinutes(value)} min czytania</span>}
         <UploadStatus st={st} />
-        <span className="rte__hint">{source ? "Widok HTML — kliknij ponownie </>, żeby wrócić do edytora." : "Zdjęcie można też wkleić ze schowka albo przeciągnąć z dysku."}</span>
+        <span className="rte__hint">{compact ? "Ctrl+K — link. Enter — nowa linia." : source ? "Widok HTML — kliknij ponownie </>, żeby wrócić do edytora." : "Zdjęcie można też wkleić ze schowka albo przeciągnąć z dysku."}</span>
       </div>
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { const files = [...(e.target.files || [])]; e.target.value = ""; addImages(files); }} />
     </div>

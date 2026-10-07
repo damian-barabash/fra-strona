@@ -46,3 +46,11 @@
   .rte__hint { display: none; }
   .rte__area { min-height: 320px; }
 }
+
+/* ---- compact editor: a short text with a limit (advertising pop-up) ---- */
+.rte--compact .rte__area { min-height: 170px; padding: 22px 24px 26px; font-size: 15px; transition: background .2s ease; }
+.rte--compact .rte__area.is-empty::before { left: 24px; top: 22px; opacity: .6; color: inherit; }
+.rte.is-over { border-color: var(--red); }
+.rte__limit { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.rte__limit b { font-weight: 600; }
+.rte__limit b.bad, .rte__limit em { color: var(--red); font-style: normal; font-weight: 600; }

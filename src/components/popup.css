@@ -1,0 +1,142 @@
+/* ============ ADVERTISING POP-UP (.apop) ============
+   Sized from its own frame: `.apop` is a size container, the block keeps 15 % of free space on every
+   side on a desktop, and all type scales with the frame (cqw / cqh). The phone layout switches on
+   the frame's width, not the window's — so the panel's small preview shows exactly what the site does. */
+.apop { position: fixed; inset: 0; z-index: 980; display: grid; place-items: center; container: apop / size; }
+.apop--embed { position: absolute; z-index: 1; }
+html.apop-lock, html.apop-lock body { overflow: hidden !important; }
+
+.apop__scrim { position: absolute; inset: 0; background: rgba(8, 9, 11, .74); backdrop-filter: blur(7px) saturate(.9); -webkit-backdrop-filter: blur(7px) saturate(.9); animation: apop-fade .4s ease both; cursor: pointer; }
+
+.apop__card { position: relative; width: 70cqw; height: 70cqh; display: grid; grid-template-columns: 46fr 54fr; background: var(--pc); color: var(--pt); overflow: hidden;
+  outline: none; box-shadow: 0 40px 120px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .06); animation: apop-in .65s cubic-bezier(.2, .9, .25, 1) both; }
+
+/* ---- photo ---- */
+.apop__media { position: relative; grid-column: 1; grid-row: 1; min-width: 0; min-height: 0; overflow: hidden; background: #0d0d0d; clip-path: polygon(0 0, 100% 0, calc(100% - 5cqw) 100%, 0 100%); }
+.apop__media img { width: 100%; height: 100%; object-fit: cover; display: block; animation: apop-zoom 1.6s cubic-bezier(.2, .7, .2, 1) both; }
+/* the racing stripe along the cut */
+.apop__cut { position: absolute; top: 0; bottom: 0; left: 0; width: 46%; pointer-events: none; background: var(--pa);
+  clip-path: polygon(calc(100% - .55cqw) 0, 100% 0, calc(100% - 5cqw) 100%, calc(100% - 5.55cqw) 100%); transform-origin: 50% 0; animation: apop-cut .7s .25s cubic-bezier(.6, 0, .2, 1) both; }
+
+/* ---- text block ---- */
+.apop__panel { position: relative; grid-column: 2; grid-row: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+  gap: clamp(10px, 2.3cqh, 26px); padding: clamp(26px, 6cqh, 66px) clamp(26px, 3.6cqw, 64px) clamp(30px, 6.6cqh, 72px) clamp(14px, 1.6cqw, 30px); overflow: hidden auto; scrollbar-width: thin; }
+.apop__panel > * { position: relative; animation: apop-up .6s cubic-bezier(.2, .8, .2, 1) both; }
+.apop__eyebrow { animation-delay: .22s; } .apop__title { animation-delay: .3s; } .apop__body { animation-delay: .38s; } .apop__btn { animation-delay: .46s; }
+
+.apop__eyebrow { display: inline-flex; align-items: center; gap: 12px; padding-right: 40px; font: 700 clamp(10px, .8cqw, 13px)/1.2 var(--font-display); letter-spacing: .26em; text-transform: uppercase; color: var(--pt2); }
+.apop__eyebrow::before { content: ""; flex: none; width: 30px; height: 5px; background: var(--pa); transform: skewX(-22deg); }
+.apop__title { margin: 0; font: 900 clamp(24px, min(2.95cqw, 5.1cqh), 62px)/.98 var(--font-display); letter-spacing: -.012em; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
+.apop__body { max-width: 34em; font-size: clamp(13px, min(1.1cqw, 1.95cqh), 18px); }
+
+.apop__btn { display: inline-flex; align-items: center; gap: 14px; margin-top: clamp(2px, .8cqh, 10px); padding: clamp(13px, 2cqh, 20px) clamp(20px, 2cqw, 32px); background: var(--pb); color: var(--pbt); overflow: hidden;
+  font: 800 clamp(11px, .88cqw, 14px)/1.15 var(--font-display); letter-spacing: .16em; text-transform: uppercase; text-decoration: none; transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+.apop__btn i { font: 400 1.9em/0 var(--font-body); font-style: normal; transition: transform .2s ease; }
+.apop__btn::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .32), transparent); transform: skewX(-22deg); animation: apop-shine 3.4s 1.2s ease-in-out infinite; }
+.apop__btn:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0, 0, 0, .34); filter: brightness(1.08); }
+.apop__btn:hover i { transform: translateX(5px); }
+.apop[data-btn="outline"] .apop__btn { box-shadow: inset 0 0 0 2px var(--pt); color: var(--pt); }
+
+/* three faint slashes behind the text — the motif of the site's headings */
+.apop__slashes { position: absolute; right: -3cqw; bottom: -6cqh; display: flex; gap: 2.2cqw; height: 46cqh; opacity: .07; pointer-events: none; animation: apop-fade-07 1s .3s both; }
+.apop__slashes i { width: 4.2cqw; background: var(--pt); transform: skewX(-22deg); }
+/* checkered edge, as on the cookie card and the route curtain */
+.apop__flag { position: absolute; left: 0; right: 0; bottom: 0; height: 9px; pointer-events: none; opacity: .9;
+  background: repeating-linear-gradient(90deg, #0d0d0d 0 9px, #fff 9px 18px) 0 0 / 100% 4.5px no-repeat, repeating-linear-gradient(90deg, #fff 0 9px, #0d0d0d 9px 18px) 0 4.5px / 100% 4.5px no-repeat; }
+
+/* ---- the cross ---- */
+.apop__x { position: absolute; top: 0; right: 0; z-index: 3; width: 54px; height: 54px; display: grid; place-items: center; background: #0d0d0d; color: #fff; cursor: pointer; transition: background .2s ease; animation: apop-fade .4s .5s both; }
+.apop__x span { position: relative; width: 22px; height: 22px; transition: transform .35s cubic-bezier(.3, 1.4, .5, 1); }
+.apop__x span::before, .apop__x span::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2.5px; margin-top: -1.25px; background: currentColor; }
+.apop__x span::before { transform: rotate(45deg); } .apop__x span::after { transform: rotate(-45deg); }
+.apop__x:hover, .apop__x:focus-visible { background: var(--red); outline: none; }
+.apop__x:hover span { transform: rotate(90deg); }
+.apop__x:focus-visible { box-shadow: inset 0 0 0 2px #fff; }
+
+/* ---- photo on the right ---- */
+.apop[data-layout="right"] .apop__card { grid-template-columns: 54fr 46fr; }
+.apop[data-layout="right"] .apop__media { grid-column: 2; clip-path: polygon(5cqw 0, 100% 0, 100% 100%, 0 100%); }
+.apop[data-layout="right"] .apop__cut { left: auto; right: 0; clip-path: polygon(5cqw 0, 5.55cqw 0, .55cqw 100%, 0 100%); }
+.apop[data-layout="right"] .apop__slashes { right: auto; left: 22cqw; }
+.apop[data-layout="right"] .apop__panel { grid-column: 1; padding-left: clamp(26px, 3.6cqw, 64px); padding-right: clamp(14px, 1.6cqw, 30px); }
+
+/* ---- photo as the background ---- */
+.apop[data-layout="cover"] .apop__card { grid-template-columns: 1fr; }
+.apop[data-layout="cover"] .apop__media { grid-column: 1; clip-path: none; }
+.apop[data-layout="cover"] .apop__cut { width: 72%; background: none; clip-path: none; animation: apop-fade .6s both;
+  background-image: linear-gradient(90deg, var(--pc) 0%, color-mix(in srgb, var(--pc) 90%, transparent) 48%, transparent 100%); }
+.apop[data-layout="cover"] .apop__panel { grid-column: 1; width: 58%; padding-left: clamp(26px, 3.6cqw, 64px); z-index: 1; }
+.apop[data-layout="cover"] .apop__slashes { display: none; }
+
+/* ---- no photo ---- */
+.apop[data-layout="text"] .apop__card { grid-template-columns: 1fr; }
+.apop[data-layout="text"] .apop__panel { grid-column: 1; padding-left: clamp(26px, 5cqw, 90px); padding-right: 30%; }
+
+/* ============ rich text inside the block (.apop-rt) — also the look of the editor's writing area ============ */
+.apop-rt { font-family: var(--font-body); font-weight: 400; line-height: 1.6; color: var(--pt2, #3a3e45); overflow-wrap: break-word; }
+.apop-rt > * { margin: 0; }
+.apop-rt > * + * { margin-top: .7em; }
+.apop-rt h2, .apop-rt h3, .apop-rt h4 { font: 800 1.14em/1.2 var(--font-display); text-transform: uppercase; letter-spacing: .01em; color: var(--pt, #14161a); }
+.apop-rt strong, .apop-rt b { font-weight: 700; color: var(--pt, #14161a); }
+.apop-rt a { color: inherit; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.apop-rt a:hover { color: var(--pt, #14161a); }
+.apop-rt ul, .apop-rt ol { padding: 0; list-style: none; display: grid; gap: .3em; }
+.apop-rt li { position: relative; padding-left: 1.7em; }
+.apop-rt ul > li::before { content: ""; position: absolute; left: .15em; top: .62em; width: .78em; height: .3em; background: var(--pa, #e30613); transform: skewX(-22deg); }
+.apop-rt ol { counter-reset: apop; }
+.apop-rt ol > li { counter-increment: apop; }
+.apop-rt ol > li::before { content: counter(apop, decimal-leading-zero); position: absolute; left: 0; top: .18em; font: 800 .8em/1.6 var(--font-display); color: var(--pa, #e30613); }
+.apop-rt blockquote { padding-left: 1em; border-left: 3px solid var(--pa, #e30613); font-weight: 600; color: var(--pt, #14161a); }
+.apop-rt figure, .apop-rt hr, .apop-rt iframe, .apop-rt img { display: none; }
+
+/* ============ phone ============ */
+@container apop (max-width: 760px) {
+  .apop__scrim { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(8, 9, 11, .86); }
+  .apop__card, .apop[data-layout] .apop__card { width: calc(100cqw - 28px); height: auto; max-height: 90cqh; display: flex; flex-direction: column; }
+  .apop__media, .apop[data-layout="right"] .apop__media { flex: 0 1 34cqh; min-height: 96px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 22px), 0 100%); }
+  .apop__cut, .apop[data-layout="right"] .apop__cut { display: none; }
+  .apop__panel, .apop[data-layout] .apop__panel { flex: 0 1 auto; width: auto; justify-content: flex-start; gap: 12px; padding: 14px 20px 30px; }
+  .apop__eyebrow { font-size: 10px; letter-spacing: .2em; gap: 9px; padding-right: 0; }
+  .apop__eyebrow::before { width: 22px; height: 4px; }
+  .apop__title { font-size: clamp(21px, 6.7cqw, 31px); line-height: 1; }
+  .apop__body { font-size: clamp(13px, 3.7cqw, 15px); line-height: 1.55; }
+  .apop__btn { align-self: stretch; justify-content: space-between; padding: 15px 18px; font-size: 11.5px; letter-spacing: .13em; margin-top: 4px; }
+  .apop__slashes { right: -6cqw; bottom: -3cqh; height: 26cqh; gap: 4cqw; }
+  .apop__slashes i { width: 8cqw; }
+  .apop__x { width: 46px; height: 46px; }
+  .apop__x span { width: 19px; height: 19px; }
+  .apop__flag { height: 8px; }
+
+  /* photo in the background: the text sits at the bottom on a fade of the block's colour */
+  .apop[data-layout="cover"] .apop__card { display: grid; grid-template-rows: 1fr; min-height: 72cqh; }
+  .apop[data-layout="cover"] .apop__media { grid-area: 1 / 1; clip-path: none; min-height: 0; }
+  .apop[data-layout="cover"] .apop__cut { display: block; width: 100%; background-image: linear-gradient(0deg, var(--pc) 0%, color-mix(in srgb, var(--pc) 88%, transparent) 46%, transparent 86%); }
+  .apop[data-layout="cover"] .apop__panel { grid-area: 1 / 1; align-self: end; padding-top: 30cqh; }
+  .apop[data-layout="text"] .apop__panel { padding: 56px 20px 32px; }
+}
+
+/* small phones: a lower photo and tighter type, so the button stays on screen */
+@container apop (max-width: 760px) and (max-height: 640px) {
+  .apop__media, .apop[data-layout="right"] .apop__media { flex-basis: 20cqh; min-height: 76px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), 0 100%); }
+  .apop__panel, .apop[data-layout] .apop__panel { gap: 8px; padding: 10px 16px 22px; }
+  .apop__card, .apop[data-layout] .apop__card { max-height: 94cqh; }
+  .apop__title { font-size: 19px; }
+  .apop__body { font-size: 12px; line-height: 1.45; }
+  .apop__body > * + * { margin-top: .5em; }
+  .apop__btn { padding: 12px 14px; font-size: 10.5px; }
+  .apop[data-layout="cover"] .apop__panel { padding-top: 16cqh; }
+}
+
+@keyframes apop-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes apop-fade-07 { from { opacity: 0; } to { opacity: .07; } }
+@keyframes apop-in { from { opacity: 0; transform: translateY(34px) scale(.955); } to { opacity: 1; transform: none; } }
+@keyframes apop-up { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes apop-zoom { from { transform: scale(1.14); } to { transform: none; } }
+@keyframes apop-cut { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+@keyframes apop-shine { 0%, 60% { left: -60%; } 100% { left: 130%; } }
+.apop--out .apop__scrim { animation: apop-fade .28s ease reverse both; }
+.apop--out .apop__card { animation: apop-out .28s ease both; }
+@keyframes apop-out { to { opacity: 0; transform: translateY(18px) scale(.97); } }
+@media (prefers-reduced-motion: reduce) {
+  .apop__card, .apop__panel > *, .apop__media img, .apop__cut, .apop__scrim, .apop__x, .apop__btn::after { animation-duration: .01s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }
+}

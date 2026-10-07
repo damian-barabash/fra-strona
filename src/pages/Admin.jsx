@@ -10,6 +10,7 @@ import { TRACKS, trackLabel, fmtZl } from "../lib/flota";
 import { TERM_TYPES } from "../lib/kalendarz";
 import { windowMonths, isoOf } from "../lib/ice";
 import RichEditor from "../components/RichEditor";
+import PopupsTab from "./AdminPopups";
 import { postDate, postState, todayIso } from "../lib/blog";
 import { plainText, wordCount } from "../lib/richtext";
 import "./admin.css";
@@ -44,6 +45,7 @@ const I = {
   tag: <svg viewBox="0 0 24 24"><path d="M20 12l-8 8-9-9V3h8z" /><circle cx="7.5" cy="7.5" r="1.5" /></svg>,
   logout: <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>,
   blog: <svg viewBox="0 0 24 24"><path d="M5 3h9l5 5v13H5z" /><path d="M14 3v5h5M8.5 13h7M8.5 17h4.5" /></svg>,
+  popup: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" /><path d="M3 9h18M7 13h6M7 16.5h4M17.2 5.6l1.8 1.8M19 5.6l-1.8 1.8" /></svg>,
   ext: <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" /></svg>,
 };
 
@@ -197,7 +199,7 @@ const GROUPS = [
     { t: "wiadomosci", l: "Wiadomości", i: "mail", p: "messages" }, { t: "firmy", l: "Zapytania firmowe", i: "biz", p: "messages" }, { t: "ustawienia", l: "Ustawienia", i: "cog", p: "settings" },
   ] },
   { id: "oferta", label: "Oferta", tabs: [{ t: "products", l: "Produkty", i: "box", p: "products" }, { t: "ice_packages", l: "Laponia — pakiety", i: "snow", p: "products" }, { t: "ice_windows", l: "Laponia — sezon", i: "snow", p: "products" }, { t: "programs", l: "Kafelki na głównej", i: "grid", p: "content" }] },
-  { id: "strona", label: "Strona", tabs: [{ t: "inline", l: "Edycja wizualna", i: "edit", link: "/", p: "content" }, { t: "menu", l: "Menu (nawigacja)", i: "menu", p: "content" }, { t: "banners", l: "Banery", i: "image", p: "content" }, { t: "media", l: "Media o nas", i: "news", p: "content" }, { t: "posts", l: "Blog", i: "blog", p: "blog" }] },
+  { id: "strona", label: "Strona", tabs: [{ t: "inline", l: "Edycja wizualna", i: "edit", link: "/", p: "content" }, { t: "menu", l: "Menu (nawigacja)", i: "menu", p: "content" }, { t: "banners", l: "Banery", i: "image", p: "content" }, { t: "popups", l: "Pop-up reklamowy", i: "popup", p: "content" }, { t: "media", l: "Media o nas", i: "news", p: "content" }, { t: "posts", l: "Blog", i: "blog", p: "blog" }] },
   { id: "tor", label: "Tor i zespół", tabs: [{ t: "cars", l: "Samochody i ceny", i: "car", p: "cars" }, { t: "terms", l: "Terminy (kalendarz)", i: "cal", p: "terms" }, { t: "tracks", l: "Tory", i: "track", p: "tracks" }, { t: "instructors", l: "Instruktorzy", i: "user", p: "instructors" }] },
   { id: "adm", label: "Administracja", tabs: [{ t: "admins", l: "Administratorzy", i: "users", p: "admins" }, { t: "logs", l: "Dziennik zdarzeń", i: "log", owner: true }] },
 ];
@@ -206,7 +208,7 @@ const PERMS = [
   { k: "orders", l: "Zamówienia i płatności", d: "Podgląd zamówień i vouchery, dokumenty Tpay, oznaczanie jako opłacone, anulowanie, wysyłka maili" },
   { k: "messages", l: "Wiadomości i zapytania firmowe", d: "Skrzynka z formularza kontaktowego i briefy od firm" },
   { k: "settings", l: "Ustawienia", d: "Adresy e-mail powiadomień, nadawca, kurs EUR" },
-  { k: "content", l: "Edycja strony", d: "Edycja wizualna tekstów i zdjęć, menu, banery, media o nas, kafelki na głównej" },
+  { k: "content", l: "Edycja strony", d: "Edycja wizualna tekstów i zdjęć, menu, banery, pop-up reklamowy, media o nas, kafelki na głównej" },
   { k: "blog", l: "Blog", d: "Pisanie, edycja i publikowanie wpisów na blogu (teksty, zdjęcia, przyciski, wideo)" },
   { k: "products", l: "Produkty i oferta", d: "Dodawanie i zmiana produktów, pakiety i sezon Laponii, wyprawy" },
   { k: "cars", l: "Samochody i ceny", d: "Flota i ceny pakietów" },
@@ -300,6 +302,7 @@ function Shell() {
           : tab === "ustawienia" ? <SettingsTab />
           : tab === "menu" ? <MenuTab />
           : tab === "posts" ? <BlogTab />
+          : tab === "popups" ? <PopupsTab />
           : <EntityTab key={tab} table={tab} />}
       </main>
     </div>
@@ -1222,7 +1225,7 @@ const ACTION_LABEL = (a, tgt) => {
   if (op === "reorder") return [`Zmiana kolejności: ${tl}`, "info"];
   return [a, "off"];
 };
-const ACTION_FILTERS = [["", "Wszystkie"], ["login", "Logowania"], ["content", "Treść"], ["media", "Pliki"], ["config", "Ustawienia"], ["bookings", "Zamówienia"], ["messages", "Wiadomości"], ["products", "Produkty"], ["posts", "Blog"], ["cars", "Samochody"], ["terms", "Terminy"], ["admins", "Administratorzy"]];
+const ACTION_FILTERS = [["", "Wszystkie"], ["login", "Logowania"], ["content", "Treść"], ["media", "Pliki"], ["config", "Ustawienia"], ["bookings", "Zamówienia"], ["messages", "Wiadomości"], ["products", "Produkty"], ["posts", "Blog"], ["popups", "Pop-up"], ["cars", "Samochody"], ["terms", "Terminy"], ["admins", "Administratorzy"]];
 function LogsTab() {
   const { adminCall } = useStore();
   const [rows, setRows] = useState(null);
