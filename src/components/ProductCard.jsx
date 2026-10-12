@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useStore } from "../lib/store";
+import { setCart, viewContent } from "../lib/pixel";
 import { EText } from "../components/Editable";
 import { fmtZl } from "../lib/flota";
 import { gross, vatOf, fmtMoney, VAT_RATE } from "../lib/vat";
@@ -16,6 +18,11 @@ export default function ProductCard({
   const grossStr = fmtMoney(gross(price), currency);
   const vatStr = fmtMoney(vatOf(price), currency);
   const vatPct = Math.round(VAT_RATE * 100);
+
+  useEffect(() => {
+    const item = { name: title, price, currency, category: kind };
+    setCart(item); viewContent(item);
+  }, [title, price, currency, kind]);
 
   return (
     <div className="pcard-x" style={{ ["--pc"]: color }}>

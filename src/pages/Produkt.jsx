@@ -11,6 +11,7 @@ import Laponia from "./Laponia";
 import D2R from "./D2R";
 import Wyprawa from "./Wyprawa";
 import "../sections/produkty.css";
+import { viewContent } from "../lib/pixel";
 import { useSeo, breadcrumbs, SITE, clip, nice } from "../lib/seo";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
@@ -44,6 +45,7 @@ export default function Produkt() {
 
   useRevealOnScroll([p?.id, products.length]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [slug]);
+  useEffect(() => { if (p && !p.external_url) viewContent({ name: p.title_pl, id: p.slug, price: p.price, currency: p.currency || "PLN", category: p.theme || "product" }); }, [p?.slug]); // eslint-disable-line
 
   // products can bring their own page style — Laponia is frozen, Driver2Racer is red-hot
   if (p && p.theme === "ice") return <Laponia p={p} />;

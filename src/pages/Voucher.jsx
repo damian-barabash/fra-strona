@@ -10,6 +10,7 @@ import { EText } from "../components/Editable";
 import { FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, carPrice, customPrice, fmtZl } from "../lib/flota";
 import { usePayRedirect } from "../lib/pay";
+import { addToCart } from "../lib/pixel";
 import { useRevealOnScroll } from "../lib/hooks";
 import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
@@ -49,6 +50,7 @@ export default function Voucher() {
     : step === "dane" ? (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim()) : true;
   const goNext = () => {
     if (!canNext) { setErr(step === "auto" ? "Wybierz auto." : step === "pakiet" ? "Wybierz pakiet." : "Uzupełnij poprawnie: imię i nazwisko, e-mail oraz telefon."); return; }
+    if (step === "produkt") addToCart();
     setErr(""); setStepIdx((i) => Math.min(STEPS.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: "smooth" });
   };
   const goPrev = () => { setErr(""); if (stepIdx === 0) { nav(-1); return; } setStepIdx((i) => Math.max(0, i - 1)); };

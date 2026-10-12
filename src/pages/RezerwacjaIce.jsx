@@ -11,6 +11,7 @@ import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
 import { fmtGross } from "../lib/vat";
 import { usePayRedirect } from "../lib/pay";
+import { addToCart } from "../lib/pixel";
 import { fmtZl } from "../lib/flota";
 import "../sections/laponia.css";
 import "../sections/productcard.css";
@@ -72,6 +73,7 @@ export default function RezerwacjaIce() {
       return;
     }
     setErr("");
+    if (step === "produkt") addToCart();
     setStepIdx((i) => Math.min(STEPS.length - 1, i + 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

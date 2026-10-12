@@ -9,6 +9,7 @@ import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { fmtEur } from "../lib/ice";
 import { usePayRedirect } from "../lib/pay";
+import { addToCart, setCart } from "../lib/pixel";
 import "../sections/wyprawa.css";
 import "../sections/zakup-wyprawa.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
@@ -32,6 +33,8 @@ export default function ZakupWyprawa() {
   const [err, setErr] = useState("");
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
+  const item = pkg && trip ? { name: `${trip.title_pl} · ${pkg.name_pl || ""}`.replace(/ · $/, ""), id: trip.slug, price: (pkg.price || 0) * persons, currency: pkg.currency || "EUR", category: "trip" } : null;
+  useEffect(() => { if (item) addToCart(item); }, [pkg?.id, trip?.slug]); // eslint-disable-line
 
   if (!pkg || !trip) {
     if (ready && products.length) return (
@@ -52,7 +55,7 @@ export default function ZakupWyprawa() {
   const valid = form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim();
   const goPay = () => {
     if (!valid) { setErr(t("zak.err")); return; }
-    setErr(""); setStep("platnosc");
+    setErr(""); setCart(item); setStep("platnosc");
   };
 
   return (

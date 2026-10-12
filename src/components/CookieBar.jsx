@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
+import { pageView } from "../lib/pixel";
 
 const LS = "fra_cookies";
 export const cookieChoice = () => { try { return localStorage.getItem(LS); } catch { return null; } };
@@ -23,7 +24,7 @@ export default function CookieBar() {
     return () => document.documentElement.classList.remove("ck-lock");
   }, [open]);
 
-  const choose = (v) => { try { localStorage.setItem(LS, v); } catch {} setPending(false); };
+  const choose = (v) => { try { localStorage.setItem(LS, v); } catch {} setPending(false); if (v === "all") pageView(); };
 
   return (
     <AnimatePresence>

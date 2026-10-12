@@ -12,6 +12,7 @@ import { fmtGross } from "../lib/vat";
 import { Speedo, FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, trackLabel, carPrice, customPrice, fmtZl, isPoznan } from "../lib/flota";
 import { usePayRedirect } from "../lib/pay";
+import { addToCart } from "../lib/pixel";
 import "../sections/flota.css";
 import "../sections/rezerwacja.css";
 import "../sections/productcard.css";
@@ -87,6 +88,7 @@ export default function Rezerwacja() {
         : (custom && !carName.trim()) ? "Podaj model swojego auta." : "Uzupełnij poprawnie: imię i nazwisko, e-mail oraz telefon.");
       return;
     }
+    if (step === "produkt") addToCart();
     setErr(""); setStepIdx((i) => Math.min(stepKeys.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: "smooth" });
   };
   // first step → back to where the visitor came from; opened straight from a link (no history) → the calendar / home

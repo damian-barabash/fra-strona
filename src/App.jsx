@@ -7,6 +7,7 @@ import CookieBar from "./components/CookieBar";
 import WhatsAppFab from "./components/WhatsAppFab";
 import SyncIndicator from "./components/SyncIndicator";
 import SitePopup from "./components/SitePopup";
+import { pageView } from "./lib/pixel";
 
 const { Mariusz, MediaPage, Szkola, Flota, Auto, Rezerwacja, Kalendarz, Produkty, Produkt, RezerwacjaIce,
   Cennik, Kontakt, Zakup, ZakupWyprawa, Legal, Platnosc, Voucher, DlaFirm, Blog, BlogPost, Admin } = Pages;
@@ -52,6 +53,8 @@ function AnimatedRoutes() {
     window.addEventListener("scroll", save, { passive: true });
     return () => window.removeEventListener("scroll", save);
   }, []);
+  // Meta Pixel: one PageView per page, sent when that page is the one on screen
+  useEffect(() => { pageView(); }, [displayed.pathname]);
   const restoreScroll = (y) => {
     window.scrollTo({ top: 0, behavior: "instant" });
     if (!y) return;

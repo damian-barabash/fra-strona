@@ -7,6 +7,7 @@ import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { FuelTank } from "../components/Fuel";
 import { usePayRedirect } from "../lib/pay";
+import { addToCart, setCart } from "../lib/pixel";
 import { fmtZl } from "../lib/flota";
 import StepTag from "../components/StepTag";
 import { fmtGross } from "../lib/vat";
@@ -41,6 +42,8 @@ export default function Zakup() {
   const [err, setErr] = useState("");
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
+  const item = p ? { name: chosen ? `${p.title_pl} · ${chosen.name}` : p.title_pl, id: p.slug, price, currency: p.currency || "PLN", category: "product" } : null;
+  useEffect(() => { if (item) addToCart(item); }, [p?.slug]); // eslint-disable-line
 
   if (!p) {
     if (ready && products.length) return (
@@ -59,7 +62,7 @@ export default function Zakup() {
   const valid = form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim();
   const goPay = () => {
     if (!valid) { setErr(t("zak.err")); return; }
-    setErr(""); setStep("platnosc");
+    setErr(""); setCart(item); setStep("platnosc");
   };
 
   return (

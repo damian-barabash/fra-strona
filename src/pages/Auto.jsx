@@ -11,6 +11,7 @@ import { useLightbox } from "../components/Lightbox";
 import { carPrice, fmtZl } from "../lib/flota";
 import { tint, isLight } from "../lib/util";
 import "../sections/auto.css";
+import { viewContent } from "../lib/pixel";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 /* /flota/:slug — one car. Fully CMS-driven (panel → Samochody): sport cars link to the configurator
@@ -35,6 +36,7 @@ export default function Auto() {
   });
   useRevealOnScroll([car?.id, allCars.length]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [slug]);
+  useEffect(() => { if (car) viewContent({ name: car.name, id: car.slug, price: car.category === "race" ? 0 : car.price_3, category: car.category || "sport" }); }, [car?.slug]); // eslint-disable-line
 
   if (!car) {
     if (ready && allCars.length) return <Navigate to="/flota" replace />;

@@ -8,6 +8,7 @@ import CmsBar from "../sections/CmsBar";
 import { fmtZl } from "../lib/flota";
 import { fmtMoney, gross } from "../lib/vat";
 import "../sections/platnosc.css";
+import { purchase } from "../lib/pixel";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const POLL_MS = 1800, GIVE_UP_MS = 90_000;
@@ -37,7 +38,7 @@ export default function Platnosc() {
         if (stop) return;
         if (r?.ok) {
           setOrder(r.order); misses = 0;
-          if (r.order.status === "paid") { setPhase("paid"); return; }
+          if (r.order.status === "paid") { purchase(r.order); setPhase("paid"); return; }
           if (r.order.status === "chargeback" || r.order.status === "cancelled") { setPhase("failed"); return; }
           if (isError) { setPhase("failed"); return; }
         } else if (r && !r.ok) { setPhase(isError ? "failed" : "empty"); return; }

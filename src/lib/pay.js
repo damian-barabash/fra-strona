@@ -2,6 +2,7 @@
 // and the browser is sent to the Tpay gateway (or straight to /platnosc in test mode).
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { initiateCheckout } from "./pixel";
 
 export function usePayRedirect(create, payload, { dur = 1900 } = {}) {
   const nav = useNavigate();
@@ -11,6 +12,7 @@ export function usePayRedirect(create, payload, { dur = 1900 } = {}) {
   const [attempt, setAttempt] = useState(0);
   const sent = useRef(false);
 
+  useEffect(() => { initiateCheckout(); }, []);
   useEffect(() => {
     let raf = 0, cancelled = false;
     const t0 = performance.now();
