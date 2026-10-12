@@ -63,6 +63,9 @@ export default function Produkty() {
 
         <section className="section section--paper pr-wall">
           <div className="tex" />
+          <div className="container pr-pick">
+            <EText id="prod.pick" as="h2" className="h-section pr-pick__t reveal-up" />
+          </div>
           <div className="container pr-layout">
             {/* compact side menu */}
             <aside className="pr-menu reveal-left">

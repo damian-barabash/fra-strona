@@ -660,6 +660,7 @@ export const DEFAULTS = {
   "prod.filterAll": { pl: "WSZYSTKO", en: "ALL", kind: "text" },
   "prod.filterTraining": { pl: "SZKOLENIA", en: "TRAINING", kind: "text" },
   "prod.filterTrips": { pl: "WYPRAWY", en: "TRIPS", kind: "text" },
+  "prod.pick": { pl: "WYBIERZ SWÓJ PRODUKT", en: "CHOOSE YOUR PRODUCT", kind: "text" },
   "prod.menuLabel": { pl: "NASZA OFERTA", en: "OUR OFFER", kind: "text" },
   "prod.menuHint": { pl: "Kliknij, aby przejść do programu.", en: "Click to jump to a programme.", kind: "text" },
 
