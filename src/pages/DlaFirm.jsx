@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import { sendContact } from "../lib/api";
+import { lead } from "../lib/pixel";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
@@ -309,7 +310,7 @@ function Configurator({ t, lang }) {
       kind: "firma", company: c.company, full_name: c.full_name, email: c.email, phone: c.phone, message: c.message, subject: "Event firmowy",
       meta: { goal: L(RATES.goals[s.goal]), persons: s.persons, track: s.track, length: L(RATES.length[s.length]), cars: `${L(RATES.pakiety[s.cars])} (${RATES.pakiety[s.cars].cars})`, extras: s.extras.map((k) => RATES.extras[k].pl), date: s.date, estimate, program },
     });
-    if (r?.ok) setPhase("done"); else { setPhase("idle"); setErr(r?.error || t("fir.errSend")); }
+    if (r?.ok) { lead("Event firmowy", "B2B"); setPhase("done"); } else { setPhase("idle"); setErr(r?.error || t("fir.errSend")); }
   };
 
   return (

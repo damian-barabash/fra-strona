@@ -118,3 +118,34 @@ test("configurator: the product card is ViewContent, ordering it AddToCart, the 
   await expect.poll(() => events(page)).toEqual(["PageView", "ViewContent", "AddToCart", "InitiateCheckout"]);
   expect((await calls(page)).find((c) => c[1] === "InitiateCheckout")[2]).toMatchObject({ value: gross, currency: "PLN" });
 });
+
+test("contact forms report Lead once the server has taken the message, never on a failed send", async ({ page }) => {
+  await setup(page);
+  let ok = false;
+  await page.route("**/functions/v1/contact", (route) => route.fulfill({ json: ok ? { ok: true } : { ok: false, error: "test" } }));
+
+  await page.goto("/kontakt");
+  const f = page.locator(".kt-form");
+  await f.locator("input").nth(0).fill("Jan Testowy");
+  await f.locator("input").nth(2).fill("jan@example.com");
+  await f.locator("textarea").fill("Proszę o kontakt w sprawie szkolenia.");
+  await page.locator(".kt-send").click();
+  await expect(page.locator(".kt-err")).toBeVisible({ timeout: 10000 });
+  expect(await events(page)).toEqual(["PageView"]);
+
+  ok = true;
+  await page.locator(".kt-send").click();
+  await expect(page.locator(".kt-done")).toBeVisible({ timeout: 10000 });
+  expect(await events(page)).toEqual(["PageView", "Lead"]);
+  expect((await calls(page)).find((c) => c[1] === "Lead")[2].content_name).toBe("Kontakt");
+
+  await page.goto("/dla-firm");
+  const c = page.locator(".fr-cfg__contact");
+  await c.locator("input").nth(0).fill("Testowa Sp. z o.o.");
+  await c.locator("input").nth(1).fill("Jan Testowy");
+  await c.locator("input").nth(2).fill("jan@example.com");
+  await c.locator("input").nth(3).fill("600100200");
+  await page.locator(".fr-cfg__foot .btn--red").click();
+  await expect.poll(() => events(page), { timeout: 10000 }).toEqual(["PageView", "Lead"]);
+  expect((await calls(page)).find((c) => c[1] === "Lead")[2]).toEqual({ content_name: "Event firmowy", content_category: "B2B" });
+});

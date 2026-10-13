@@ -3,7 +3,8 @@
 
    Events: PageView on every page of the SPA, ViewContent on a product page and on the product card
    of a configurator, AddToCart when the card is ordered, InitiateCheckout on the payment step,
-   Purchase on /platnosc once the server has confirmed the payment. */
+   Purchase on /platnosc once the server has confirmed the payment, Lead when a contact form
+   (contact page, company event brief) has been accepted by the server. */
 import { gross } from "./vat";
 
 export const PIXEL_ID = "231855914162315";
@@ -58,6 +59,9 @@ let cart = null;
 export const setCart = (item) => { cart = item?.name ? item : null; };
 export const addToCart = (item) => { if (item) setCart(item); if (cart) send("AddToCart", content(cart), `${cart.name}:${cart.price}`); };
 export const initiateCheckout = () => { if (cart) send("InitiateCheckout", { ...content(cart), num_items: 1 }, `${cart.name}:${cart.price}`); };
+
+/* a form that asks for contact instead of selling: name = which form, category = its subject */
+export const lead = (name, category) => send("Lead", { content_name: name, ...(category ? { content_category: category } : {}) }, name);
 
 /* order = row from booking.status with status "paid"; reported once per order in this browser */
 export function purchase(order) {

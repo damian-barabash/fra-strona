@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import { sendContact } from "../lib/api";
+import { lead } from "../lib/pixel";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
@@ -57,11 +58,13 @@ export default function Kontakt() {
       await new Promise((r) => setTimeout(r, 180));
       setLights(i);
     }
-    const r = await sendContact({ ...form, subject: form.subject || SUBJECTS[0] });
+    const subject = form.subject || SUBJECTS[0];
+    const r = await sendContact({ ...form, subject });
     await new Promise((res) => setTimeout(res, 260));
     setLights(0); // …and out they go — lights out, message away
 
     if (r?.ok) {
+      lead("Kontakt", subject);
       setPhase("done");
       setForm({ full_name: "", email: "", phone: "", subject: "", message: "" });
     } else {
