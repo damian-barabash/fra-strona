@@ -4,6 +4,7 @@ import { setCart, viewContent } from "../lib/pixel";
 import { EText } from "../components/Editable";
 import { fmtZl } from "../lib/flota";
 import { gross, vatOf, fmtMoney, VAT_RATE } from "../lib/vat";
+import { DiscountField, Roll } from "./Discount";
 
 /* The "shop product card" shown in every configurator right before the customer's data:
    a big photo with thumbnails, a buy-box on the right, and the full training description below
@@ -11,6 +12,7 @@ import { gross, vatOf, fmtMoney, VAT_RATE } from "../lib/vat";
 export default function ProductCard({
   title, subtitle, code, photo, photos = [], color = "var(--red)",
   price, currency = "PLN", pricePln, lines = [], includes = [], onOrder, orderLabel, kind = "track",
+  disc,   // { d: useDiscount(), pv: its preview for this card } — the code field + the discounted price
 }) {
   const { t, lang } = useStore();
   const gallery = [photo, ...photos].filter(Boolean).slice(0, 5);
@@ -44,12 +46,24 @@ export default function ProductCard({
           <h3 className="pcard-x__title">{title}</h3>
           {subtitle && <p className="pcard-x__sub">{subtitle}</p>}
           <ul className="pcard-x__lines">{lines.map((l, i) => <li key={i}><b>{l[0]}</b><span>{l[1]}</span></li>)}</ul>
-          <div className="pcard-x__price">
-            <span><EText id="card.priceLabel" /></span>
-            <b>{grossStr}</b>
-            <i>{t("card.gross")}</i>
+          <div className="pcard-x__price" data-disc-target="1">
+            {disc?.pv?.ok && disc.pv.ready && disc.pv.off > 0 ? (
+              <>
+                <span>{t("disc.toPay")}</span>
+                <s className="pcard-x__old">{grossStr}{currency === "EUR" ? ` · ≈ ${fmtMoney(disc.pv.base)}` : ""}</s>
+                <b className="pcard-x__new"><Roll from={disc.pv.base} value={disc.pv.toPay} /></b>
+                <em className="pcard-x__disc">{t("disc.line")} {disc.d.code?.code} · −{fmtMoney(disc.pv.off)}</em>
+              </>
+            ) : (
+              <>
+                <span><EText id="card.priceLabel" /></span>
+                <b>{grossStr}</b>
+              </>
+            )}
+            <i>{disc?.pv?.ok && disc.pv.ready && disc.pv.off > 0 ? t("card.grossShort") : t("card.gross")}</i>
             <em className="pcard-x__vat">{netStr} {t("card.net")} + VAT {vatPct}% ({vatStr}){currency === "EUR" && pricePln ? ` · ≈ ${fmtMoney(gross(pricePln))} ${t("card.pln")}` : ""}</em>
           </div>
+          {disc && <DiscountField d={disc.d} variant="compact" preview={disc.pv} />}
           <button type="button" className="btn btn--red pcard-x__btn" onClick={onOrder}>{orderLabel || t("card.order")} <span className="btn__arrow">›</span></button>
           <div className="pcard-x__trust">
             <span>🔒 Tpay · BLIK · karta · przelew</span>

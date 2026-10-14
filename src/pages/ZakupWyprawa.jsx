@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "../lib/store";
 import StepTag from "../components/StepTag";
-import { fmtGross } from "../lib/vat";
+import { fmtGross, fmtMoney } from "../lib/vat";
+import { useDiscount } from "../lib/discount";
+import { DiscountField, DiscountLines } from "../components/Discount";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
@@ -19,6 +21,10 @@ const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boo
 /* /zakup-wyprawa?pakiet=<id> — buying a trip package: DANE → PŁATNOŚĆ, no configurator.
    The price (and whether the trip is still open) is verified server-side. */
 export default function ZakupWyprawa() {
+  const { search } = useLocation();
+  return <ZakupWyprawaFlow key={search} />;
+}
+function ZakupWyprawaFlow() {
   const [sp] = useSearchParams();
   const nav = useNavigate();
   const { products, tripPackages, ready, t, L, createTripBooking } = useStore();
@@ -31,6 +37,9 @@ export default function ZakupWyprawa() {
   const [persons, setPersons] = useState(1);
   const [step, setStep] = useState("dane");
   const [err, setErr] = useState("");
+  const disc = useDiscount({ kind: "trip" });
+  const pv = disc.preview({ slug: trip?.slug, trip_package_id: pkg?.id, net: (pkg?.price || 0) * persons, currency: pkg?.currency || "EUR", persons });
+  const discOn = !!(pv?.ok && pv.ready && pv.off > 0);
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
   const item = pkg && trip ? { name: `${trip.title_pl} · ${pkg.name_pl || ""}`.replace(/ · $/, ""), id: trip.slug, price: (pkg.price || 0) * persons, currency: pkg.currency || "EUR", category: "trip" } : null;
@@ -107,12 +116,14 @@ export default function ZakupWyprawa() {
                         <textarea rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                     </div>
 
+                    <DiscountField d={disc} preview={pv} />
+
                     {err && <div className="zw-err">{err}</div>}
 
                     <div className="zw-foot">
                       <button className="btn btn--back" onClick={() => nav(-1)}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                       <button className={`btn wy-btn ${!valid ? "is-locked" : ""}`} onClick={goPay}>
-                        {t("flota.bk.pay")} · {fmtGross(total, pkg.currency)} <span className="btn__arrow">›</span>
+                        {t("flota.bk.pay")} · {discOn ? fmtMoney(pv.toPay) : fmtGross(total, pkg.currency)} <span className="btn__arrow">›</span>
                       </button>
                     </div>
                   </>
@@ -120,7 +131,7 @@ export default function ZakupWyprawa() {
                   <>
                     <StepTag n={2} of={2} title={t("flota.bk.s4")} />
                     <PayTrip pkg={pkg} trip={trip} persons={persons} total={total} form={form}
-                      t={t} create={createTripBooking} />
+                      t={t} create={createTripBooking} code={pv?.ok ? disc.code?.code : undefined} dropCode={disc.clear} />
                   </>
                 )}
               </div>
@@ -135,11 +146,12 @@ export default function ZakupWyprawa() {
                       {lines(L(pkg, "includes")).map((l, i) => <li key={i}>{l}</li>)}
                     </ul>
                     {lines(L(pkg, "note")).map((n, i) => <p key={i} className="zw-card__note">{n}</p>)}
-                    <div className="zw-card__total">
+                    <div className="zw-card__total" data-disc-target="1">
                       <span>{t("flota.bk.total")}</span>
                       <b>{fmtEur(total, pkg.currency)}</b>
                     </div>
                     <div className="zk-card__vat">{t("d2r.net")} · {t("flota.bk.pay").toLowerCase()}: {fmtGross(total, pkg.currency)} {t("card.grossShort")}</div>
+                    <DiscountLines code={disc.code} pv={pv} />
                   </div>
                 </div>
               </aside>
@@ -154,8 +166,8 @@ export default function ZakupWyprawa() {
 }
 
 /* payment — a luxury "sealing" animation, then the order + Tpay transaction and the gateway */
-function PayTrip({ pkg, persons, form, t, create }) {
-  const { phase, fill, err, retry } = usePayRedirect(create, { package_id: pkg.id, persons, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note });
+function PayTrip({ pkg, persons, form, t, create, code, dropCode }) {
+  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, { package_id: pkg.id, persons, discount_code: code, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note }, { dropCode });
   return (
     <div className="zw-pay">
       <div className="zw-seal" style={{ ["--f"]: `${fill}%` }}>
@@ -170,7 +182,7 @@ function PayTrip({ pkg, persons, form, t, create }) {
         <div className="zw-pay__done">
           <h3 className="zw-pay__t">Ups!</h3>
           <p className="zw-pay__p">{err}</p>
-          <button className="btn wy-btn" onClick={retry}>Spróbuj ponownie</button>
+          <button className="btn wy-btn" onClick={payWithoutCode || retry}>{payWithoutCode ? t("disc.noCode") : "Spróbuj ponownie"}</button>
         </div>
       )}
     </div>

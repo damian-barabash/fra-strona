@@ -22,6 +22,8 @@ const ACTION_LABEL = (a) => ({
   "config.set": "Ustawienia", "media.upload": "Wysyłka pliku", "admins.create": "Nowe konto", "admins.update": "Konto administratora",
   "admins.delete": "Usunięcie konta", "bookings.markPaid": "Oznaczenie jako opłacone", "bookings.resendMail": "Ponowna wysyłka e-maili",
   "bookings.cancel": "Anulowanie zamówienia", "bookings.delete": "Usunięcie zamówienia", "messages.delete": "Usunięcie wiadomości",
+  "discounts.create": "Nowe kody rabatowe", "discounts.generate": "Seria kodów rabatowych", "discounts.update": "Kody rabatowe",
+  "discounts.delete": "Usunięcie kodów rabatowych", "discounts.release": "Zwolnienie kodu",
 }[a] || a);
 
 export function StoreProvider({ children }) {

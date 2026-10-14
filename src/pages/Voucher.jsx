@@ -11,6 +11,9 @@ import { FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, carPrice, customPrice, fmtZl } from "../lib/flota";
 import { usePayRedirect } from "../lib/pay";
 import { addToCart } from "../lib/pixel";
+import { useDiscount, valueLabel } from "../lib/discount";
+import { DiscountField } from "../components/Discount";
+import { fmtMoney } from "../lib/vat";
 import { useRevealOnScroll } from "../lib/hooks";
 import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
@@ -45,6 +48,9 @@ export default function Voucher() {
   const total = sessions ? priceFor(sessions) : 0;
   const pkg = packageOf(sessions);
   const carName = car?.own ? t("vch.own") : car?.name;
+  const disc = useDiscount({ kind: "voucher", firstStep: stepIdx === 0 });
+  const pv = disc.preview({ net: total, currency: "PLN" });
+  const discOn = !!(pv?.ok && pv.ready && pv.off > 0);
 
   const canNext = step === "auto" ? !!car : step === "pakiet" ? !!sessions : step === "gift" || step === "produkt" ? true
     : step === "dane" ? (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim()) : true;
@@ -148,7 +154,7 @@ export default function Voucher() {
                       title={`${t("vch.title")} · ${t("flota.bk.product")}`} subtitle={t("card.desc")}
                       code={car?.own ? "OWN" : car?.badge} color={car?.own ? "var(--red)" : (car?.color || "var(--red)")}
                       photo={car?.own ? "/assets/covers/mariusz.webp" : (car?.png || car?.photos?.[0])} photos={car?.own ? [] : (car?.photos || [])}
-                      price={total} currency="PLN" onOrder={goNext}
+                      price={total} currency="PLN" onOrder={goNext} disc={{ d: disc, pv }}
                       lines={[[t("flota.bk.sAuto"), carName], [t("vch.sPkg"), pkg ? `${lang === "en" ? pkg.sub_en : pkg.sub_pl} · ${lang === "en" ? pkg.en : pkg.pl}` : "—"], [t("kal.fTrack"), track === "poznan" ? "Tor Poznań" : "Tor Łódź"], [t("vch.for"), gift.voucher_for || "—"]]}
                       includes={[
                         lang === "en" ? "Gift voucher valid 12 months" : "Voucher prezentowy ważny 12 miesięcy",
@@ -173,9 +179,12 @@ export default function Voucher() {
                   </div>
                 )}
 
+                {stepIdx === 0 && <DiscountField d={disc} preview={pv} need={t("disc.needVoucher")} />}
+
                 {step === "platnosc" && <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.s4")} />}
                 {step === "platnosc" && (
-                  <PayVoucher t={t} create={createVoucherBooking} payload={{
+                  <PayVoucher t={t} create={createVoucherBooking} dropCode={disc.clear} payload={{
+                    discount_code: pv?.ok ? disc.code?.code : undefined,
                     car_id: car?.own ? null : car?.id, is_custom: !!car?.own, sessions, track,
                     voucher_for: gift.voucher_for, voucher_message: gift.voucher_message,
                     full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
@@ -186,7 +195,7 @@ export default function Voucher() {
               {step === "produkt" && (
                 <div className="rz-foot">
                   <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
-                  <div className="rz-foot__sum"><span>{carName}</span><b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")}</small></b></div>
+                  <div className="rz-foot__sum" data-disc-target="2"><span>{carName}</span><b>{discOn ? fmtMoney(pv.toPay) : fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")}</small></b></div>
                   <button className="btn btn--red" onClick={goNext}>{t("card.order")} ›</button>
                 </div>
               )}
@@ -195,7 +204,7 @@ export default function Voucher() {
                   {err && <div className="rz-err">{err}</div>}
                   <div className="rz-foot">
                     <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
-                    <div className="rz-foot__sum">{sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}{total > 0 && <b>{fmtZl(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.net")}</small></b>}</div>
+                    <div className="rz-foot__sum" data-disc-target="2">{sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}{total > 0 && <b>{fmtZl(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.net")}</small></b>}{disc.status === "ok" && pv?.ok && <em className="dsc-foot">{t("disc.line")} {discOn ? `−${fmtMoney(pv.off)}` : valueLabel(disc.code, t)}</em>}</div>
                     <button className={`btn btn--red ${!canNext ? "is-locked" : ""}`} onClick={goNext}>{step === "dane" ? t("vch.pay") : t("flota.bk.next")} ›</button>
                   </div>
                 </>
@@ -229,8 +238,8 @@ export default function Voucher() {
   );
 }
 
-function PayVoucher({ t, create, payload }) {
-  const { phase, fill, err, retry } = usePayRedirect(create, payload);
+function PayVoucher({ t, create, payload, dropCode }) {
+  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, payload, { dropCode });
   return (
     <div className="fl-pay rz-pay">
       <FuelTank fill={fill} done={phase === "redirect"} />
@@ -239,7 +248,7 @@ function PayVoucher({ t, create, payload }) {
         <div className="fl-pay__done">
           <h4 className="fl-pay__title" style={{ color: "var(--red)" }}>Ups!</h4>
           <p className="fl-pay__thanks">{err}</p>
-          <button className="btn btn--red" onClick={retry}>Spróbuj ponownie</button>
+          <button className="btn btn--red" onClick={payWithoutCode || retry}>{payWithoutCode ? t("disc.noCode") : "Spróbuj ponownie"}</button>
         </div>
       )}
     </div>

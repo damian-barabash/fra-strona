@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
@@ -13,6 +13,9 @@ import { Speedo, FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, trackLabel, carPrice, customPrice, fmtZl, isPoznan } from "../lib/flota";
 import { usePayRedirect } from "../lib/pay";
 import { addToCart } from "../lib/pixel";
+import { useDiscount, valueLabel } from "../lib/discount";
+import { DiscountField } from "../components/Discount";
+import { fmtMoney } from "../lib/vat";
 import "../sections/flota.css";
 import "../sections/rezerwacja.css";
 import "../sections/productcard.css";
@@ -28,8 +31,13 @@ const fmtDate = (iso, lang) => {
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 
 /* /rezerwacja — the drive configurator: AUTO → TERMIN → PAKIET → PRODUKT (card) → DANE → PŁATNOŚĆ (Tpay).
-   Entry presets: ?car=<id> ?custom=1 ?term=<id> ?sessions=N. The total is recomputed server-side. */
+   Entry presets: ?car=<id> ?custom=1 ?term=<id> ?sessions=N ?kod=<discount code>. The total is recomputed server-side.
+   A new query (e.g. a product discount code re-opening it preset) starts the configurator afresh. */
 export default function Rezerwacja() {
+  const { search } = useLocation();
+  return <RezerwacjaFlow key={search} />;
+}
+function RezerwacjaFlow() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const { cars, terms, t, raw, lang, L, createBooking } = useStore();
@@ -67,6 +75,9 @@ export default function Rezerwacja() {
   const priceFor = (n) => (custom ? customPrice(raw, n, track) : carPrice(carSel, n, track));
   const total = sessions ? priceFor(sessions) : 0;
   const pkg = packageOf(sessions);
+  const disc = useDiscount({ kind: "track", firstStep: stepIdx === 0 });
+  const pv = disc.preview({ car_id: carSel?.id, custom, sessions, net: total, currency: "PLN" });
+  const discOn = !!(pv?.ok && pv.ready && pv.off > 0);
 
   const dateLabel = termSel?.noDate ? t("flota.bk.noDate")
     : termSel ? `${fmtDate(termSel.date, lang)} · ${termSel.location_pl || trackLabel(termSel.track, lang)} · ${termSel.time}` : "";
@@ -127,6 +138,9 @@ export default function Rezerwacja() {
                   {(carSel || custom) && <span className="rz-chip"><b>{t("flota.bk.chosenCar")}</b>{custom ? t("flota.customName") : carSel?.name}</span>}
                   {dateLabel && <span className="rz-chip"><b>{t("flota.bk.chosenDate")}</b>{dateLabel}</span>}
                   {sessions && <span className="rz-chip"><b>{t("flota.bk.total")}</b>{fmtZl(total)} {t("card.net")}</span>}
+                  {disc.code && (disc.status === "ok" || disc.status === "landing") && (
+                    <span className="rz-chip rz-chip--disc" data-disc-target="3" style={disc.status === "landing" ? { opacity: 0 } : undefined}><b>{t("disc.line")}</b>{disc.code.code} · {valueLabel(disc.code, t)}</span>
+                  )}
                 </div>
               </div>
               <div className="rz-head__gauge"><Speedo value={step === "platnosc" ? 1 : gauge} big /></div>
@@ -196,7 +210,7 @@ export default function Rezerwacja() {
                     title={t("flota.bk.product")} subtitle={t("card.desc")}
                     code={custom ? "OWN" : carSel?.badge} color={custom ? "var(--red)" : (carSel?.color || "var(--red)")}
                     photo={custom ? "/assets/covers/mariusz.webp" : (carSel?.png || carSel?.photos?.[0])} photos={custom ? [] : (carSel?.photos || [])}
-                    price={total} currency="PLN" lines={cardLines} includes={cardIncludes} onOrder={goNext}
+                    price={total} currency="PLN" lines={cardLines} includes={cardIncludes} onOrder={goNext} disc={{ d: disc, pv }}
                   />
                 </div>
               )}
@@ -222,9 +236,12 @@ export default function Rezerwacja() {
                 </div>
               )}
 
+              {stepIdx === 0 && step !== "platnosc" && <DiscountField d={disc} preview={pv} need={t("disc.needTrack")} />}
+
               {step === "platnosc" && <StepTag n={stepIdx + 1} of={stepKeys.length} title={t("flota.bk.s4")} />}
               {step === "platnosc" && (
-                <PayStep create={createBooking} payload={{
+                <PayStep create={createBooking} dropCode={disc.clear} payload={{
+                  discount_code: pv?.ok ? disc.code?.code : undefined,
                   car_id: custom ? null : carSel?.id, car_name: custom ? carName : carSel?.name, is_custom: custom, sessions,
                   term_id: (termSel && !termSel.noDate) ? termSel.id : null, track,
                   term_label: termSel?.noDate ? "Termin do ustalenia" : termSel ? `${termSel.location_pl || trackLabel(termSel.track, "pl")} · ${termSel.date} · ${termSel.time}` : "",
@@ -238,9 +255,10 @@ export default function Rezerwacja() {
                 {err && <div className="rz-err">{err}</div>}
                 <div className="rz-foot">
                   <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
-                  <div className="rz-foot__sum">
+                  <div className="rz-foot__sum" data-disc-target="2">
                     {sessions && <span>{pkg?.[lang === "en" ? "en" : "pl"]}</span>}
                     {total > 0 && <b>{fmtZl(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.net")}</small></b>}
+                    {disc.status === "ok" && pv?.ok && <em className="dsc-foot">{t("disc.line")} {discOn ? `−${fmtMoney(pv.off)}` : valueLabel(disc.code, t)}</em>}
                   </div>
                   <button className={`btn btn--red ${!canNext ? "is-locked" : ""}`} onClick={goNext}>
                     {step === "dane" ? t("flota.bk.pay") : t("flota.bk.next")} ›
@@ -251,7 +269,7 @@ export default function Rezerwacja() {
             {step === "produkt" && (
               <div className="rz-foot">
                 <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
-                <div className="rz-foot__sum"><span>{carTitle}</span><b>{fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")}</small></b></div>
+                <div className="rz-foot__sum" data-disc-target="2"><span>{carTitle}</span><b>{discOn ? fmtMoney(pv.toPay) : fmtGross(total)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.grossShort")}</small></b></div>
                 <button className="btn btn--red" onClick={goNext}>{t("card.order")} ›</button>
               </div>
             )}
@@ -265,9 +283,9 @@ export default function Rezerwacja() {
 }
 
 /* payment step — the tank fills, the pending order + Tpay transaction are created, then off to the gateway */
-export function PayStep({ create, payload }) {
+export function PayStep({ create, payload, dropCode }) {
   const { t } = useStore();
-  const { phase, fill, err, retry } = usePayRedirect(create, payload);
+  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, payload, { dropCode });
   return (
     <div className="fl-pay rz-pay">
       <FuelTank fill={fill} done={phase === "redirect"} />
@@ -276,7 +294,7 @@ export function PayStep({ create, payload }) {
         <div className="fl-pay__done">
           <h4 className="fl-pay__title" style={{ color: "var(--red)" }}>Ups!</h4>
           <p className="fl-pay__thanks">{err}</p>
-          <button className="btn btn--red" onClick={retry}>Spróbuj ponownie</button>
+          <button className="btn btn--red" onClick={payWithoutCode || retry}>{payWithoutCode ? t("disc.noCode") : "Spróbuj ponownie"}</button>
         </div>
       )}
     </div>

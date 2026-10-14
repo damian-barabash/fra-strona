@@ -20,7 +20,11 @@
 .pcard-x__price span { font: 700 10px/1 var(--font-display); letter-spacing: .18em; color: var(--muted); }
 .pcard-x__price b { font: 900 clamp(30px, 3vw, 42px)/1 var(--font-display); color: var(--text); }
 .pcard-x__price i { font: 600 12px/1.3 var(--font-body); color: var(--red); font-style: normal; }
-.pcard-x__btn { width: 100%; justify-content: center; }
+.pcard-x__btn { width: 100%; justify-content: center; margin-top: 14px; }
+.pcard-x__old { font: 700 15px/1.2 var(--font-display); color: var(--muted); text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 2px; margin-top: 4px; }
+.pcard-x__new { color: #138a55 !important; }
+.pcard-x__price .dsc-roll { font: inherit; letter-spacing: inherit; color: inherit; }
+.pcard-x__disc { font: 700 12px/1.4 var(--font-body); font-style: normal; color: #138a55; }
 .pcard-x__trust { display: flex; flex-direction: column; gap: 4px; font: 500 11.5px/1.4 var(--font-body); color: var(--muted); }
 .pcard-x__inc { background: var(--ink); color: #fff; padding: clamp(18px, 2vw, 26px); }
 .pcard-x__inc ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 22px; }

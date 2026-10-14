@@ -9,6 +9,7 @@ import { fmtZl } from "../lib/flota";
 import { fmtMoney, gross } from "../lib/vat";
 import "../sections/platnosc.css";
 import { purchase } from "../lib/pixel";
+import { forgetDiscount } from "../lib/discount";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
 const POLL_MS = 1800, GIVE_UP_MS = 90_000;
@@ -38,7 +39,7 @@ export default function Platnosc() {
         if (stop) return;
         if (r?.ok) {
           setOrder(r.order); misses = 0;
-          if (r.order.status === "paid") { purchase(r.order); setPhase("paid"); return; }
+          if (r.order.status === "paid") { purchase(r.order); forgetDiscount(); setPhase("paid"); return; }
           if (r.order.status === "chargeback" || r.order.status === "cancelled") { setPhase("failed"); return; }
           if (isError) { setPhase("failed"); return; }
         } else if (r && !r.ok) { setPhase(isError ? "failed" : "empty"); return; }
@@ -52,7 +53,9 @@ export default function Platnosc() {
 
   const isVoucher = order?.kind === "voucher";
   const copy = () => { navigator.clipboard?.writeText(order?.voucher_code || ""); setCopied(true); setTimeout(() => setCopied(false), 1800); };
-  const money = order ? `${fmtMoney(order.total_gross != null ? order.total_gross : gross(order.total), order.currency)} brutto` : "";
+  // with a discount code the receipt shows what was actually charged (PLN), the code is a line of its own
+  const money = !order ? "" : Number(order.discount_pln) > 0 ? `${fmtMoney(order.amount_pln)} brutto`
+    : `${fmtMoney(order.total_gross != null ? order.total_gross : gross(order.total), order.currency)} brutto`;
 
   return (
     <div className="pl">
@@ -137,6 +140,7 @@ function Receipt({ order, money, t }) {
       {order.sessions && <div className="pl-receipt__row"><span>{order.sessions} × sesja{order.term_label ? ` · ${order.term_label}` : ""}</span></div>}
       {order.package_name && <div className="pl-receipt__row"><span>{order.package_name}{order.persons > 1 ? ` · ${order.persons} os.` : ""}</span></div>}
       {order.voucher_for && <div className="pl-receipt__row"><span>Voucher dla: {order.voucher_for}</span></div>}
+      {Number(order.discount_pln) > 0 && <div className="pl-receipt__row"><span>{t("disc.line")} · {order.discount_code}</span><b>−{fmtMoney(order.discount_pln)}</b></div>}
       <div className="pl-receipt__mail">{order.email}</div>
     </div>
   );

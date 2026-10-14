@@ -3,6 +3,7 @@
 import { db, cfg, listOf, sendMail, shell, table, row, chip, esc, zl } from "../_shared/mail.ts";
 import { tpayConfigured, tpayCreateTransaction, tpayToken, TPAY_API } from "../_shared/tpay.ts";
 import { fulfillOrder, sendOrderMails, VAT_RATE, gross, round2 } from "../_shared/orders.ts";
+import { REASON, normCode, validCode, stateOf, findCode, fits, offFor, reserve, release, describeTarget, variantsOf, type Code } from "../_shared/discounts.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -174,7 +175,7 @@ async function auth(req: Request): Promise<Admin | null> {
 /* ---------------- permissions ----------------
    'owner' (the moderator) can do everything; an 'admin' only what its perms jsonb allows.
    PERM_KEYS is the catalogue the panel shows as checkboxes. */
-const PERM_KEYS = ["orders", "messages", "settings", "content", "products", "cars", "terms", "tracks", "instructors", "blog", "admins"];
+const PERM_KEYS = ["orders", "discounts", "messages", "settings", "content", "products", "cars", "terms", "tracks", "instructors", "blog", "admins"];
 const isOwner = (a: Admin) => a.role === "owner";
 const can = (a: Admin, perm: string) => isOwner(a) || !!a.perms?.[perm];
 // which permission a table's CRUD needs
@@ -186,7 +187,7 @@ const TABLE_PERM: Record<string, string> = {
 };
 // which permission a named action needs (prefix match); actions missing here are open to every admin (reads)
 const ACTION_PERM: [RegExp, string][] = [
-  [/^config\./, "settings"], [/^bookings\./, "orders"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
+  [/^config\./, "settings"], [/^bookings\./, "orders"], [/^discounts\./, "discounts"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
 ];
 const UPLOAD_PERMS = ["content", "products", "cars", "terms", "tracks", "instructors", "blog"];
 function allowed(a: Admin, action: string, table: string): boolean {
@@ -201,7 +202,7 @@ function allowed(a: Admin, action: string, table: string): boolean {
 }
 
 /* ---------------- audit log ---------------- */
-const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|cancel|read|create|update)$/;
+const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|cancel|read|create|update|generate|release)$/;
 async function audit(req: Request, a: Admin, action: string, target: string | null, details: unknown) {
   try {
     const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
@@ -239,14 +240,34 @@ const phoneOf = (s: string) => { const d = s.replace(/[^\d+]/g, ""); return /^\+
 
 /** Insert the pending booking and open the Tpay transaction. Returns what the browser needs. */
 async function startPayment(rowIn: Record<string, unknown>, p: any) {
-  const row: Record<string, unknown> = { ...rowIn, status: "pending", lang: p.lang === "en" ? "en" : "pl" };
+  const row: Record<string, unknown> = { ...rowIn, id: crypto.randomUUID(), status: "pending", lang: p.lang === "en" ? "en" : "pl" };
   // list prices are net — the gateway charges gross (23% VAT), converted to PLN for EUR trips
   row.vat_rate = VAT_RATE;
   row.total_gross = gross(Number(row.total));
   if (row.currency === "EUR") row.amount_pln = round2(Number(row.total_gross) * (await eurRate()));
   else row.amount_pln = Number(row.total_gross);
+
+  // discount code: checked again here (the browser's word means nothing), reserved for this order before
+  // it exists, spent when the order is paid. Worth one person's place on multi-person orders.
+  let code: Code | null = null;
+  if (p.discount_code) {
+    code = await findCode(String(p.discount_code));
+    const why = !code ? "notfound" : stateOf(code, String(row.email)) ?? (fits(code, row) ? null : "target");
+    if (why) return json({ ok: false, discount_error: true, reason: why, error: REASON[why] }, 409);
+    const base = Number(row.amount_pln), persons = Math.max(1, Number(row.persons) || 1);
+    const off = offFor(code!, base, round2(base / persons));
+    if (!(await reserve(code!, row.id as string, String(row.email)))) return json({ ok: false, discount_error: true, reason: "reserved", error: REASON.reserved }, 409);
+    Object.assign(row, { discount_id: code!.id, discount_code: code!.code, discount_pln: off, amount_pln: round2(base - off) });
+  }
+
   const { data: o, error } = await db.from("bookings").insert(row).select("*").single();
-  if (error) return json({ ok: false, error: error.message }, 500);
+  if (error) { if (code) await release(row.id as string); return json({ ok: false, error: error.message }, 500); }
+
+  // the code covers everything — no gateway, the order is paid right away
+  if (code && Number(o.amount_pln) <= 0) {
+    const r = await fulfillOrder(o.id, 0, "kod rabatowy");
+    return json({ ok: true, id: o.id, number: o.number, paid: true, free: true, status: r.order?.status });
+  }
 
   if (TEST_PAYMENTS || !tpayConfigured()) {
     if (!TEST_PAYMENTS) console.error("checkout: Tpay not configured");
@@ -398,12 +419,38 @@ async function createVoucherBooking(p: any) {
   }, p);
 }
 
+/* PUBLIC: what a discount code is (the configurator shows it and computes the preview; checkout decides).
+   Failed look-ups are counted per IP — 25 misses in 15 minutes and the door closes for a while. */
+async function checkDiscount(p: any, req: Request) {
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "?";
+  const since = new Date(Date.now() - 15 * 60e3).toISOString();
+  const { count } = await db.from("discount_attempts").select("id", { count: "exact", head: true }).eq("ip", ip).gte("at", since);
+  if ((count ?? 0) >= 25) return json({ ok: false, reason: "throttle", error: REASON.throttle }, 429);
+  const miss = async (reason: string) => { await db.from("discount_attempts").insert({ ip }); return json({ ok: false, reason, error: REASON[reason] }); };
+
+  const raw = normCode(p.code);
+  if (!raw) return miss("notfound");
+  const c = await findCode(raw);
+  if (!c) {
+    // a gift-voucher code typed into the discount field — say what it is instead of "unknown"
+    const { data: v } = await db.from("bookings").select("id").eq("voucher_code", raw).maybeSingle();
+    return miss(v ? "voucher" : "notfound");
+  }
+  const why = stateOf(c, "", true);
+  if (why) return json({ ok: false, reason: why, error: REASON[why] });
+  const t = await describeTarget(c);
+  return json({
+    ok: true, eur_pln: await eurRate(),
+    code: { code: c.code, kind: c.kind, value_type: c.value_type, value: Number(c.value), target: c.target, valid_to: c.valid_to, label: t.label, url: t.url },
+  });
+}
+
 // PUBLIC: order status for the "thank you" page (only by the unguessable uuid)
 async function orderStatus(p: any) {
   const id = String(p?.id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ ok: false, error: "not found" }, 404);
   const { data: o } = await db.from("bookings")
-    .select("id, number, kind, status, total, currency, amount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at")
+    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at")
     .eq("id", id).maybeSingle();
   if (!o) return json({ ok: false, error: "not found" }, 404);
   return json({ ok: true, order: o });
@@ -470,6 +517,7 @@ Deno.serve(async (req) => {
     if (action === "booking.createTrip") return await createTripBooking(payload ?? {});
     if (action === "booking.createVoucher") return await createVoucherBooking(payload ?? {});
     if (action === "booking.status") return await orderStatus(payload ?? {});
+    if (action === "discount.check") return await checkDiscount(payload ?? {}, req);
 
     // ---- ADMIN ----
     const me = await auth(req);
@@ -496,6 +544,10 @@ function describe(action: string, p: any, table: string): { target: string | nul
   if (action === "media.upload") return { target: String(p.path ?? ""), details: null };
   if (action === "config.set") return { target: String(p.key ?? ""), details: { value: String(p.value ?? "").slice(0, 200) } };
   if (action.startsWith("bookings.")) return { target: String(p.number ? `#${p.number}` : p.id ?? ""), details: null };
+  if (action.startsWith("discounts.")) {
+    const n = (p.codes ?? p.ids ?? []).length || Number(p.count) || (p.id ? 1 : 0);
+    return { target: `${p.settings?.batch || p.batch || ""}${n ? ` · ${n} kod(ów)` : ""}`.replace(/^ · /, "") || null, details: { settings: p.settings ?? null, patch: p.patch ?? null, codes: (p.codes ?? []).slice(0, 20) } };
+  }
   if (action.startsWith("messages.")) return { target: String(p.id ?? ""), details: null };
   if (action.startsWith("admins.")) return { target: String(p.login ?? p.id ?? ""), details: { role: p.role, perms: p.perms, name: p.name, position: p.position } };
   if (table) {
@@ -605,6 +657,7 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
       return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true, rows: data });
     }
     if (action === "bookings.delete") {
+      await release(String(payload?.id ?? ""));
       const { error } = await db.from("bookings").delete().eq("id", payload?.id ?? "");
       return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
     }
@@ -621,9 +674,12 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
       catch (e) { return json({ ok: false, error: String(e) }, 502); }
     }
     if (action === "bookings.cancel") {
+      await release(String(payload?.id ?? ""));
       const { error } = await db.from("bookings").update({ status: "cancelled" }).eq("id", payload?.id ?? "");
       return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
     }
+
+    if (action.startsWith("discounts.")) return await discountsAdmin(action, payload, me);
 
     if (action === "messages.list") {
       const { data, error } = await db.from("messages").select("*").order("created_at", { ascending: false }).limit(300);
@@ -725,5 +781,148 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
     return json({ ok: false, error: "unknown action" }, 400);
   }
 }
+/* ---------------- ADMIN: discount codes ----------------
+   One form serves all three ways of adding codes: typed by hand, a generated series (e.g. 200 × 100 zł)
+   and a file import — they share the settings (kind, value, product, dates, series name). */
+const CODE_ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";   // no I/L/O/0/1 — nobody misreads a printed code
+function randomCode(prefix: string, len: number) {
+  const b = crypto.getRandomValues(new Uint8Array(len));
+  const body = Array.from(b, (x) => CODE_ALPHA[x % CODE_ALPHA.length]).join("").match(/.{1,4}/g)!.join("-");
+  return prefix ? `${prefix}-${body}` : body;
+}
+const isoDay = (v: unknown) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v ?? "")) ? String(v) : null);
+function codeSettings(s: any): { err: string } | { row: Record<string, unknown> } {
+  const kind = s?.kind === "product" ? "product" : "amount";
+  const value_type = kind === "amount" ? "amount" : (["full", "percent", "amount"].includes(s?.value_type) ? s.value_type : "full");
+  const value = round2(Math.max(0, Number(String(s?.value ?? "").replace(",", ".")) || 0));
+  if (value_type === "amount" && !(value > 0)) return { err: "Podaj kwotę rabatu w złotych." };
+  if (value_type === "percent" && !(value > 0 && value <= 100)) return { err: "Procent rabatu musi być od 1 do 100." };
+  let target: Record<string, unknown> | null = null;
+  if (kind === "product") {
+    const t = s?.target ?? {};
+    if (!["track", "ice", "product", "trip"].includes(t.kind)) return { err: "Wybierz, na jaki produkt jest kod." };
+    target = { kind: t.kind };
+    if (t.kind === "track") Object.assign(target, { car_id: t.car_id || null, sessions: [3, 6, 9].includes(Number(t.sessions)) ? Number(t.sessions) : null });
+    if (t.kind === "ice") target.package_id = t.package_id || null;
+    if (t.kind === "product") { if (!t.slug) return { err: "Wybierz program." }; Object.assign(target, { slug: String(t.slug), variant: t.variant || null }); }
+    if (t.kind === "trip") { if (!t.slug && !t.package_id) return { err: "Wybierz wyprawę." }; Object.assign(target, { slug: t.slug || null, package_id: t.package_id || null }); }
+  }
+  const valid_from = isoDay(s?.valid_from), valid_to = isoDay(s?.valid_to);
+  if (valid_from && valid_to && valid_to < valid_from) return { err: "Data „ważny do” jest wcześniejsza niż „ważny od”." };
+  return { row: { kind, value_type, value: value_type === "full" ? 0 : value, target, valid_from, valid_to, note: str(s?.note, 300) || null, batch: str(s?.batch, 80) || null, active: s?.active !== false } };
+}
+async function existingCodes(codes: string[]) {
+  const have = new Set<string>();
+  for (let i = 0; i < codes.length; i += 300) {
+    const { data } = await db.from("discount_codes").select("code").in("code", codes.slice(i, i + 300));
+    (data ?? []).forEach((r: any) => have.add(r.code));
+  }
+  return have;
+}
+async function insertCodes(codes: string[], base: Record<string, unknown>, by: string) {
+  const out: any[] = [];
+  for (let i = 0; i < codes.length; i += 500) {
+    const { data, error } = await db.from("discount_codes").insert(codes.slice(i, i + 500).map((code) => ({ ...base, code, created_by: by }))).select("*");
+    if (error) return { error: error.message, rows: out };
+    out.push(...(data ?? []));
+  }
+  return { rows: out };
+}
+
+async function discountsAdmin(action: string, p: any, me: Admin): Promise<Response> {
+  if (action === "discounts.list") {
+    const rows: any[] = [];
+    for (let from = 0; from < 50000; from += 1000) {   // PostgREST answers 1000 rows at a time
+      const { data, error } = await db.from("discount_codes").select("*").order("created_at", { ascending: false }).order("code").range(from, from + 999);
+      if (error) return json({ ok: false, error: error.message }, 500);
+      rows.push(...(data ?? []));
+      if ((data ?? []).length < 1000) break;
+    }
+    const ids = [...new Set(rows.flatMap((r) => [r.used_booking, r.reserved_booking]).filter(Boolean))];
+    const orders: Record<string, unknown> = {};
+    for (let i = 0; i < ids.length; i += 300) {
+      const { data } = await db.from("bookings").select("id, number, status, full_name, email, amount_pln, discount_pln, car_name, product_name").in("id", ids.slice(i, i + 300));
+      (data ?? []).forEach((b: any) => { orders[b.id] = b; });
+    }
+    return json({ ok: true, rows, orders });
+  }
+
+  if (action === "discounts.create" || action === "discounts.generate") {
+    const st = codeSettings(p.settings);
+    if ("err" in st) return json({ ok: false, error: st.err }, 400);
+    const skipped: { code: string; why: string }[] = [];
+    let codes: string[] = [];
+    if (action === "discounts.create") {
+      // typed by hand or read from a file: normalised, checked, duplicates reported (not silently dropped)
+      const raw: unknown[] = Array.isArray(p.codes) ? p.codes.slice(0, 5000) : [];
+      const seen = new Set<string>();
+      for (const r of raw) {
+        const c = normCode(r);
+        if (!c) continue;
+        if (!validCode(c)) { skipped.push({ code: String(r).slice(0, 40), why: "zły format (3–40 znaków: litery, cyfry, myślnik)" }); continue; }
+        if (seen.has(c)) { skipped.push({ code: c, why: "powtórzony w pliku / liście" }); continue; }
+        seen.add(c); codes.push(c);
+      }
+      const have = await existingCodes(codes);
+      codes = codes.filter((c) => (have.has(c) ? (skipped.push({ code: c, why: "już istnieje" }), false) : true));
+    } else {
+      const count = Math.min(5000, Math.max(1, parseInt(p.count, 10) || 0));
+      const prefix = normCode(p.prefix).slice(0, 12);
+      const len = Math.min(16, Math.max(6, parseInt(p.length, 10) || 8));
+      const set = new Set<string>();
+      for (let round = 0; round < 6 && set.size < count; round++) {
+        const fresh: string[] = [];
+        while (set.size + fresh.length < count) { const c = randomCode(prefix, len); if (!set.has(c) && !fresh.includes(c)) fresh.push(c); }
+        const have = await existingCodes(fresh);
+        fresh.filter((c) => !have.has(c)).forEach((c) => set.add(c));
+      }
+      codes = [...set];
+    }
+    if (!codes.length) return json({ ok: true, rows: [], skipped });
+    const res = await insertCodes(codes, st.row, me.login);
+    if (res.error) return json({ ok: false, error: res.error, rows: res.rows, skipped }, 500);
+    return json({ ok: true, rows: res.rows, skipped });
+  }
+
+  if (action === "discounts.update") {
+    const ids: string[] = (Array.isArray(p.ids) ? p.ids : [p.id]).filter(Boolean).slice(0, 50000).map(String);
+    const patch: Record<string, unknown> = {};
+    if ("active" in (p.patch ?? {})) patch.active = !!p.patch.active;
+    if ("valid_from" in (p.patch ?? {})) patch.valid_from = isoDay(p.patch.valid_from);
+    if ("valid_to" in (p.patch ?? {})) patch.valid_to = isoDay(p.patch.valid_to);
+    if ("note" in (p.patch ?? {})) patch.note = str(p.patch.note, 300) || null;
+    if (!ids.length || !Object.keys(patch).length) return json({ ok: false, error: "nothing to change" }, 400);
+    const rows: any[] = [];
+    for (let i = 0; i < ids.length; i += 300) {
+      const { data, error } = await db.from("discount_codes").update(patch).in("id", ids.slice(i, i + 300)).select("*");
+      if (error) return json({ ok: false, error: error.message }, 500);
+      rows.push(...(data ?? []));
+    }
+    return json({ ok: true, rows });
+  }
+
+  if (action === "discounts.delete") {
+    // a spent code is the record of a discount on a paid order, and a reserved one belongs to a payment
+    // in progress — neither is deleted (switch it off instead)
+    const ids: string[] = (Array.isArray(p.ids) ? p.ids : [p.id]).filter(Boolean).slice(0, 50000).map(String);
+    const now = new Date().toISOString();
+    let deleted: string[] = [];
+    for (let i = 0; i < ids.length; i += 300) {
+      const { data, error } = await db.from("discount_codes").delete().in("id", ids.slice(i, i + 300)).is("used_at", null)
+        .or(`reserved_until.is.null,reserved_until.lt."${now}"`).select("id");
+      if (error) return json({ ok: false, error: error.message }, 500);
+      deleted = deleted.concat((data ?? []).map((r: any) => r.id));
+    }
+    return json({ ok: true, deleted, kept: ids.length - deleted.length });
+  }
+
+  if (action === "discounts.release") {
+    const { data, error } = await db.from("discount_codes").update({ reserved_booking: null, reserved_email: null, reserved_until: null })
+      .eq("id", String(p.id ?? "")).is("used_at", null).select("*").maybeSingle();
+    return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true, row: data });
+  }
+  return json({ ok: false, error: "unknown action" }, 400);
+}
+
 // keep unused imports referenced for bundlers
-void [listOf, sendMail, shell, table, row, chip, esc, zl];
+void [listOf, sendMail, shell, table, row, chip, esc, zl, variantsOf];

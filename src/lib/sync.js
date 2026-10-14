@@ -14,7 +14,7 @@ export const useSync = () => useSyncExternalStore(subscribe, () => state, () => 
 export const hasUnsaved = () => state.pending > 0;
 
 // admin-api actions that change data (mirrors MUTATING in the edge function); reads are not tracked
-export const isMutation = (action) => /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|cancel|create|update)$/.test(action || "");
+export const isMutation = (action) => /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|cancel|create|update|generate|release)$/.test(action || "");
 
 let seq = 0;
 /** Runs `run()` (→ admin-api result `{ ok, … }`) as a tracked operation. On failure `rollback()` undoes

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
@@ -12,6 +12,9 @@ import StepTag from "../components/StepTag";
 import { fmtGross } from "../lib/vat";
 import { usePayRedirect } from "../lib/pay";
 import { addToCart } from "../lib/pixel";
+import { useDiscount, valueLabel } from "../lib/discount";
+import { DiscountField } from "../components/Discount";
+import { fmtMoney } from "../lib/vat";
 import { fmtZl } from "../lib/flota";
 import "../sections/laponia.css";
 import "../sections/productcard.css";
@@ -22,6 +25,10 @@ const lines = (x) => String(x || "").split("\n").map((v) => v.trim()).filter(Boo
 /* The ice configurator: PAKIET → TERMIN (a start date inside the CMS season window) → DANE → PŁATNOŚĆ.
    Prices and the window come from the CMS; the total is recomputed server-side on submit. */
 export default function RezerwacjaIce() {
+  const { search } = useLocation();
+  return <RezerwacjaIceFlow key={search} />;
+}
+function RezerwacjaIceFlow() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const { icePackages, iceWindows, products, raw, t, L, lang, createIceBooking } = useStore();
@@ -51,6 +58,10 @@ export default function RezerwacjaIce() {
   useEffect(() => { if (start && win && !allowed.has(start)) setStart(""); }, [allowed, start, win]);
   const end = start ? addDays(start, days - 1) : "";
   const total = (pkg?.price || 0) * persons;
+  const entry = preset ? 1 : 0;   // the step the visitor starts on
+  const disc = useDiscount({ kind: "ice", firstStep: stepIdx === entry });
+  const pv = disc.preview({ package_id: pkg?.id, net: total, currency: pkg?.currency || "EUR", persons });
+  const discOn = !!(pv?.ok && pv.ready && pv.off > 0);
 
   const STEPS = ["pakiet", "termin", "produkt", "dane", "platnosc"];
   const laponia = products.find((x) => x.slug === "ice-driving-laponia");
@@ -104,6 +115,9 @@ export default function RezerwacjaIce() {
                   {pkg && <span className="lp-frost-chip"><b>{t("ice.sPkg")}</b>{L(pkg, "name")}</span>}
                   {start && <span className="lp-frost-chip"><b>{t("ice.sDate")}</b>{fmtDay(start, lang)}{days > 1 ? ` – ${fmtDay(end, lang)}` : ""}</span>}
                   {pkg && <span className="lp-frost-chip"><b>{t("ice.total")}</b>{fmtEur(total, pkg.currency)} {t("card.net")}</span>}
+                  {disc.code && (disc.status === "ok" || disc.status === "landing") && (
+                    <span className="lp-frost-chip" data-disc-target="3" style={disc.status === "landing" ? { opacity: 0 } : undefined}><b>{t("disc.line")}</b>{disc.code.code} · {valueLabel(disc.code, t)}</span>
+                  )}
                 </div>
               </div>
               <IceGauge value={step === "platnosc" ? 1 : progress} />
@@ -161,7 +175,7 @@ export default function RezerwacjaIce() {
                     price={total} currency={pkg?.currency || "EUR"} pricePln={Math.round(total * eurRate)}
                     lines={[[t("ice.sPkg"), L(pkg, "name")], [t("ice.sessions") || "SESJE", L(pkg, "sessions")], [t("ice.sDate"), `${fmtDay(start, lang)}${days > 1 ? ` – ${fmtDay(end, lang)}` : ""}`], [t("ice.persons"), String(persons)]]}
                     includes={lines(L(laponia, "includes"))}
-                    onOrder={goNext}
+                    onOrder={goNext} disc={{ d: disc, pv }}
                   />
                 </div>
               )}
@@ -186,9 +200,12 @@ export default function RezerwacjaIce() {
                 </div>
               )}
 
+              {stepIdx === entry && <DiscountField d={disc} preview={pv} need={t("disc.needIce")} />}
+
               {step === "platnosc" && <StepTag n={stepIdx + 1} of={STEPS.length} title={t("flota.bk.s4")} />}
               {step === "platnosc" && (
-                <PayIce t={t} create={createIceBooking} payload={{
+                <PayIce t={t} create={createIceBooking} dropCode={disc.clear} payload={{
+                  discount_code: pv?.ok ? disc.code?.code : undefined,
                   package_id: pkg?.id, window_id: win?.id, date_from: start, persons,
                   full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
                 }} />
@@ -200,9 +217,10 @@ export default function RezerwacjaIce() {
                 {err && <div className="ri-err">{err}</div>}
                 <div className="ri-foot">
                   <button className="btn btn--back" onClick={goPrev}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
-                  <div className="ri-foot__sum">
+                  <div className="ri-foot__sum" data-disc-target="2">
                     {pkg && <span>{L(pkg, "name")}{persons > 1 ? ` · ${persons} ${t("ice.personsShort")}` : ""}</span>}
                     {total > 0 && <b>{fmtEur(total, pkg?.currency)} <small style={{ font: "600 11px var(--font-body)", color: "var(--muted)" }}>{t("card.net")}</small></b>}
+                    {disc.status === "ok" && pv?.ok && <em className="dsc-foot">{t("disc.line")} {discOn ? `−${fmtMoney(pv.off)}` : valueLabel(disc.code, t)}</em>}
                   </div>
                   <button className={`btn lp-btn ${!canNext ? "is-locked" : ""}`} onClick={goNext}>
                     {step === "dane" ? t("ice.pay") : t("flota.bk.next")} ›
@@ -220,8 +238,8 @@ export default function RezerwacjaIce() {
 }
 
 /* payment: the ice freezes over, the pending order + Tpay transaction are created, then off to the gateway */
-function PayIce({ t, create, payload }) {
-  const { phase, fill, err, retry } = usePayRedirect(create, payload);
+function PayIce({ t, create, payload, dropCode }) {
+  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, payload, { dropCode });
   return (
     <div className="ri-pay">
       <div className="ri-ice" style={{ ["--f"]: `${fill}%` }}>
@@ -234,7 +252,7 @@ function PayIce({ t, create, payload }) {
         <div className="ri-pay__done">
           <h3 className="ri-pay__title" style={{ color: "var(--red)" }}>Ups!</h3>
           <p className="ri-pay__thanks">{err}</p>
-          <button className="btn lp-btn" onClick={retry}>Spróbuj ponownie</button>
+          <button className="btn lp-btn" onClick={payWithoutCode || retry}>{payWithoutCode ? t("disc.noCode") : "Spróbuj ponownie"}</button>
         </div>
       )}
     </div>

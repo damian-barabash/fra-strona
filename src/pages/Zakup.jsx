@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
@@ -10,7 +10,9 @@ import { usePayRedirect } from "../lib/pay";
 import { addToCart, setCart } from "../lib/pixel";
 import { fmtZl } from "../lib/flota";
 import StepTag from "../components/StepTag";
-import { fmtGross } from "../lib/vat";
+import { fmtGross, fmtMoney } from "../lib/vat";
+import { useDiscount } from "../lib/discount";
+import { DiscountField, DiscountLines } from "../components/Discount";
 import "../sections/rezerwacja.css";
 import "../sections/d2r.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
@@ -25,6 +27,10 @@ export const parseVariants = (txt) => lines(txt).filter((l) => !l.startsWith("##
 /* /zakup?produkt=<slug> — buying a fixed-price package (Driver2Racer): no configurator,
    straight to DANE → PŁATNOŚĆ. The price is re-read server-side from the product row. */
 export default function Zakup() {
+  const { search } = useLocation();
+  return <ZakupFlow key={search} />;
+}
+function ZakupFlow() {
   const [sp] = useSearchParams();
   const nav = useNavigate();
   const { products, ready, t, L, createProductBooking } = useStore();
@@ -40,6 +46,14 @@ export default function Zakup() {
   const chosen = variants[variant] || variants[0] || null;
   const price = chosen ? chosen.price : p?.price;
   const [err, setErr] = useState("");
+  const disc = useDiscount({ kind: "product" });
+  const pv = disc.preview({ slug: p?.slug, variant: chosen?.name, net: price, currency: p?.currency || "PLN" });
+  const discOn = !!(pv?.ok && pv.ready && pv.off > 0);
+  // a code for one variant of this very product picks that variant
+  const tv = disc.applied?.target;
+  useEffect(() => {
+    if (tv?.kind === "product" && tv.slug === p?.slug && tv.variant) { const i = variants.findIndex((v) => v.name === tv.variant); if (i >= 0) setVariant(i); }
+  }, [tv?.slug, tv?.variant, variants.length]); // eslint-disable-line
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
   const item = p ? { name: chosen ? `${p.title_pl} · ${chosen.name}` : p.title_pl, id: p.slug, price, currency: p.currency || "PLN", category: "product" } : null;
@@ -128,12 +142,14 @@ export default function Zakup() {
                         <textarea rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                     </div>
 
+                    <DiscountField d={disc} preview={pv} />
+
                     {err && <div className="zk-err">{err}</div>}
 
                     <div className="zk-foot">
                       <button className="btn btn--back" onClick={() => nav(-1)}><i className="btn__back">‹</i>{t("flota.bk.prev")}</button>
                       <button className={`btn btn--red ${!valid ? "is-locked" : ""}`} onClick={goPay}>
-                        {t("flota.bk.pay")} · {fmtGross(price)} <span className="btn__arrow">›</span>
+                        {t("flota.bk.pay")} · {discOn ? fmtMoney(pv.toPay) : fmtGross(price)} <span className="btn__arrow">›</span>
                       </button>
                     </div>
                   </>
@@ -142,7 +158,7 @@ export default function Zakup() {
                 {step === "platnosc" && (
                   <>
                     <StepTag n={variants.length > 1 ? 3 : 2} of={variants.length > 1 ? 3 : 2} title={t("flota.bk.s4")} />
-                    <PayStep p={p} form={form} t={t} create={createProductBooking} variant={chosen?.name} />
+                    <PayStep p={p} form={form} t={t} create={createProductBooking} variant={chosen?.name} code={pv?.ok ? disc.code?.code : undefined} dropCode={disc.clear} />
                   </>
                 )}
               </div>
@@ -158,11 +174,12 @@ export default function Zakup() {
                     <ul className="zk-card__list">
                       {lines(L(p, "includes")).slice(0, 5).map((l, i) => <li key={i}>{l}</li>)}
                     </ul>
-                    <div className="zk-card__total">
+                    <div className="zk-card__total" data-disc-target="1">
                       <span>{t("flota.bk.total")}</span>
                       <b>{fmtZl(price)}</b>
                     </div>
                     <div className="zk-card__vat">{t("d2r.net")} · {t("flota.bk.pay").toLowerCase()}: {fmtGross(price)} {t("card.grossShort")}</div>
+                    <DiscountLines code={disc.code} pv={pv} />
                   </div>
                 </div>
               </aside>
@@ -177,8 +194,8 @@ export default function Zakup() {
 }
 
 /* payment — the tank fills, the order + Tpay transaction are created server-side, then the gateway */
-function PayStep({ p, form, t, create, variant }) {
-  const { phase, fill, err, retry } = usePayRedirect(create, { product_slug: p.slug, variant: variant || null, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note });
+function PayStep({ p, form, t, create, variant, code, dropCode }) {
+  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, { product_slug: p.slug, variant: variant || null, discount_code: code, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note }, { dropCode });
   return (
     <div className="zk-pay">
       <FuelTank fill={fill} done={phase === "redirect"} />
@@ -187,7 +204,7 @@ function PayStep({ p, form, t, create, variant }) {
         <div className="zk-pay__done">
           <h3 className="zk-pay__t" style={{ color: "var(--red)" }}>Ups!</h3>
           <p className="zk-pay__p">{err}</p>
-          <button className="btn btn--red" onClick={retry}>Spróbuj ponownie</button>
+          <button className="btn btn--red" onClick={payWithoutCode || retry}>{payWithoutCode ? t("disc.noCode") : "Spróbuj ponownie"}</button>
         </div>
       )}
     </div>

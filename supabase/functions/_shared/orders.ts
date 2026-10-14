@@ -1,6 +1,7 @@
 // Order fulfilment — the ONE place that marks a booking as paid and sends the e-mails.
 // Used by the Tpay webhook (real payments) and by the admin (manual "mark as paid").
 import { db, cfg, listOf, sendMail, shell, table, row, button, chip, zl, esc } from "./mail.ts";
+import { spend } from "./discounts.ts";
 
 const SITE = (Deno.env.get("SITE_URL") ?? "https://fastlineracingacademy.pl").replace(/\/$/, "");
 
@@ -34,7 +35,13 @@ function summaryRows(o: any) {
   const rate = Number(o.vat_rate ?? 0), g = o.total_gross != null ? Number(o.total_gross) : Number(o.total);
   rows.push(row("Wartość netto", zl(o.total, o.currency)));
   if (rate > 0) rows.push(row(`VAT ${Math.round(rate * 100)}%`, zl2(round2(g - Number(o.total)), o.currency)));
-  rows.push(row("Do zapłaty brutto", `<b>${zl2(g, o.currency)}</b>${o.currency === "EUR" && o.amount_pln ? ` (${zl2(o.amount_pln)} PLN)` : ""}`, true));
+  const disc = Number(o.discount_pln) || 0;
+  if (disc > 0) {
+    // a discount code: the full gross value, what the code took off, and what was actually charged
+    rows.push(row("Wartość brutto", `${zl2(g, o.currency)}${o.currency === "EUR" ? ` (${zl2(round2(Number(o.amount_pln) + disc))} PLN)` : ""}`));
+    rows.push(row("Kod rabatowy", `${esc(o.discount_code)} · <b style="color:#21b573">−${zl2(disc)}</b>`));
+    rows.push(row("Do zapłaty", `<b>${zl2(o.amount_pln)}</b>${Number(o.amount_pln) ? "" : " — pokryte kodem rabatowym"}`, true));
+  } else rows.push(row("Do zapłaty brutto", `<b>${zl2(g, o.currency)}</b>${o.currency === "EUR" && o.amount_pln ? ` (${zl2(o.amount_pln)} PLN)` : ""}`, true));
   if (o.tpay_title) rows.push(row("Transakcja Tpay", esc(o.tpay_title)));
   return table(rows.join(""));
 }
@@ -54,6 +61,8 @@ export async function fulfillOrder(orderId: string, paidAmount?: number, method?
   if (paidAmount != null) patch.paid_amount = paidAmount;
   if (method) patch.tpay_method = method;
   if (o.kind === "voucher" && !o.voucher_code) patch.voucher_code = voucherCode();
+  // the order is paid — its discount code is spent (if another order spent it first, the team sees why)
+  if (o.discount_id && !(await spend(o))) patch.payment_error = `kod rabatowy ${o.discount_code} był już wykorzystany w innym zamówieniu`;
   const { data: upd, error } = await db.from("bookings").update(patch).eq("id", o.id).select("*").single();
   if (error) throw new Error(error.message);
 

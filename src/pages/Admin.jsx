@@ -11,6 +11,7 @@ import { TERM_TYPES } from "../lib/kalendarz";
 import { windowMonths, isoOf } from "../lib/ice";
 import RichEditor from "../components/RichEditor";
 import PopupsTab from "./AdminPopups";
+import CodesTab from "./AdminCodes";
 import { postDate, postState, todayIso } from "../lib/blog";
 import { plainText, wordCount } from "../lib/richtext";
 import "./admin.css";
@@ -195,7 +196,7 @@ const CFG = {
 const GROUPS = [
   { id: "pulpit", label: "Pulpit", tabs: [{ t: "dashboard", l: "Pulpit", i: "home" }] },
   { id: "sprzedaz", label: "Sprzedaż", tabs: [
-    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart", p: "orders" }, { t: "vouchery", l: "Vouchery", i: "gift", p: "orders" },
+    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart", p: "orders" }, { t: "vouchery", l: "Vouchery", i: "gift", p: "orders" }, { t: "kody", l: "Kody rabatowe", i: "tag", p: "discounts" },
     { t: "wiadomosci", l: "Wiadomości", i: "mail", p: "messages" }, { t: "firmy", l: "Zapytania firmowe", i: "biz", p: "messages" }, { t: "ustawienia", l: "Ustawienia", i: "cog", p: "settings" },
   ] },
   { id: "oferta", label: "Oferta", tabs: [{ t: "products", l: "Produkty", i: "box", p: "products" }, { t: "ice_packages", l: "Laponia — pakiety", i: "snow", p: "products" }, { t: "ice_windows", l: "Laponia — sezon", i: "snow", p: "products" }, { t: "programs", l: "Kafelki na głównej", i: "grid", p: "content" }] },
@@ -206,6 +207,7 @@ const GROUPS = [
 /* permission catalogue — what a checkbox in the admin form means (keys mirror admin-api PERM_KEYS) */
 const PERMS = [
   { k: "orders", l: "Zamówienia i płatności", d: "Podgląd zamówień i vouchery, dokumenty Tpay, oznaczanie jako opłacone, anulowanie, wysyłka maili" },
+  { k: "discounts", l: "Kody rabatowe", d: "Tworzenie, generowanie serii i import kodów rabatowych, wyłączanie, eksport do CSV" },
   { k: "messages", l: "Wiadomości i zapytania firmowe", d: "Skrzynka z formularza kontaktowego i briefy od firm" },
   { k: "settings", l: "Ustawienia", d: "Adresy e-mail powiadomień, nadawca, kurs EUR" },
   { k: "content", l: "Edycja strony", d: "Edycja wizualna tekstów i zdjęć, menu, banery, pop-up reklamowy, media o nas, kafelki na głównej" },
@@ -297,6 +299,7 @@ function Shell() {
           : tab === "logs" ? <LogsTab />
           : tab === "zamowienia" ? <OrdersTab />
           : tab === "vouchery" ? <OrdersTab only="voucher" />
+          : tab === "kody" ? <CodesTab />
           : tab === "wiadomosci" ? <MessagesTab kind="contact" />
           : tab === "firmy" ? <MessagesTab kind="firma" />
           : tab === "ustawienia" ? <SettingsTab />
@@ -453,7 +456,9 @@ function OrdersTab({ only }) {
               <span className="adm-tr__date">{when(b.created_at)}</span>
               <span className="adm-tr__who"><b>{b.full_name}</b><small>{b.email}</small></span>
               <span className="adm-tr__what"><span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span><b>{b.car_name || b.product_name}</b><small>{b.sessions ? `${b.sessions} sesji · ` : ""}{b.term_label || b.package_name || ""}{b.voucher_code ? ` · ${b.voucher_code}` : ""}</small></span>
-              <span className="adm-tr__sum"><b>{money2(grossOf(b), b.currency)}</b><small>{money(b)} netto{b.currency === "EUR" ? ` · ${money2(b.amount_pln)}` : ""}</small></span>
+              <span className="adm-tr__sum">{Number(b.discount_pln) > 0
+                ? <><b>{money2(b.amount_pln)}</b><small>kod {b.discount_code} −{money2(b.discount_pln)} · {money(b)} netto</small></>
+                : <><b>{money2(grossOf(b), b.currency)}</b><small>{money(b)} netto{b.currency === "EUR" ? ` · ${money2(b.amount_pln)}` : ""}</small></>}</span>
               <span><i className={`adm-badge adm-badge--${STATUS[b.status]?.[1] || "off"}`}>{STATUS[b.status]?.[0] || b.status}</i>{b.payment_error && <small className="adm-tr__err" title={b.payment_error}>⚠</small>}</span>
               <span><button className="adm-mini adm-mini--dark" onClick={() => setOpen(b)}>Szczegóły</button></span>
             </div>
@@ -520,7 +525,11 @@ function OrderDrawer({ id, onClose, onChanged }) {
                 <dl>
                   <div><dt>Wartość netto</dt><dd>{money(o)}</dd></div>
                   <div><dt>VAT {Math.round(Number(o.vat_rate ?? 0) * 100)}%</dt><dd>{money2(grossOf(o) - (Number(o.total) || 0), o.currency)}</dd></div>
-                  <div><dt>Do zapłaty brutto</dt><dd><b>{money2(grossOf(o), o.currency)}</b>{o.currency === "EUR" && ` · ${money2(o.amount_pln)}`}</dd></div>
+                  {Number(o.discount_pln) > 0 ? <>
+                    <div><dt>Wartość brutto</dt><dd>{money2(grossOf(o), o.currency)}</dd></div>
+                    <div><dt>Kod rabatowy</dt><dd><b className="adm-code">{o.discount_code}</b> −{money2(o.discount_pln)}</dd></div>
+                    <div><dt>Do zapłaty</dt><dd><b>{money2(o.amount_pln)}</b>{!Number(o.amount_pln) && " — pokryte kodem"}</dd></div>
+                  </> : <div><dt>Do zapłaty brutto</dt><dd><b>{money2(grossOf(o), o.currency)}</b>{o.currency === "EUR" && ` · ${money2(o.amount_pln)}`}</dd></div>}
                   <div><dt>Zapłacono</dt><dd>{o.paid_amount != null ? money2(o.paid_amount) : "—"}</dd></div>
                   <div><dt>Metoda</dt><dd>{o.tpay_method || lastAttempt?.paymentMethod || "—"}</dd></div>
                   {o.payment_error && <div><dt>Uwaga</dt><dd className="adm-doc__err">{o.payment_error}</dd></div>}
