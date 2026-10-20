@@ -92,3 +92,31 @@ test("an amount code entered before choosing says what to choose first", async (
   await expect(page.locator(".dsc--strip input")).toBeVisible();
   expect(await page.evaluate(() => sessionStorage.getItem("fra_kod"))).toBeNull();
 });
+
+test("percent code on a direct purchase: −10% of the whole gross amount", async ({ page, request }) => {
+  const [prod] = await rest(request, "products?select=slug&visible=eq.true&buy_direct=eq.true&theme=neq.wyprawa&order=sort&limit=1");
+  test.skip(!prod, "no direct-purchase product in the CMS");
+  const PCT = { code: "JESIEN-10", kind: "amount", value_type: "percent", value: 10, target: null, valid_to: null, label: "", url: "" };
+  const sent = await mockApi(page, { "JESIEN-10": PCT });
+  await page.goto(`/zakup?produkt=${prod.slug}`);
+
+  const field = page.locator(".dsc--strip");
+  await field.locator("input").fill("jesien-10");
+  await field.locator(".dsc-form__btn").click();
+  await expect(field.locator(".dsc-ticket")).toContainText("−10%", { timeout: 6000 });
+  const lines = page.locator(".dsc-lines");
+  await expect(lines).toBeVisible();
+  await page.waitForTimeout(1200);                                               // the price finishes counting down
+  const money = (s) => Number(s.replace(/[^\d,]/g, "").replace(",", "."));
+  const off = money(await lines.locator(".dsc-lines__off").innerText());
+  const toPay = money(await lines.locator(".dsc-lines__pay b").innerText());
+  expect(off).toBeGreaterThan(0);
+  expect(Math.abs(off - Math.round((off + toPay) * 10) / 100)).toBeLessThanOrEqual(0.01);   // 10% of the gross total
+
+  await page.fill(".zk-form input >> nth=0", "Jan Test");
+  await page.fill(".zk-form input >> nth=1", "600600600");
+  await page.fill(".zk-form input[type=email]", "jan@example.com");
+  await page.locator(".zk-foot .btn--red").click();
+  await expect(page).toHaveURL(/\/platnosc\?order=/, { timeout: 8000 });
+  expect(sent[0].payload.discount_code).toBe("JESIEN-10");
+});

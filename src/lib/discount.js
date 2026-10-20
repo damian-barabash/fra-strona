@@ -45,9 +45,11 @@ export function previewOf(code, ctx, eurPln = 4.35) {
   const base = ctx.currency === "EUR" ? round2(g * eurPln) : g;
   const unit = round2(base / Math.max(1, Number(ctx.persons) || 1));
   if (!ok) return { ok, ready: true, base, off: 0, toPay: base };
-  let off = code.kind === "amount" ? Number(code.value) || 0
+  const pct = Math.min(100, Math.max(0, Number(code.value) || 0));
+  // a general code: X zł, or X % of the whole order (all persons); a product code: one place
+  let off = code.kind === "amount" ? (code.value_type === "percent" ? round2((base * pct) / 100) : Number(code.value) || 0)
     : code.value_type === "full" ? unit
-    : code.value_type === "percent" ? round2((unit * Math.min(100, Number(code.value) || 0)) / 100)
+    : code.value_type === "percent" ? round2((unit * pct) / 100)
     : Math.min(Number(code.value) || 0, unit);
   off = Math.min(round2(off), base);
   if (base - off < FREE_BELOW) off = base;
@@ -57,8 +59,8 @@ export function previewOf(code, ctx, eurPln = 4.35) {
 /** "−100 zł" / "−20%" / "cały produkt" — what the code is worth, in words */
 export function valueLabel(code, t) {
   if (!code) return "";
-  if (code.kind === "amount" || code.value_type === "amount") return `−${Number(code.value).toLocaleString("pl-PL")} zł`;
   if (code.value_type === "percent") return `−${Number(code.value).toLocaleString("pl-PL")}%`;
+  if (code.kind === "amount" || code.value_type === "amount") return `−${Number(code.value).toLocaleString("pl-PL")} zł`;
   return t ? t("disc.full") : "100%";
 }
 

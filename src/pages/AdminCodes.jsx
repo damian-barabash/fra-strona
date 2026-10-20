@@ -6,6 +6,7 @@ import { fmtMoney } from "../lib/vat";
 /* ============ KODY RABATOWE ============
    Single-use codes the customer types in a configurator.
    · KWOTOWY — X zł off the gross amount of any purchase (a cheaper product is covered entirely)
+   · PROCENTOWY — X % off the whole gross amount of any purchase (kind "amount", value_type "percent")
    · NA PRODUKT — bound to a product / package / car: the whole item, a % or an amount; typing it takes
      the customer to that product's configurator with the choice preset
    Codes are added by hand, generated as a series (e.g. 200 × 100 zł) or imported from a file; all three
@@ -34,8 +35,11 @@ export function stateOf(c) {
   if (c.valid_from && d < c.valid_from) return "early";
   return "active";
 }
-export const valueOf = (c) => (c.kind === "amount" || c.value_type === "amount" ? `−${Number(c.value).toLocaleString("pl-PL")} zł`
-  : c.value_type === "percent" ? `−${Number(c.value).toLocaleString("pl-PL")}%` : "cały produkt");
+export const valueOf = (c) => (c.value_type === "percent" ? `−${Number(c.value).toLocaleString("pl-PL")}%`
+  : c.kind === "amount" || c.value_type === "amount" ? `−${Number(c.value).toLocaleString("pl-PL")} zł` : "cały produkt");
+// the panel's three kinds: a general code is "amount" in the database, worth zł or %
+const kindOf = (c) => (c.kind === "product" ? "product" : c.value_type === "percent" ? "percent" : "amount");
+const KIND_SUB = { amount: "kwotowy · brutto", percent: "procentowy · cała kwota", product: "na produkt" };
 
 /* what a product code is for, from the panel's own lists */
 function useTargetLabel() {
@@ -96,7 +100,7 @@ export default function CodesTab() {
   const batches = useMemo(() => [...new Set(all.map((c) => c.batch).filter(Boolean))].sort(), [all]);
   const list = useMemo(() => all
     .filter((c) => !filter || stateOf(c) === filter)
-    .filter((c) => !kind || c.kind === kind)
+    .filter((c) => !kind || kindOf(c) === kind)
     .filter((c) => !batch || c.batch === batch)
     .filter((c) => !q.trim() || `${c.code} ${c.note || ""} ${c.batch || ""} ${c.used_email || ""} ${label(c)}`.toLowerCase().includes(q.trim().toLowerCase())),
   [all, filter, kind, batch, q]); // eslint-disable-line
@@ -147,7 +151,7 @@ export default function CodesTab() {
     <div className="dc">
       <div className="adm-head">
         <div><h2>Kody rabatowe <span className="adm-count">{all.length}</span></h2>
-          <p className="adm-sub">Klient wpisuje kod w konfiguratorze (pole na dole pierwszego kroku albo przy cenie). <b>Każdy kod działa jeden raz.</b> Kod <b>kwotowy</b> odejmuje kwotę od ceny brutto dowolnego zakupu — gdy produkt jest tańszy, kod pokrywa całość (reszta przepada). Kod <b>na produkt</b> przenosi klienta do konfiguratora tego produktu i obejmuje jedno miejsce. Kod jest zarezerwowany na czas płatności i zużyty dopiero po jej potwierdzeniu.</p></div>
+          <p className="adm-sub">Klient wpisuje kod w konfiguratorze (pole na dole pierwszego kroku albo przy cenie). <b>Każdy kod działa jeden raz.</b> Kod <b>kwotowy</b> odejmuje kwotę od ceny brutto dowolnego zakupu — gdy produkt jest tańszy, kod pokrywa całość (reszta przepada). Kod <b>procentowy</b> odejmuje procent od całej kwoty brutto dowolnego zakupu. Kod <b>na produkt</b> przenosi klienta do konfiguratora tego produktu i obejmuje jedno miejsce. Kod jest zarezerwowany na czas płatności i zużyty dopiero po jej potwierdzeniu.</p></div>
         <button className="adm-btn adm-btn--red" onClick={() => setCreating(true)}>+ Nowe kody</button>
       </div>
 
@@ -161,7 +165,7 @@ export default function CodesTab() {
       <div className="adm-toolbar">
         <div className="adm-chips">{FILTERS.map(([k, l]) => <button key={k} className={`adm-chip ${filter === k ? "on" : ""}`} onClick={() => setFilter(k)}>{l}</button>)}</div>
         <select className="adm-select dc-sel" value={kind} onChange={(e) => setKind(e.target.value)}>
-          <option value="">Każdy rodzaj</option><option value="amount">Kwotowe</option><option value="product">Na produkt</option>
+          <option value="">Każdy rodzaj</option><option value="amount">Kwotowe</option><option value="percent">Procentowe</option><option value="product">Na produkt</option>
         </select>
         {!!batches.length && (
           <select className="adm-select dc-sel" value={batch} onChange={(e) => setBatch(e.target.value)}>
@@ -204,7 +208,7 @@ export default function CodesTab() {
                   <button type="button" onClick={() => copy(c.code)} title="Kopiuj">{c.code}<i>{copied === c.code ? "skopiowano" : "kopiuj"}</i></button>
                   {(c.batch || c.note) && <small>{[c.batch, c.note].filter(Boolean).join(" · ")}</small>}
                 </span>
-                <span className="dc-val"><b>{valueOf(c)}</b><small>{c.kind === "amount" ? "kwotowy · brutto" : "na produkt"}</small></span>
+                <span className="dc-val"><b>{valueOf(c)}</b><small>{KIND_SUB[kindOf(c)]}</small></span>
                 <span className="dc-target">{label(c)}</span>
                 <span className="dc-dates">{c.valid_from || c.valid_to ? <>{c.valid_from ? `od ${day(c.valid_from)}` : ""}{c.valid_from && c.valid_to ? <br /> : ""}{c.valid_to ? `do ${day(c.valid_to)}` : ""}</> : <small>bez limitu</small>}</span>
                 <span className="dc-st">
@@ -261,13 +265,16 @@ function CreateCodes({ onClose, onDone, label, existingBatches }) {
   const [prefix, setPrefix] = useState("");
   const [len, setLen] = useState(8);
   const [fileCodes, setFileCodes] = useState(null);   // { name, codes }
-  const [s, setS] = useState({ kind: "amount", value_type: "full", value: 100, target: { kind: "track" }, valid_from: "", valid_to: "", batch: "", note: "", active: true });
+  const [s, setS] = useState({ kind: "amount", gen: "amount", value_type: "full", value: 100, target: { kind: "track" }, valid_from: "", valid_to: "", batch: "", note: "", active: true });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(null);             // { rows, skipped }
   const batchTouched = useRef(false);
   const set = (k, v) => setS((x) => ({ ...x, [k]: v }));
   const setT = (k, v) => setS((x) => ({ ...x, target: { ...x.target, [k]: v } }));
+  // zł ↔ % — a value that makes no sense in the other unit starts from a sensible default
+  const pickGen = (g) => setS((x) => ({ ...x, kind: "amount", gen: g,
+    value: g === "percent" ? (Number(x.value) > 0 && Number(x.value) <= 100 && x.gen === "percent" ? x.value : 10) : (x.gen === "amount" ? x.value : 100) }));
 
   const products = (getters.products || []).filter((p) => p.buy_direct && p.theme !== "wyprawa");
   const trips = (getters.products || []).filter((p) => p.theme === "wyprawa");
@@ -276,7 +283,9 @@ function CreateCodes({ onClose, onDone, label, existingBatches }) {
 
   const manualCodes = useMemo(() => manual.split(/[\s,;]+/).map(normCode).filter(Boolean), [manual]);
   const howMany = mode === "manual" ? manualCodes.length : mode === "series" ? Math.min(5000, Math.max(0, parseInt(count, 10) || 0)) : (fileCodes?.codes.length || 0);
-  const preview = { kind: s.kind, value_type: s.kind === "amount" ? "amount" : s.value_type, value: Number(s.value) || 0, target: s.target };
+  // a general code (kind "amount") is worth zł or % — `gen`; a product code keeps its own value_type
+  const vt = s.kind === "amount" ? s.gen : s.value_type;
+  const preview = { kind: s.kind, value_type: vt, value: Number(s.value) || 0, target: s.target };
   const valueTxt = valueOf(preview);
   const targetTxt = s.kind === "amount" ? "dowolny zakup" : label({ kind: "product", target: s.target }).toLowerCase();
   const examples = useMemo(() => Array.from({ length: 3 }, () => sample(normCode(prefix).slice(0, 12), Math.min(16, Math.max(6, parseInt(len, 10) || 8)))), [prefix, len]);
@@ -298,7 +307,8 @@ function CreateCodes({ onClose, onDone, label, existingBatches }) {
     setErr("");
     if (!howMany) { setErr(mode === "file" ? "Wybierz plik z kodami." : mode === "manual" ? "Wpisz co najmniej jeden kod." : "Podaj liczbę kodów."); return; }
     setBusy(true);
-    const settings = { ...s, value_type: s.kind === "amount" ? "amount" : s.value_type };
+    const { gen, ...rest } = s;
+    const settings = { ...rest, value_type: vt };
     const r = mode === "series"
       ? await adminCall("discounts.generate", { count: howMany, prefix, length: len, settings })
       : await adminCall("discounts.create", { codes: mode === "manual" ? manualCodes : fileCodes.codes, settings });
@@ -370,10 +380,17 @@ function CreateCodes({ onClose, onDone, label, existingBatches }) {
           {/* 2 · what */}
           <div className="dc-step"><span>2</span>Co daje kod</div>
           <div className="dc-kind">
-            <button type="button" className={s.kind === "amount" ? "on" : ""} onClick={() => set("kind", "amount")}><b>Rabat kwotowy</b><small>Kwota odejmowana od ceny brutto dowolnego zakupu. Tańszy produkt = pokryty w całości.</small></button>
+            <button type="button" className={s.kind === "amount" && s.gen === "amount" ? "on" : ""} onClick={() => pickGen("amount")}><b>Rabat kwotowy</b><small>Kwota odejmowana od ceny brutto dowolnego zakupu. Tańszy produkt = pokryty w całości.</small></button>
+            <button type="button" className={s.kind === "amount" && s.gen === "percent" ? "on" : ""} onClick={() => pickGen("percent")}><b>Rabat procentowy</b><small>Procent od całej kwoty brutto dowolnego zakupu — wszystkich osób i całego pakietu.</small></button>
             <button type="button" className={s.kind === "product" ? "on" : ""} onClick={() => set("kind", "product")}><b>Na produkt</b><small>Konkretny produkt lub pakiet — klient trafia od razu do jego konfiguratora.</small></button>
           </div>
-          {s.kind === "amount" ? (
+          {s.kind === "amount" && s.gen === "percent" ? (
+            <div className="dc-grid3">
+              <label className="adm-f"><span>Procent rabatu (1–100)</span><input type="number" min="1" max="100" step="1" value={s.value} onChange={(e) => set("value", e.target.value)} /></label>
+              <div className="dc-presets">{[5, 10, 15, 20, 25, 50].map((v) => <button type="button" key={v} className={Number(s.value) === v ? "on" : ""} onClick={() => set("value", v)}>{v}%</button>)}</div>
+              <p className="dc-hint">Liczony od kwoty brutto całego zamówienia (przy kilku osobach — od wszystkich). Ceny w EUR (Laponia, wyprawy) są przeliczane na złote po kursie z „Ustawień”.</p>
+            </div>
+          ) : s.kind === "amount" ? (
             <div className="dc-grid3">
               <label className="adm-f"><span>Kwota rabatu (zł brutto)</span><input type="number" min="1" step="1" value={s.value} onChange={(e) => set("value", e.target.value)} /></label>
               <div className="dc-presets">{[50, 100, 200, 300, 500, 1000].map((v) => <button type="button" key={v} className={Number(s.value) === v ? "on" : ""} onClick={() => set("value", v)}>{v} zł</button>)}</div>

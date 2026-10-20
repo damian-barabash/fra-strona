@@ -68,11 +68,13 @@ export function fits(c: Code, row: Record<string, any>): boolean {
 
 /** How many PLN the code takes off. base = the whole gross amount in PLN, unit = one person's share
  *  (a product code is worth one place — the 2nd person of a Laponia stay pays in full). */
+const pct = (v: unknown) => Math.min(100, Math.max(0, Number(v) || 0));
 export function offFor(c: Code, basePln: number, unitPln: number): number {
   let off = 0;
-  if (c.kind === "amount") off = Number(c.value) || 0;
+  // a general code: X zł, or X % of the WHOLE gross amount (every person, every item of the order)
+  if (c.kind === "amount") off = c.value_type === "percent" ? round2(basePln * pct(c.value) / 100) : Number(c.value) || 0;
   else if (c.value_type === "full") off = unitPln;
-  else if (c.value_type === "percent") off = round2(unitPln * Math.min(100, Math.max(0, Number(c.value) || 0)) / 100);
+  else if (c.value_type === "percent") off = round2(unitPln * pct(c.value) / 100);
   else off = Math.min(Number(c.value) || 0, unitPln);
   off = Math.min(round2(off), basePln);
   if (basePln - off < FREE_BELOW) off = basePln;

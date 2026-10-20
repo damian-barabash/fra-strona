@@ -793,7 +793,8 @@ function randomCode(prefix: string, len: number) {
 const isoDay = (v: unknown) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v ?? "")) ? String(v) : null);
 function codeSettings(s: any): { err: string } | { row: Record<string, unknown> } {
   const kind = s?.kind === "product" ? "product" : "amount";
-  const value_type = kind === "amount" ? "amount" : (["full", "percent", "amount"].includes(s?.value_type) ? s.value_type : "full");
+  // a general code is worth X zł or X % of the whole order; a product code also "full"
+  const value_type = kind === "amount" ? (s?.value_type === "percent" ? "percent" : "amount") : (["full", "percent", "amount"].includes(s?.value_type) ? s.value_type : "full");
   const value = round2(Math.max(0, Number(String(s?.value ?? "").replace(",", ".")) || 0));
   if (value_type === "amount" && !(value > 0)) return { err: "Podaj kwotę rabatu w złotych." };
   if (value_type === "percent" && !(value > 0 && value <= 100)) return { err: "Procent rabatu musi być od 1 do 100." };
