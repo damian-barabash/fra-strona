@@ -303,8 +303,9 @@ export function StoreProvider({ children }) {
   };
 
   // every other admin action that changes data (settings, uploads, accounts, orders) is tracked too
-  const call = (action, payload) =>
-    isMutation(action) ? track(ACTION_LABEL(action), () => adminCall(token, action, payload)) : adminCall(token, action, payload);
+  // `quiet`: an optional side job (the phone-size copies of an uploaded photo) — not shown in the indicator
+  const call = (action, payload, { quiet = false } = {}) =>
+    isMutation(action) && !quiet ? track(ACTION_LABEL(action), () => adminCall(token, action, payload)) : adminCall(token, action, payload);
 
   const value = {
     lang, setLang, ready,

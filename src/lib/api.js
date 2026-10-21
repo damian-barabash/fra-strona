@@ -36,11 +36,11 @@ export async function processUpload(file, path, adminCall, onStage = () => {}) {
   const ext = isVideo ? (file.type === "video/webm" ? "webm" : "mp4") : "webp";
   onStage({ stage: "upload", from: file.size, to: bytesOut, name, webp: !isVideo });
   // smaller copies for phones (lib/img.js): uploaded first, and the file name carries the original width
-  // ("…~2000.webp") so the page knows they exist. If a copy fails, the photo goes up without them.
+  // ("…_w2000.webp") so the page knows they exist (no "~": Storage rejects it). If a copy fails, the photo goes up without them.
   let finalPath = `${path}.${ext}`;
   if (conv?.copies.length) {
-    const base = `${path}~${conv.width}`;
-    const ok = await Promise.all(conv.copies.map((c) => adminCall("media.upload", { path: `${base}@${c.width}.webp`, dataUrl: c.dataUrl }).then((x) => x.ok, () => false)));
+    const base = `${path}_w${conv.width}`;
+    const ok = await Promise.all(conv.copies.map((c) => adminCall("media.upload", { path: `${base}@${c.width}.webp`, dataUrl: c.dataUrl }, { quiet: true }).then((x) => x.ok, () => false)));
     if (ok.every(Boolean)) finalPath = `${base}.webp`;
   }
   const r = await adminCall("media.upload", { path: finalPath, dataUrl });

@@ -43,7 +43,7 @@ test("menu has BLOG between KALENDARZ and KONTAKT and it opens the blog", async 
   await mockPosts(page);
   await page.goto("/");
   await page.waitForTimeout(1000);
-  const scope = isMobile ? ".mobile-menu" : ".nav__menu";
+  const scope = isMobile ? ".mobile-menu" : ".nav__menu .nav__links";
   if (isMobile) await page.locator(".nav__burger").click();
   const labels = (await page.locator(`${scope} > a`).allTextContents()).map((x) => x.replace(/[›\s]+$/g, "").trim().toUpperCase());
   const i = labels.indexOf("BLOG");
