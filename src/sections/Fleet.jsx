@@ -92,7 +92,7 @@ export default function Fleet() {
                   <motion.div key={`c-${car.id}`} className="fleet__carlayer"
                     custom={dir} variants={carVar} initial="enter" animate="center" exit="exit"
                     transition={{ duration: 0.55, ease: EASE }}>
-                    <img className="fleet__car" src={car.png} alt={car.name} />
+                    <img className="fleet__car" src={car.png} alt={car.name} sizes="(max-width: 900px) 100vw, 60vw" />
                   </motion.div>
                 </AnimatePresence>
               )}
@@ -114,7 +114,7 @@ export default function Fleet() {
               {cars.map((c, i) => (
                 <button key={c.id} type="button" role="tab" aria-selected={c.id === car.id} className={`carthumb ${c.id === car.id ? "on" : ""}`} style={{ background: c.color }} title={c.name}
                   onClick={() => { const cur = ((idx % n) + n) % n; if (i !== cur) jump(i, i > cur ? 1 : -1); }}>
-                  {(c.png || c.photos?.[0]) ? <img src={c.png || c.photos[0]} alt={c.name} loading="lazy" /> : <span>{c.badge}</span>}
+                  {(c.png || c.photos?.[0]) ? <img src={c.png || c.photos[0]} alt={c.name} loading="lazy" sizes="56px" /> : <span>{c.badge}</span>}
                 </button>
               ))}
             </div>
@@ -148,8 +148,8 @@ export default function Fleet() {
             {photos.slice(0, 3).map((p, i) => (
               // click shows the photo in the stage; the ⤢ badge opens it fullscreen
               <span key={i} className="fleet__thumb">
-                <img src={p} alt="" loading="lazy" decoding="async" onClick={() => setThumb(i)}
-                  style={{ outline: thumb === i && car.png ? "2px solid var(--red)" : "none" }} loading="lazy" />
+                <img src={p} alt="" loading="lazy" decoding="async" sizes="(max-width: 900px) 260px, 170px" onClick={() => setThumb(i)}
+                  style={{ outline: thumb === i && car.png ? "2px solid var(--red)" : "none" }} />
                 <button className="fleet__zoom" aria-label="Powiększ"
                   onClick={(e) => { e.stopPropagation(); openLightbox(photos, i); }}>⤢</button>
               </span>

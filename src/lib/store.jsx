@@ -4,6 +4,7 @@ import { DEFAULTS } from "./defaults";
 import { authLogin, authVerify, adminCall } from "./api";
 import { track, chain, isMutation, hasUnsaved } from "./sync";
 import { popupState } from "./popup";
+import { bootData, siteData, fetchSiteData } from "./siteData";
 
 const Ctx = createContext(null);
 export const useStore = () => useContext(Ctx);
@@ -16,6 +17,7 @@ const bySort = (a, b) => (a.sort ?? 0) - (b.sort ?? 0);
 const POST_CARD = "id,slug,title_pl,title_en,tag_pl,tag_en,excerpt_pl,excerpt_en,cover,cover_alt,author,published_at,reading_min,visible,sort,created_at,updated_at";
 const isoToday = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 // the site shows visible rows only; the lists themselves also hold the hidden ones once an admin is in
+const contentMap = (rows) => { const m = {}; (rows || []).forEach((r) => { m[r.key] = { pl: r.pl, en: r.en, kind: r.kind }; }); return m; };
 const useVisible = (list) => useMemo(() => (list.some((x) => x.visible === false) ? list.filter((x) => x.visible !== false) : list), [list]);
 
 const ACTION_LABEL = (a) => ({
@@ -27,25 +29,29 @@ const ACTION_LABEL = (a) => ({
 }[a] || a);
 
 export function StoreProvider({ children }) {
+  // the start-up request (lib/siteData) has usually arrived before React starts — then the very first
+  // render already has the data (same as the prerendered page underneath: nothing jumps)
+  const [boot] = useState(bootData);
+  const b = (k) => boot?.[k] || [];
   const [lang, setLang] = useState(() => localStorage.getItem(LS_LANG) || "pl");
-  const [content, setContent] = useState({}); // key -> {pl,en,kind}
-  const [allCarsRaw, setCars] = useState([]);   // every car (sport + race) — the admin edits this list
-  const [instructorsRaw, setInstructors] = useState([]);
-  const [eventsRaw, setEvents] = useState([]);
-  const [programsRaw, setPrograms] = useState([]);
-  const [bannersRaw, setBanners] = useState([]);
-  const [tracksRaw, setTracks] = useState([]);
-  const [termsRaw, setTerms] = useState([]); // available booking dates
-  const [mediaListRaw, setMediaList] = useState([]); // press / "Media o nas"
-  const [productsRaw, setProducts] = useState([]); // offer: STAGE 1-3, S&S, SIM, Heels…
-  const [icePackagesRaw, setIcePackages] = useState([]); // Laponia packages (price + days)
-  const [iceWindowsRaw, setIceWindows] = useState([]);   // Laponia date windows
-  const [tripPackagesRaw, setTripPackages] = useState([]);     // trip packages (Monaco…)
-  const [tripAttractionsRaw, setTripAttractions] = useState([]); // "W programie" of a trip
-  const [tripPointsRaw, setTripPoints] = useState([]);           // pins on the trip map (route)
-  const [postsRaw, setPosts] = useState([]);                     // blog (public load: cards only, the article body comes with its page)
-  const [popupsRaw, setPopups] = useState([]);                   // advertising pop-ups (public load: the active one only)
-  const [ready, setReady] = useState(false);
+  const [content, setContent] = useState(() => contentMap(boot?.content)); // key -> {pl,en,kind}
+  const [allCarsRaw, setCars] = useState(() => b("cars"));   // every car (sport + race) — the admin edits this list
+  const [instructorsRaw, setInstructors] = useState(() => b("instructors"));
+  const [eventsRaw, setEvents] = useState(() => b("events"));
+  const [programsRaw, setPrograms] = useState(() => b("programs"));
+  const [bannersRaw, setBanners] = useState(() => b("banners"));
+  const [tracksRaw, setTracks] = useState(() => b("tracks"));
+  const [termsRaw, setTerms] = useState(() => b("terms")); // available booking dates
+  const [mediaListRaw, setMediaList] = useState(() => b("media")); // press / "Media o nas"
+  const [productsRaw, setProducts] = useState(() => b("products")); // offer: STAGE 1-3, S&S, SIM, Heels…
+  const [icePackagesRaw, setIcePackages] = useState(() => b("ice_packages")); // Laponia packages (price + days)
+  const [iceWindowsRaw, setIceWindows] = useState(() => b("ice_windows"));   // Laponia date windows
+  const [tripPackagesRaw, setTripPackages] = useState(() => b("trip_packages"));     // trip packages (Monaco…)
+  const [tripAttractionsRaw, setTripAttractions] = useState(() => b("trip_attractions")); // "W programie" of a trip
+  const [tripPointsRaw, setTripPoints] = useState(() => b("trip_points"));           // pins on the trip map (route)
+  const [postsRaw, setPosts] = useState(() => b("posts"));                     // blog (public load: cards only, the article body comes with its page)
+  const [popupsRaw, setPopups] = useState(() => b("popups").slice(0, 1));      // advertising pop-ups (public load: the active one only)
+  const [ready, setReady] = useState(() => !!boot);
   const setters = { popups: setPopups, posts: setPosts, cars: setCars, instructors: setInstructors, events: setEvents, programs: setPrograms, banners: setBanners, tracks: setTracks, media: setMediaList, terms: setTerms, products: setProducts, ice_packages: setIcePackages, ice_windows: setIceWindows, trip_packages: setTripPackages, trip_attractions: setTripAttractions, trip_points: setTripPoints };
 
   // admin
@@ -55,8 +61,9 @@ export function StoreProvider({ children }) {
 
   useEffect(() => { localStorage.setItem(LS_LANG, lang); document.documentElement.lang = lang; }, [lang]);
 
-  // initial data load
-  const load = useCallback(async () => {
+  // initial data load: the one start-up request (lib/siteData); the 17 separate queries below are only
+  // the fallback when it fails (e.g. the SQL function is missing)
+  const loadTables = async () => {
     const [c, cr, ins, ev, pr, bn, tr, md, tm, pd, ip, iw, tp, ta, tpt, po, pu] = await Promise.all([
       supabase.from("content").select("*"),
       supabase.from("cars").select("*").eq("visible", true).order("sort"),
@@ -76,31 +83,39 @@ export function StoreProvider({ children }) {
       supabase.from("posts").select(POST_CARD).eq("visible", true).order("published_at", { ascending: false }),
       supabase.from("popups").select("*").eq("active", true).limit(1).then((r) => r, () => ({ data: null })),
     ]);
-    const map = {};
-    (c.data || []).forEach((r) => { map[r.key] = { pl: r.pl, en: r.en, kind: r.kind }; });
-    setContent(map);
-    setCars(cr.data || []);
-    setInstructors(ins.data || []);
-    setEvents(ev.data || []);
-    setPrograms(pr.data || []);
-    setBanners(bn.data || []);
-    setTracks(tr.data || []);
-    setMediaList(md.data || []);
-    setTerms(tm.data || []);
-    setProducts(pd.data || []);
-    setIcePackages(ip.data || []);
-    setIceWindows(iw.data || []);
-    setTripPackages(tp.data || []);
-    setTripAttractions(ta.data || []);
-    setTripPoints(tpt.data || []);
+    return { content: c.data, cars: cr.data, instructors: ins.data, events: ev.data, programs: pr.data, banners: bn.data, tracks: tr.data, media: md.data,
+      terms: tm.data, products: pd.data, ice_packages: ip.data, ice_windows: iw.data, trip_packages: tp.data, trip_attractions: ta.data, trip_points: tpt.data, posts: po.data, popups: pu.data };
+  };
+  const apply = (d) => {
+    const g = (k) => d[k] || [];
+    setContent(contentMap(d.content));
+    setCars(g("cars"));
+    setInstructors(g("instructors"));
+    setEvents(g("events"));
+    setPrograms(g("programs"));
+    setBanners(g("banners"));
+    setTracks(g("tracks"));
+    setMediaList(g("media"));
+    setTerms(g("terms"));
+    setProducts(g("products"));
+    setIcePackages(g("ice_packages"));
+    setIceWindows(g("ice_windows"));
+    setTripPackages(g("trip_packages"));
+    setTripAttractions(g("trip_attractions"));
+    setTripPoints(g("trip_points"));
     // an article opened meanwhile may already have brought its full row — keep the fuller one
     // …and once the panel's list is in (drafts, scheduled posts), a late public answer must not replace it
-    setPosts((cur) => (adminRows.current ? cur : (po.data || []).map((r) => cur.find((x) => x.id === r.id && x.body_pl != null) || r)));
-    setPopups((cur) => (adminPopups.current ? cur : pu.data || []));
+    setPosts((cur) => (adminRows.current ? cur : g("posts").map((r) => cur.find((x) => x.id === r.id && x.body_pl != null) || r)));
+    setPopups((cur) => (adminPopups.current ? cur : g("popups").slice(0, 1)));
     setReady(true);
-  }, []);
+  };
+  const load = useCallback(async (fresh = false) => {
+    const d = (fresh ? await fetchSiteData() : await siteData) || await loadTables();
+    apply(d);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { load(); }, [load]);
+  // with the start-up data already in the first render there is nothing to load
+  useEffect(() => { if (!boot) load(); }, [load]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The public load above only brings visible rows. The panel needs the hidden ones as well — otherwise
   // a hidden product vanishes from its list while still holding its slug. Rows still being saved stay.
@@ -156,7 +171,7 @@ export function StoreProvider({ children }) {
   const logout = () => {
     if (hasUnsaved() && !confirm("Nie wszystkie zmiany zostały jeszcze zapisane na serwerze. Wylogować mimo to? Te zmiany mogą nie zostać zastosowane.")) return;
     adminRows.current = false; adminPopups.current = false;
-    setToken(""); setAdmin(null); setCmsMode(false); localStorage.removeItem(LS_TOKEN); load(); };
+    setToken(""); setAdmin(null); setCmsMode(false); localStorage.removeItem(LS_TOKEN); load(true); };
 
   // optimistic content edit
   const setContentLocal = (key, pl, kind) =>
@@ -294,7 +309,7 @@ export function StoreProvider({ children }) {
   const value = {
     lang, setLang, ready,
     content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints, posts, loadPost, popup,
-    raw, t, media, L, reload: async () => { await load(); if (admin) await loadAdmin(token); },
+    raw, t, media, L, reload: async () => { await load(true); if (admin) await loadAdmin(token); },
     token, admin, isAdmin: !!admin,
     // permissions: the owner (moderator) can do everything, an admin only what its perms allow
     isOwner: admin?.role === "owner",

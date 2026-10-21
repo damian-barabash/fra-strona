@@ -43,7 +43,7 @@ export default function Nav() {
         <div className="container nav__inner">
           <Link className="nav__logo" to="/" aria-label="Fastline Racing Academy"
             onClick={() => window.scrollTo({ top: 0 })}>
-            <img src="/assets/ui/logo.webp" alt="Fastline Racing Academy" />
+            <img src="/assets/ui/logo.webp" sizes="80px" alt="Fastline Racing Academy" />
           </Link>
 
           <nav className="nav__menu">

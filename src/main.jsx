@@ -21,9 +21,11 @@ import { LightboxProvider } from "./components/Lightbox";
 import { preloadRoute, prefetchAllWhenIdle } from "./lib/routes";
 import { autoPauseVideos } from "./lib/video";
 import { LazyMotion, domAnimation } from "./lib/motion";
+import { waitSiteData } from "./lib/siteData";
 
-// load the current page's chunk first (the prerendered snapshot stays on screen meanwhile), then boot
-preloadRoute(window.location.pathname).then(() => ReactDOM.createRoot(document.getElementById("root")).render(
+// load the current page's chunk and the site data first (the prerendered snapshot stays on screen
+// meanwhile), then boot — the first render then matches the snapshot. Slow data: boot anyway after 2.5 s.
+Promise.all([preloadRoute(window.location.pathname), waitSiteData(2500)]).then(() => ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <StoreProvider>

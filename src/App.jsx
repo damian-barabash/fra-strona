@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { motion } from "./lib/motion";
 import Home from "./pages/Home";
@@ -54,7 +54,9 @@ function AnimatedRoutes() {
     return () => window.removeEventListener("scroll", save);
   }, []);
   // Meta Pixel: one PageView per page, sent when that page is the one on screen
-  useEffect(() => { pageView(); }, [displayed.pathname]);
+  // (layout effect: runs before the page's own effects — ViewContent of a product page comes after it,
+  // now that the data is there from the first render)
+  useLayoutEffect(() => { pageView(); }, [displayed.pathname]);
   const restoreScroll = (y) => {
     window.scrollTo({ top: 0, behavior: "instant" });
     if (!y) return;
@@ -134,7 +136,7 @@ function AnimatedRoutes() {
       >
         <div className="rt-curtain__flag" />
         <div className="rt-curtain__streaks">{[0, 1, 2, 3].map((i) => <span key={i} style={{ ["--i"]: i }} />)}</div>
-        <img src="/assets/ui/logo_dark.webp" alt="" className="rt-curtain__logo" decoding="async" />
+        <img src="/assets/ui/logo_dark.webp" sizes="110px" alt="" className="rt-curtain__logo" decoding="async" />
         <span className="rt-curtain__edge" />
       </motion.div>
     </>

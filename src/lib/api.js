@@ -1,4 +1,5 @@
 import { FN, SUPABASE_ANON } from "../config";
+import { WIDTHS } from "./img";
 
 // Authorization always carries the anon key (the gateway may verify it); our own admin session
 // token travels in x-admin-token, so the panel keeps working whatever the JWT setting is.
@@ -28,11 +29,21 @@ export async function processUpload(file, path, adminCall, onStage = () => {}) {
   const isVideo = file.type.startsWith("video/");
   const name = file.name;
   onStage({ stage: "convert", from: file.size, name });
-  const dataUrl = isVideo ? await fileToDataUrl(file) : await fileToWebpDataUrl(file);
+  const isImage = !isVideo && file.type.startsWith("image/");
+  const conv = isImage ? await imageToWebp(file) : null;
+  const dataUrl = conv ? conv.dataUrl : await fileToDataUrl(file);
   const bytesOut = Math.round((dataUrl.length - dataUrl.indexOf(",") - 1) * 3 / 4);
   const ext = isVideo ? (file.type === "video/webm" ? "webm" : "mp4") : "webp";
   onStage({ stage: "upload", from: file.size, to: bytesOut, name, webp: !isVideo });
-  const r = await adminCall("media.upload", { path: `${path}.${ext}`, dataUrl });
+  // smaller copies for phones (lib/img.js): uploaded first, and the file name carries the original width
+  // ("…~2000.webp") so the page knows they exist. If a copy fails, the photo goes up without them.
+  let finalPath = `${path}.${ext}`;
+  if (conv?.copies.length) {
+    const base = `${path}~${conv.width}`;
+    const ok = await Promise.all(conv.copies.map((c) => adminCall("media.upload", { path: `${base}@${c.width}.webp`, dataUrl: c.dataUrl }).then((x) => x.ok, () => false)));
+    if (ok.every(Boolean)) finalPath = `${base}.webp`;
+  }
+  const r = await adminCall("media.upload", { path: finalPath, dataUrl });
   if (!r.ok) { onStage({ stage: "error", error: r.error, name }); return null; }
   onStage({ stage: "done", from: file.size, to: bytesOut, name, webp: !isVideo, url: r.url });
   return r.url;
@@ -52,6 +63,32 @@ export async function fileToWebpDataUrl(file, maxW = 2000, quality = 0.85) {
   const ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL("image/webp", quality);
+}
+
+/** the photo as WebP (max 2000 px) + scaled copies for lib/img.js srcset (only those that are smaller) */
+async function imageToWebp(file, maxW = 2000, quality = 0.85) {
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  try {
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+    const draw = (w, hq = true) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = Math.max(1, Math.round((img.height * w) / img.width));
+      const ctx = canvas.getContext("2d");
+      if (hq) ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL("image/webp", quality);
+    };
+    const width = Math.round(Math.min(img.width, maxW));
+    const dataUrl = draw(width, false);   // the photo itself: drawn exactly as before
+    // a browser without WebP encoding (old Safari) gives PNG — then no copies, the photo goes as before
+    if (!dataUrl.startsWith("data:image/webp")) return { dataUrl, width, copies: [] };
+    const size = (d) => d.length;
+    const copies = WIDTHS.filter((w) => w < width * 0.92).map((w) => ({ width: w, dataUrl: draw(w) }));
+    // lib/img.js expects every copy below the width — all or none (a flat graphic may not shrink)
+    return { dataUrl, width, copies: copies.every((c) => size(c.dataUrl) < size(dataUrl) * 0.85) ? copies : [] };
+  } finally { URL.revokeObjectURL(url); }
 }
 
 export function fileToDataUrl(file) {

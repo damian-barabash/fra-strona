@@ -1,4 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { perTableData } from "./_tables.js";
+
+test.beforeEach(async ({ page }) => { await perTableData(page); });
 
 /* Advertising pop-up: when the site shows it, how closing behaves across visits, and the panel's
    editor. The `popups` table and admin-api answer from this file — the database is never touched.

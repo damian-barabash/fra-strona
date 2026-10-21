@@ -27,7 +27,7 @@ export default function Training() {
             <div className="training__photo">
               <EMedia id="training.sideImage" kind="image"
                 wrapperStyle={{ position: "absolute", inset: 0 }}
-                imgProps={{ style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" } }} />
+                imgProps={{ sizes: "(max-width: 900px) 100vw, 50vw", style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" } }} />
             </div>
           </div>
         </div>

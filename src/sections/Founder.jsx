@@ -17,7 +17,7 @@ export default function Founder() {
       <div className="container founder__grid">
         <div className="founder__media reveal-left">
           <span className="founder__rect" />
-          <EMedia id="founder.photo" className="founder__fig" alt={t("founder.title")} />
+          <EMedia id="founder.photo" className="founder__fig" alt={t("founder.title")} imgProps={{ sizes: "(max-width: 900px) 92vw, 560px" }} />
           <span className="founder__num">01</span>
           <span className="founder__tape">FOUNDER · 9× MISTRZ POLSKI</span>
         </div>

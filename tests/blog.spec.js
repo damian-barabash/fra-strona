@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { perTableData } from "./_tables.js";
 
 /* Blog: the wall, an article, its SEO, and the panel's rich editor. Posts are mocked (the `posts` table
    answers from this file) and the panel talks to a fake admin-api — the database is never touched. */
@@ -36,7 +37,7 @@ const watch = (page) => {
   return errors;
 };
 
-test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
+test.beforeEach(async ({ page }) => { await perTableData(page); await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("menu has BLOG between KALENDARZ and KONTAKT and it opens the blog", async ({ page, isMobile }) => {
   await mockPosts(page);

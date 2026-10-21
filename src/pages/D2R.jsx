@@ -55,7 +55,7 @@ export default function D2R({ p }) {
           <div className="container d2-hero__inner">
             <span className="d2-hero__eyebrow">FASTLINE RACING ACADEMY</span>
             {/* the real Driver2Racer wordmark (white version) — the h1 stays for screen readers */}
-            <img className="d2-hero__logo" src="/assets/d2r/logo-white.webp" alt={L(p, "title")} />
+            <img className="d2-hero__logo" src="/assets/d2r/logo-white.webp" alt={L(p, "title")} fetchpriority="high" />
             <h1 className="sr-only">{L(p, "title")}</h1>
             <p className="d2-hero__sub">{L(p, "excerpt")}</p>
 

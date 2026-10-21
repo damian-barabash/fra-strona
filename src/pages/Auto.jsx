@@ -83,7 +83,7 @@ export default function Auto() {
               </div>
             </div>
             <div className="au-hero__media">
-              {hero && <img src={hero} alt={car.name} className={car.png ? "au-hero__png" : "au-hero__photo"} />}
+              {hero && <img src={hero} alt={car.name} className={car.png ? "au-hero__png" : "au-hero__photo"} sizes={car.png ? "(max-width: 900px) 100vw, 60vw" : undefined} fetchpriority="high" />}
             </div>
           </div>
         </section>
@@ -127,7 +127,7 @@ export default function Auto() {
               <div className="au-others__grid">
                 {others.map((c, i) => (
                   <Link key={c.id} to={`/flota/${c.slug}`} className={`au-mini reveal-up rv-d${(i % 4) + 1}`} style={{ ["--cc"]: c.color }} onClick={() => window.scrollTo({ top: 0 })}>
-                    <span className="au-mini__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}</span>
+                    <span className="au-mini__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" sizes="(max-width: 900px) 92vw, 440px" />}</span>
                     <b>{c.name}</b>
                     <small>{lang === "en" ? "See the car ›" : "Zobacz auto ›"}</small>
                   </Link>

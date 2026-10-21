@@ -14,7 +14,7 @@ export default function Programs() {
   const Tile = ({ p, i }) => {
     const inner = (
       <>
-        <img src={p.image} alt={L(p, "title")} loading="lazy" />
+        <img src={p.image} alt={L(p, "title")} loading="lazy" sizes="(max-width: 900px) 92vw, 760px" />
         <div className="pcard__scrim" />
         <div className="pcard__top">
           <span className="pcard__tag">{L(p, "tag")}</span>

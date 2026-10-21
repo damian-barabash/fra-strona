@@ -117,7 +117,7 @@ function Grid({ onPick }) {
           {cars.map((c, i) => (
             <div key={c.id} role="button" tabIndex={0} className={`fl-card reveal-up rv-d${(i % 5) + 1}`} onClick={() => onPick(c.id)} onKeyDown={(e) => e.key === "Enter" && onPick(c.id)} style={{ ["--cc"]: c.color }}>
               <div className="fl-card__media">
-                {(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}
+                {(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" sizes="(max-width: 900px) 92vw, 440px" />}
                 <span className="fl-card__badge">{c.badge}</span>
               </div>
               <div className="fl-card__foot">
@@ -149,7 +149,7 @@ function RaceCars() {
         <div className="fl-race__grid">
           {raceCars.map((c, i) => (
             <Link key={c.id} to={`/flota/${c.slug}`} className={`fl-racecard reveal-up rv-d${(i % 3) + 1}`} style={{ ["--cc"]: c.color }} onClick={() => window.scrollTo({ top: 0 })}>
-              <span className="fl-racecard__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}<span className="fl-racecard__badge">{c.badge}</span></span>
+              <span className="fl-racecard__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" sizes="(max-width: 900px) 92vw, 480px" />}<span className="fl-racecard__badge">{c.badge}</span></span>
               <span className="fl-racecard__body">
                 <b>{c.name}</b>
                 <span className="fl-racecard__spec">{[c.power, c.engine, c.weight].filter(Boolean).join(" · ")}</span>

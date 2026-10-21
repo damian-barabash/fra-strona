@@ -49,8 +49,10 @@ function RezerwacjaFlow() {
   const presetCar = carId ? cars.find((c) => c.id === carId) : null;
   const presetTerm = termIdQ ? terms.find((x) => x.id === termIdQ && x.date >= today()) || null : null;
 
-  const [carSel, setCarSel] = useState(null);
-  const [termSel, setTermSel] = useState(null);
+  // start with what the effects below / the car slider (first car) select a moment later — the first render
+  // then matches the prerendered page and the header does not jump
+  const [carSel, setCarSel] = useState(() => presetCar || (!custom && cars[0]) || null);
+  const [termSel, setTermSel] = useState(() => presetTerm);
   const sessionsQ = parseInt(sp.get("sessions"), 10);
   const [sessions, setSessions] = useState(packageOf(sessionsQ) ? sessionsQ : null);
   const [carName, setCarName] = useState("");

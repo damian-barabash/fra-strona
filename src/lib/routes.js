@@ -71,6 +71,7 @@ export function preloadRoute(pathname) {
 
 /** After the page has settled, quietly fetch the other public pages so in-app navigation is instant. */
 export function prefetchAllWhenIdle() {
+  if (window.__FRA_PRERENDER) return;   // snapshot (scripts/postbuild.mjs): only this page's CSS may end up in it
   const conn = navigator.connection;
   if (conn && (conn.saveData || /2g/.test(conn.effectiveType || ""))) return;
   const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1));

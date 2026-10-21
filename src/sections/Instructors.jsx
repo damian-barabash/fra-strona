@@ -45,7 +45,7 @@ export default function Instructors() {
                 <div className={`icard ${i === active ? "on" : ""}`} key={p.id} onClick={() => setActive(i)}>
                   <div className="icard__stage">
                     <div className="icard__rect" style={{ background: p.color || "#3a3d42" }} />
-                    <img className="icard__fig" src={p.photo} alt={p.name} loading="lazy" />
+                    <img className="icard__fig" src={p.photo} alt={p.name} loading="lazy" sizes="300px" />
                   </div>
                   {p.signature && !isUrl(p.signature) && <div className="icard__sig">{p.signature}</div>}
                   {isUrl(p.signature) && <img className="icard__sig-img" loading="lazy" decoding="async" src={p.signature} alt="" />}

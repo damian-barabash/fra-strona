@@ -95,7 +95,7 @@ export default function Voucher() {
                     <div className="rz-cars">
                       {cars.map((c, i) => (
                         <button key={c.id} className={`rz-car ${car?.id === c.id ? "on" : ""}`} style={{ ["--cc"]: c.color, animationDelay: `${i * 60}ms` }} onClick={() => setCar(c)}>
-                          <span className="rz-car__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}<span className="rz-car__badge">{c.badge}</span></span>
+                          <span className="rz-car__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" sizes="(max-width: 900px) 70vw, 220px" />}<span className="rz-car__badge">{c.badge}</span></span>
                           <span className="rz-car__foot"><span className="rz-car__name">{c.name}</span><span className="rz-car__from">{t("flota.from")} {fmtZl(carPrice(c, 3, "lodz"))}</span></span>
                         </button>
                       ))}
@@ -216,7 +216,7 @@ export default function Voucher() {
               <span className="vc-side__lbl">{t("vch.preview")}</span>
               <motion.div className="vc-card" layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}>
                 <span className="vc-card__flag" />
-                <img className="vc-card__logo" src="/assets/ui/logo_dark.webp" alt="Fastline Racing Academy" />
+                <img className="vc-card__logo" src="/assets/ui/logo_dark.webp" sizes="64px" alt="Fastline Racing Academy" />
                 <span className="vc-card__eyebrow">VOUCHER PREZENTOWY</span>
                 <div className="vc-card__for">{gift.voucher_for || "· · ·"}</div>
                 <div className="vc-card__what">

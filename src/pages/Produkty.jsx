@@ -153,7 +153,7 @@ function Plate({ p, i, L, t, editing }) {
         <span className="pp__grid" />
         <span className="pp__streaks">{[0, 1, 2].map((k) => <i key={k} style={{ ["--i"]: k }} />)}</span>
         {p.logo
-          ? <span className={`pp__logo ${p.theme === "ice" ? "pp__logo--ice" : ""}`}><img src={p.logo} alt={L(p, "title")} /></span>
+          ? <span className={`pp__logo ${p.theme === "ice" ? "pp__logo--ice" : ""}`}><img src={p.logo} alt={L(p, "title")} sizes="200px" /></span>
           : <span className="pp__code">{p.code}</span>}
         {ext && <span className="pp__ext">↗</span>}
       </div>

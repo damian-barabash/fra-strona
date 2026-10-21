@@ -196,7 +196,9 @@ try {
   process.exit(0);
 }
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: "pl-PL" });
-await ctx.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); localStorage.setItem("fra_lang", "pl"); } catch {} });
+// __FRA_PRERENDER: the site skips prefetching the other pages, so a snapshot links only the CSS its own
+// page needs (otherwise every route's stylesheet ended up render-blocking in every snapshot)
+await ctx.addInitScript(() => { window.__FRA_PRERENDER = true; try { localStorage.setItem("fra_cookies", "all"); localStorage.setItem("fra_lang", "pl"); } catch {} });
 // keep media out of the snapshot run — faster and no autoplay video buffering
 await ctx.route(/\.(mp4|webm)(\?|$)/, (r) => r.abort());
 

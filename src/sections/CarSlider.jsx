@@ -139,7 +139,7 @@ export default function CarSlider({ onChoose, onCurrent, jumpTo, onJumped, hideH
             {cars.map((c, i) => (
               <button key={c.id} type="button" role="tab" aria-selected={c.id === car.id} className={`carthumb ${c.id === car.id ? "on" : ""}`} style={{ background: c.color }} title={c.name}
                 onClick={() => { const cur = ((idx % n) + n) % n; if (i !== cur) jump(i, i > cur ? 1 : -1); }}>
-                {(c.png || c.photos?.[0]) ? <img src={c.png || c.photos[0]} alt={c.name} loading="lazy" /> : <span>{c.badge}</span>}
+                {(c.png || c.photos?.[0]) ? <img src={c.png || c.photos[0]} alt={c.name} loading="lazy" sizes="56px" /> : <span>{c.badge}</span>}
               </button>
             ))}
           </div>

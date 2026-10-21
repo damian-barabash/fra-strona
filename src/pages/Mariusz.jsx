@@ -175,7 +175,7 @@ function HeroScene() {
         {/* interactive portrait + helmet */}
         <div className="mz-figure">
           <div className={stageCls} ref={stageRef} onPointerMove={onMove} onPointerLeave={onLeave}>
-            <img className="mz-face" src={media("mz.face")} alt={t("mz.name")} draggable="false" />
+            <img className="mz-face" src={media("mz.face")} alt={t("mz.name")} draggable="false" fetchpriority="high" />
             <div className="mz-kask"><img src={media("mz.kask")} alt="" draggable="false" /></div>
           </div>
         </div>

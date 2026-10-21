@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { visibleProducts } from "./_cms.js";
+import { perTableData } from "./_tables.js";
 // the cookie bar is answered up-front so it never sits over a button under test
-test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
+test.beforeEach(async ({ page }) => { await perTableData(page); await page.addInitScript(() => { try { localStorage.setItem("fra_cookies", "all"); } catch {} }); });
 
 test("the wall follows the CMS order and carries the flagship products", async ({ page, request }) => {
   const products = await visibleProducts(request);

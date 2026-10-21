@@ -183,7 +183,7 @@ export default function DlaFirm() {
             <div className="fr-fleet__grid">
               {cars.map((c, i) => (
                 <div key={c.id} className={`fr-car reveal-up rv-d${(i % 4) + 1}`} style={{ ["--cc"]: c.color }}>
-                  <div className="fr-car__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" />}</div>
+                  <div className="fr-car__media">{(c.png || c.photos?.[0]) && <img src={c.png || c.photos?.[0]} alt={c.name} loading="lazy" sizes="(max-width: 900px) 92vw, 440px" />}</div>
                   <b>{c.name}</b>
                   <dl><div><dt>{t("fleet.l_power")}</dt><dd>{c.power || "—"}</dd></div><div><dt>{t("fleet.l_engine")}</dt><dd>{c.engine || "—"}</dd></div></dl>
                 </div>
