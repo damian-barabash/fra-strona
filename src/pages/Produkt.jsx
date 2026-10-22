@@ -3,6 +3,7 @@ import { Link, useParams, Navigate } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
+import VideoBlock from "../components/YouTube";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { useRevealOnScroll } from "../lib/hooks";
@@ -192,6 +193,8 @@ export default function Produkt() {
             ))}
           </section>
         )}
+
+        <VideoBlock list={p.youtube} accent={p.color} />
 
         {/* ---- CTA (info-only products, e.g. the simulator, get contact instead of booking) ---- */}
         <section className="section section--dark pd-cta">

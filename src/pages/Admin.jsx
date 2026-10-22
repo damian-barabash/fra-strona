@@ -71,6 +71,7 @@ const CFG = {
       { k: "description_pl", t: "textarea", l: "Opis krótki — slider i karta (PL — EN tłumaczy się samo)" },
       { k: "intro_pl", t: "textarea", l: "Opis rozszerzony — podstrona auta /flota/<adres>" },
       { k: "photos", t: "images", l: "Zdjęcia (mini-slider)" },
+      { k: "youtube", t: "textarea", l: "Filmy YouTube — blok „To auto w akcji” na podstronie auta (jeden link w linii; opcjonalnie „link | tytuł”)" },
       { k: "price_3", t: "number", l: "💰 3 sesje / Experience — Łódź (zł netto)" },
       { k: "price_6", t: "number", l: "💰 6 sesji / Sport — Łódź (zł netto)" },
       { k: "price_9", t: "number", l: "💰 9 sesji / Performance — Łódź (zł netto)" },
@@ -144,6 +145,7 @@ const CFG = {
       { k: "buy_direct", t: "check", l: "Kup od razu (bez konfiguratora — dane + płatność)" },
       { k: "photo", t: "image", l: "Zdjęcie główne (kafelek + hero podstrony)" },
       { k: "video", t: "video", l: "Wideo hero (opcjonalnie — MP4/WebM)" },
+      { k: "youtube", t: "textarea", l: "Filmy YouTube — blok wideo na dole podstrony (jeden link w linii; opcjonalnie „link | tytuł”, bez tytułu weźmie się z YouTube)" },
       { k: "excerpt_pl", t: "textarea", l: "Krótki opis (kafelek na liście)" },
       { k: "intro_pl", t: "textarea", l: "Wstęp na podstronie (każdy akapit w nowej linii)" },
       { k: "theory_pl", t: "textarea", l: "Część teoretyczna" },
@@ -660,6 +662,8 @@ function MenuTab() {
       </div>
       <div className="adm-head" style={{ marginTop: 30 }}><div><h2>Social media</h2><p className="adm-sub">Linki do profili (ikony w nagłówku i stopce). Pusty adres = ikona znika.</p></div></div>
       <div className="adm-menu">{["facebook", "instagram", "linkedin", "youtube", "tiktok"].map((k) => <SocialRow key={k} k={k} raw={raw} saveContent={saveContent} />)}</div>
+      <div className="adm-head" style={{ marginTop: 30 }}><div><h2>Wideo YouTube</h2><p className="adm-sub">Odtwarzacz z listą filmów. Jeden link w linii, opcjonalnie „link | tytuł” (bez tytułu weźmie się z YouTube). Pierwszy film to ten na dużym ekranie. Puste pole = blok znika. Filmy produktów i aut wpisuje się w ich kartach (pole „Filmy YouTube”).</p></div></div>
+      <div className="adm-menu">{[["vid.home", "Strona główna"], ["vid.firmy", "Dla firm"]].map(([k, l]) => <VideoListRow key={k} k={k} label={l} raw={raw} saveContent={saveContent} />)}</div>
     </div>
   );
 }
@@ -683,6 +687,16 @@ function SocialRow({ k, raw, saveContent }) {
   return (
     <div className="adm-menu__row">
       <label className="adm-f adm-menu__f"><span>{k}</span><input value={href} onChange={(e) => setHref(e.target.value)} onBlur={commit} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} placeholder="https://…" /></label>
+    </div>
+  );
+}
+
+function VideoListRow({ k, label, raw, saveContent }) {
+  const [val, setVal] = useState(raw(k).pl || "");
+  const commit = () => { const v = val.trim(); if (v !== (raw(k).pl || "").trim()) saveContent(k, v || " ", "url"); };
+  return (
+    <div className="adm-menu__row">
+      <label className="adm-f adm-menu__f" style={{ flex: 1 }}><span>{label}</span><textarea rows={5} value={val} onChange={(e) => setVal(e.target.value)} onBlur={commit} placeholder="https://youtu.be/… | Tytuł" /></label>
     </div>
   );
 }

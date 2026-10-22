@@ -4,6 +4,7 @@ import { motion } from "../lib/motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
+import VideoBlock from "../components/YouTube";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
@@ -206,6 +207,8 @@ export default function D2R({ p }) {
             </aside>
           </div>
         </section>
+
+        <VideoBlock list={p.youtube} />
 
         <div className="container d2-back">
           <Link to="/produkty" onClick={() => window.scrollTo({ top: 0 })}>‹ {t("prod.back")}</Link>

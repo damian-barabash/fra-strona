@@ -11,6 +11,7 @@ import Tracks from "../sections/Tracks";
 import Events from "../sections/Events";
 import CtaBuy from "../sections/CtaBuy";
 import Footer from "../sections/Footer";
+import VideoBlock from "../components/YouTube";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
@@ -35,6 +36,7 @@ export default function Home() {
         <Instructors />
         <Tracks />
         <Events />
+        <HomeVideos />
         <CtaBuy />
       </main>
       <Footer />
@@ -42,4 +44,10 @@ export default function Home() {
       {!ready && <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 300, opacity: 0, pointerEvents: "none" }} />}
     </div>
   );
+}
+
+// "Fastline na wideo" — the list is edited in the panel (Menu → Wideo YouTube, content key vid.home)
+function HomeVideos() {
+  const { t } = useStore();
+  return <VideoBlock list={t("vid.home")} eyebrowId="yt.homeEyebrow" titleId="yt.homeTitle" />;
 }

@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
+import VideoBlock from "../components/YouTube";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
@@ -118,6 +119,8 @@ export default function Auto() {
             ))}
           </section>
         )}
+
+        <VideoBlock list={car.youtube} titleId="yt.carTitle" />
 
         {/* ---- other cars ---- */}
         {!!others.length && (

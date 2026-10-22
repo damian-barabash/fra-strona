@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "../lib/motion";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
+import VideoBlock from "../components/YouTube";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
@@ -268,6 +269,8 @@ export default function Wyprawa({ p }) {
             ))}
           </section>
         )}
+
+        <VideoBlock list={p.youtube} accent={p.color} className="yts--wy" />
 
         <div className="container wy-back">
           <Link to="/produkty" onClick={() => window.scrollTo({ top: 0 })}>‹ {t("prod.back")}</Link>

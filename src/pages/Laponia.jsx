@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
+import VideoBlock from "../components/YouTube";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { useRevealOnScroll } from "../lib/hooks";
@@ -197,6 +198,8 @@ export default function Laponia({ p }) {
             ))}
           </section>
         )}
+
+        <VideoBlock list={p.youtube} className="yts--ice" />
 
         {/* ---------------- CTA ---------------- */}
         <section className="lp-sec lp-sec--deep lp-cta">

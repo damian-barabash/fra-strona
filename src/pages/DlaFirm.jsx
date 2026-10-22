@@ -6,6 +6,7 @@ import { sendContact } from "../lib/api";
 import { lead } from "../lib/pixel";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
+import VideoBlock from "../components/YouTube";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText, EMedia, EBg } from "../components/Editable";
@@ -74,6 +75,8 @@ const TRACKS = [
 ];
 const EXTRAS = [["🎮", "Symulator Virtual GP", "Virtual GP simulator"], ["📸", "Relacja foto/video", "Photo/video coverage"], ["🍸", "Afterparty", "Afterparty"], ["🧠", "Trener psychomotoryczny", "Psychomotor coach"], ["💃", "Hostessy & Pit-Girls", "Hostesses & Pit-Girls"], ["🏨", "Nocleg", "Accommodation"], ["🍷", "Kolacja", "Dinner"], ["🎁", "Nagrody i gifty", "Prizes and gifts"]];
 const LOGOS = ["orange", "nokia", "orlen", "verva", "brs", "sony", "chiesi", "canon", "vortune", "playstation", "cisco", "samsung", "c2c", "porsche", "bmw", "jaworski", "alpine", "granturismo", "logwin", "pirelli", "nobleplace", "tagheuer", "redbull", "viessmann"];
+// portfolio tiles: 1 and 4 are wide (landscape photos), 2 and 3 are tall (portrait)
+const PORTFOLIO = ["branding", "detal", "catering", "scena"];
 const fmt = (n) => Math.round(n).toLocaleString("pl-PL");
 
 export default function DlaFirm() {
@@ -224,6 +227,26 @@ export default function DlaFirm() {
             </div>
           </div>
         </section>
+
+        {/* ---------- PORTFOLIO (photos + captions editable in the CMS) ---------- */}
+        <section className="section section--dark fr-pf">
+          <div className="container">
+            <div className="fr-pf__head">
+              <div className="fr-sec-head"><EText id="fir.pfEyebrow" as="span" className="eyebrow reveal-up" /><EText id="fir.pfTitle" as="h2" className="h-section reveal-up rv-d1" /></div>
+              <div className="fr-pf__case reveal-up rv-d2"><EText id="fir.pfCase" as="b" /><EText id="fir.pfSub" as="p" multiline /></div>
+            </div>
+            <div className="fr-pf__grid">
+              {PORTFOLIO.map((k, i) => (
+                <figure key={k} className={`fr-pf__item fr-pf__item--${i + 1} reveal-scale rv-d${i + 1}`}>
+                  <EMedia id={`fir.pf${i + 1}`} className="fr-pf__img" alt={t(`fir.pf${i + 1}T`)} imgProps={{ sizes: i === 0 || i === 3 ? "(max-width: 900px) 92vw, 640px" : "(max-width: 900px) 46vw, 320px" }} />
+                  <figcaption><span>0{i + 1}</span><EText id={`fir.pf${i + 1}T`} as="b" /><EText id={`fir.pf${i + 1}B`} as="p" multiline /></figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <VideoBlock list={t("vid.firmy")} eyebrowId="yt.firmyEyebrow" titleId="yt.firmyTitle" />
 
         <Configurator t={t} lang={lang} />
 
