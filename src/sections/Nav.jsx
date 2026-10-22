@@ -47,20 +47,12 @@ export default function Nav() {
           </Link>
 
           <nav className="nav__menu">
-            {/* links centred in the free room between the logo and the buttons */}
+            {/* links centred in the free room between the logo and the right-hand block */}
             <span className="nav__links">
               {MENU_A.map((id) => <NavLink key={id} id={id} />)}
               <span className="nav__div" />
               {order.map((id) => <NavLink key={id} id={id} />)}
             </span>
-            <Link to={hrefOf(MENU_CTA).startsWith("/") ? hrefOf(MENU_CTA) : "/rezerwacja"} className="nav__cta"
-              onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
-              <EText id={MENU_CTA} /> <i>›</i>
-            </Link>
-            <Link to={hrefOf(MENU_CTA2).startsWith("/") ? hrefOf(MENU_CTA2) : "/voucher"} className="nav__cta nav__cta--dark"
-              onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
-              <svg className="nav__gift" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg><EText id={MENU_CTA2} /> <i>›</i>
-            </Link>
           </nav>
 
           <div className="nav__right">
@@ -71,6 +63,17 @@ export default function Nav() {
               <span>/</span>
               <button className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>EN</button>
             </div>
+            {/* purchase buttons stand last, right after the language switch */}
+            <span className="nav__ctas">
+              <Link to={hrefOf(MENU_CTA).startsWith("/") ? hrefOf(MENU_CTA) : "/rezerwacja"} className="nav__cta"
+                onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+                <EText id={MENU_CTA} /> <i>›</i>
+              </Link>
+              <Link to={hrefOf(MENU_CTA2).startsWith("/") ? hrefOf(MENU_CTA2) : "/voucher"} className="nav__cta nav__cta--dark"
+                onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>
+                <svg className="nav__gift" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9" /><path d="M2 7h20v5H2z" /><path d="M12 22V7" /><path d="M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg><EText id={MENU_CTA2} /> <i>›</i>
+              </Link>
+            </span>
             <button className="nav__burger" aria-label="menu" onClick={() => setOpen(true)}><span /></button>
           </div>
         </div>

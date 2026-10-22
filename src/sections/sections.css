@@ -47,6 +47,7 @@
 .mobile-menu__cta.mobile-menu__cta--dark { margin-top: -12px; }
 .nav__div { width: 1px; height: 22px; background: rgba(0,0,0,.16); display: inline-block; flex: 0 0 auto; }
 .nav__right { display: flex; align-items: center; gap: 18px; }
+.nav__ctas { display: flex; align-items: center; gap: 10px; }
 .social { display: flex; gap: 12px; }
 .social a { display: grid; place-items: center; width: 22px; height: 22px; color: var(--text); opacity: .82; transition: opacity .2s, transform .2s, color .2s; }
 .social svg { width: 18px; height: 18px; fill: currentColor; }
@@ -428,8 +429,8 @@
   .nav__menu a.nav__cta, .nav__cta { padding: 12px 13px; margin-right: 2px; gap: 6px; }
   .nav__right { gap: 12px; }
   .nav__logo img { max-height: 40px; }
-  /* the links (OFERTA … KONTAKT) sit centred in the room between the logo and the two buttons, which
-     stand on the right next to the icons: the menu takes all the free width, the links box is centred in it */
+  /* the links (OFERTA … KONTAKT) sit centred in the room between the logo and the right-hand block
+     (icons, PL/EN, then the two purchase buttons): the menu takes all the free width, the links box is centred in it */
   .nav__menu { flex: 1 1 auto; }
   .nav__links { margin: 0 auto; }
 }
@@ -441,7 +442,7 @@
   .nav__socials, .nav__div--r { display: none; }
 }
 @media (max-width: 1200px) {
-  .nav__menu, .nav__div { display: none; }
+  .nav__menu, .nav__div, .nav__ctas { display: none; }
   .nav__burger { display: grid; }
   .nav__burger span, .nav__burger span::before, .nav__burger span::after { background: var(--text); }
 }
