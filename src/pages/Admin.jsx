@@ -159,6 +159,7 @@ const CFG = {
       { k: "logo", t: "image", l: "Logo produktu (opcjonalnie — zastępuje bejd na kafelku)" },
       { k: "external_url", t: "text", l: "Link zewnętrzny (opcjonalnie — zamiast podstrony)" },
       { k: "info_only", t: "check", l: "Strona tylko informacyjna (bez przycisków rezerwacji — jak symulator)" },
+      { k: "is_test", t: "check", l: "Produkt TESTOWY — tylko z bezpośredniego linku (adres min. 32 znaki), poza listami, sitemapą i Google; zamówienia oznaczone jako testowe i poza przychodem. Zostaw „Widoczne na stronie” odznaczone." },
     ],
     title: (r) => `${r.code ? r.code + " · " : ""}${r.title_pl || ""}`,
   },
@@ -375,7 +376,7 @@ function Dashboard({ go }) {
               {(s.recent || []).map((b) => (
                 <div key={b.id} className="adm-mini-row">
                   <span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span>
-                  <span className="adm-mini-row__t"><b>#{b.number} · {b.car_name || b.product_name}</b><small>{b.full_name} · {when(b.paid_at || b.created_at)}</small></span>
+                  <span className="adm-mini-row__t"><b>#{b.number} · {b.car_name || b.product_name}{b.is_test && <> <i className="adm-badge adm-badge--test">TEST</i></>}</b><small>{b.full_name} · {when(b.paid_at || b.created_at)}</small></span>
                   <span className="adm-mini-row__r"><b>{fmtZl(b.amount_pln)}</b><i className={`adm-badge adm-badge--${STATUS[b.status]?.[1] || "off"}`}>{STATUS[b.status]?.[0] || b.status}</i></span>
                 </div>
               ))}
@@ -428,9 +429,10 @@ function OrdersTab({ only }) {
 
   const list = useMemo(() => (rows || [])
     .filter((b) => (only ? b.kind === only : true))
-    .filter((b) => filter === "all" ? true : filter === "paid" || filter === "pending" ? b.status === filter : b.kind === filter)
+    .filter((b) => filter === "all" ? true : filter === "test" ? b.is_test : filter === "paid" || filter === "pending" ? b.status === filter && !b.is_test : b.kind === filter && !b.is_test)
     .filter((b) => !q.trim() || `${b.number} ${b.full_name} ${b.email} ${b.car_name} ${b.voucher_code || ""} ${b.tpay_title || ""}`.toLowerCase().includes(q.toLowerCase())), [rows, filter, q, only]);
-  const sumPaid = list.filter((b) => b.status === "paid").reduce((s, b) => s + (b.amount_pln || 0), 0);
+  // test orders (the hidden test product) never count as revenue
+  const sumPaid = list.filter((b) => b.status === "paid" && !b.is_test).reduce((s, b) => s + (b.amount_pln || 0), 0);
 
   return (
     <div>
@@ -441,7 +443,7 @@ function OrdersTab({ only }) {
       </div>
       <div className="adm-toolbar">
         <div className="adm-chips">
-          {[["all", "Wszystkie"], ["paid", "Opłacone"], ["pending", "Oczekujące"], ...(only ? [] : [["track", "Szkolenia"], ["ice", "Laponia"], ["trip", "Wyprawy"], ["product", "Programy"], ["voucher", "Vouchery"]])].map(([k, l]) => (
+          {[["all", "Wszystkie"], ["paid", "Opłacone"], ["pending", "Oczekujące"], ...(only ? [] : [["track", "Szkolenia"], ["ice", "Laponia"], ["trip", "Wyprawy"], ["product", "Programy"], ["voucher", "Vouchery"]]), ["test", "Testowe"]].map(([k, l]) => (
             <button key={k} className={`adm-chip ${filter === k ? "on" : ""}`} onClick={() => setFilter(k)}>{l}</button>
           ))}
         </div>
@@ -453,8 +455,8 @@ function OrdersTab({ only }) {
         <div className="adm-table">
           <div className="adm-tr adm-tr--head"><span>#</span><span>Data</span><span>Klient</span><span>Zamówienie</span><span>Kwota</span><span>Status</span><span /></div>
           {list.map((b) => (
-            <div key={b.id} className={`adm-tr ${b.status === "pending" ? "is-pending" : ""}`}>
-              <span className="adm-tr__no">#{b.number}</span>
+            <div key={b.id} className={`adm-tr ${b.status === "pending" ? "is-pending" : ""} ${b.is_test ? "is-test" : ""}`}>
+              <span className="adm-tr__no">#{b.number}{b.is_test && <i className="adm-badge adm-badge--test">TEST</i>}</span>
               <span className="adm-tr__date">{when(b.created_at)}</span>
               <span className="adm-tr__who"><b>{b.full_name}</b><small>{b.email}</small></span>
               <span className="adm-tr__what"><span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span><b>{b.car_name || b.product_name}</b><small>{b.sessions ? `${b.sessions} sesji · ` : ""}{b.term_label || b.package_name || ""}{b.voucher_code ? ` · ${b.voucher_code}` : ""}</small></span>
@@ -508,7 +510,7 @@ function OrderDrawer({ id, onClose, onChanged }) {
         {!d ? <div className="adm-empty">Ładowanie…</div> : d.error ? <div className="adm-empty">{d.error}</div> : (
           <div className="adm-doc">
             <div className="adm-doc__head">
-              <div><span className="adm-doc__eyebrow">FASTLINE RACING ACADEMY · DOKUMENT PŁATNOŚCI</span><h4>Zamówienie #{o.number}</h4><small>utworzone {when(o.created_at)}{o.paid_at ? ` · opłacone ${when(o.paid_at)}` : ""}</small></div>
+              <div><span className="adm-doc__eyebrow">FASTLINE RACING ACADEMY · DOKUMENT PŁATNOŚCI</span><h4>Zamówienie #{o.number}{o.is_test && <> <i className="adm-badge adm-badge--test adm-badge--lg">TEST</i></>}</h4><small>utworzone {when(o.created_at)}{o.paid_at ? ` · opłacone ${when(o.paid_at)}` : ""}</small></div>
               <i className={`adm-badge adm-badge--${STATUS[o.status]?.[1] || "off"} adm-badge--lg`}>{STATUS[o.status]?.[0] || o.status}</i>
             </div>
             <div className="adm-doc__grid">
@@ -808,7 +810,7 @@ function EntityTab({ table }) {
         {items.map((r, i) => (
           <div className="adm-row" key={r.id}>
             <div className="adm-row__thumb" style={{ background: r.color || "#e9eaec" }}>{(r.png || r.photo || r.image || r.photos?.[0]) && <img src={r.png || r.photo || r.image || r.photos?.[0]} alt="" />}</div>
-            <div className="adm-row__title">{cfg.title(r) || "—"}{r.visible === false && <span className="adm-badge adm-badge--off" style={{ marginLeft: 8 }}>ukryte</span>}{r._pending && <span className="adm-badge adm-badge--sync" style={{ marginLeft: 8 }}>zapisuję…</span>}</div>
+            <div className="adm-row__title">{cfg.title(r) || "—"}{r.visible === false && <span className="adm-badge adm-badge--off" style={{ marginLeft: 8 }}>ukryte</span>}{r.is_test && <><i className="adm-badge adm-badge--test" style={{ marginLeft: 8 }}>TEST</i><a className="adm-row__link" href={`/produkty/${r.slug}`} target="_blank" rel="noreferrer">otwórz link testowy ↗</a></>}{r._pending && <span className="adm-badge adm-badge--sync" style={{ marginLeft: 8 }}>zapisuję…</span>}</div>
             <div className="adm-row__ops">
               <button className="adm-mini" onClick={() => move(i, -1)} disabled={i === 0}>↑</button>
               <button className="adm-mini" onClick={() => move(i, 1)} disabled={i === items.length - 1}>↓</button>

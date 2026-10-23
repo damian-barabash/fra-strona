@@ -534,3 +534,11 @@
 .carthumb:hover { opacity: .9; transform: translateY(-2px); }
 .carthumb.on { opacity: 1; border-color: var(--red); box-shadow: 0 6px 16px rgba(0,0,0,.18); }
 @media (max-width: 560px) { .carthumb { flex-basis: 56px; height: 42px; } }
+
+/* test product / test order: a small fixed note, so a test page is never mistaken for a real one */
+.test-strip { position: fixed; left: 16px; bottom: 16px; z-index: 160; max-width: min(520px, calc(100% - 32px)); display: flex; gap: 10px; align-items: center;
+  padding: 10px 14px; background: #111; color: #fff; font: 500 12.5px/1.4 Poppins, sans-serif; border-left: 4px solid #f0a500; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  animation: testStripIn .5s cubic-bezier(.2,.8,.2,1) both; }
+.test-strip b { flex: none; padding: 3px 7px; background: #f0a500; color: #111; font: 800 11px/1 Montserrat, sans-serif; letter-spacing: .12em; }
+@keyframes testStripIn { from { opacity: 0; transform: translateY(14px); } }
+@media (prefers-reduced-motion: reduce) { .test-strip { animation: none; } }

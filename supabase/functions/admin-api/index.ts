@@ -360,7 +360,7 @@ async function createIceBooking(p: any) {
 
 async function createProductBooking(p: any) {
   const payer = payerOf(p); if ("err" in payer) return json({ ok: false, error: payer.err }, 400);
-  const { data: prod } = await db.from("products").select("slug, title_pl, price, currency, buy_direct, packages_pl").eq("slug", String(p.product_slug ?? "")).maybeSingle();
+  const { data: prod } = await db.from("products").select("slug, title_pl, price, currency, buy_direct, packages_pl, is_test").eq("slug", String(p.product_slug ?? "")).maybeSingle();
   if (!prod || !prod.buy_direct) return json({ ok: false, error: "product not for sale" }, 404);
   // variants = package lines like "Alpine A110S — 999 zł netto · …" (Race Taxi); the price comes from the chosen line
   const variants = String(prod.packages_pl ?? "").split("\n").map((l: string) => l.trim()).filter((l: string) => l && !l.startsWith("## ")).map((l: string) => {
@@ -374,7 +374,7 @@ async function createProductBooking(p: any) {
   if (!total) return json({ ok: false, error: "product not for sale" }, 404);
   const label = variantName ? `${prod.title_pl} — ${variantName}` : prod.title_pl;
   return startPayment({
-    kind: "product", product_slug: prod.slug, product_name: prod.title_pl, car_name: variantName || prod.title_pl, term_label: label, persons: 1, package_name: variantName || null,
+    kind: "product", is_test: !!prod.is_test, product_slug: prod.slug, product_name: prod.title_pl, car_name: variantName || prod.title_pl, term_label: label, persons: 1, package_name: variantName || null,
     ...payer, total, currency: prod.currency ?? "PLN",
   }, p);
 }
@@ -451,7 +451,7 @@ async function orderStatus(p: any) {
   const id = String(p?.id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ ok: false, error: "not found" }, 404);
   const { data: o } = await db.from("bookings")
-    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at, meta")
+    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at, is_test, meta")
     .eq("id", id).maybeSingle();
   if (!o) return json({ ok: false, error: "not found" }, 404);
   const { meta, ...pub } = o as any;
@@ -461,14 +461,15 @@ async function orderStatus(p: any) {
 /* ---------------- ADMIN extras ---------------- */
 const CONFIG_KEYS = ["contact_to", "firma_to", "voucher_to", "order_to", "contact_from", "eur_pln"];
 
+// test orders (is_test — the hidden test product) stay out of revenue, paid and pending numbers
 async function stats() {
   const since = new Date(); since.setMonth(since.getMonth() - 11); since.setDate(1);
   const [{ data: paid }, { data: pendingRows }, { data: latest }, { data: msgs }, { data: terms }] = await Promise.all([
-    db.from("bookings").select("id, kind, amount_pln, total, currency, paid_at, created_at, car_name, product_name, full_name, number, status").eq("status", "paid").gte("created_at", since.toISOString()).order("created_at", { ascending: false }),
+    db.from("bookings").select("id, kind, amount_pln, total, currency, paid_at, created_at, car_name, product_name, full_name, number, status").eq("status", "paid").eq("is_test", false).gte("created_at", since.toISOString()).order("created_at", { ascending: false }),
     // pending = started at the gateway, not paid yet (count + how much is waiting)
-    db.from("bookings").select("id, amount_pln").eq("status", "pending"),
+    db.from("bookings").select("id, amount_pln").eq("status", "pending").eq("is_test", false),
     // the dashboard's "latest orders" list shows every status, not only paid ones
-    db.from("bookings").select("id, kind, amount_pln, paid_at, created_at, car_name, product_name, full_name, number, status").order("created_at", { ascending: false }).limit(6),
+    db.from("bookings").select("id, kind, amount_pln, paid_at, created_at, car_name, product_name, full_name, number, status, is_test").order("created_at", { ascending: false }).limit(6),
     db.from("messages").select("id, kind, is_read, created_at").order("created_at", { ascending: false }).limit(500),
     db.from("terms").select("id, date, type, track").gte("date", new Date().toISOString().slice(0, 10)).order("date"),
   ]);

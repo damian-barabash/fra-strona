@@ -104,14 +104,15 @@ export async function sendOrderMails(o: any) {
   body += details;
   body += `<p style="font-size:13px;color:#6c7075">Pytania? Łukasz: <a href="tel:+48603102665" style="color:#e30613">+48 603 102 665</a> · <a href="mailto:racingacademy@fastline.pl" style="color:#e30613">racingacademy@fastline.pl</a></p>`;
   body += button(`${SITE}/kalendarz`, isVoucher ? "Zobacz terminy na torze" : "Kalendarz szkoleń");
-  const custSubject = isVoucher ? `Twój voucher ${o.voucher_code} — Fastline Racing Academy` : `Potwierdzenie zamówienia #${o.number} — Fastline Racing Academy`;
+  const T = o.is_test ? "[TEST] " : "";   // the hidden test product — never mistaken for a real sale
+  const custSubject = T + (isVoucher ? `Twój voucher ${o.voucher_code} — Fastline Racing Academy` : `Potwierdzenie zamówienia #${o.number} — Fastline Racing Academy`);
   const c = await sendMail(o.email, custSubject, shell(isVoucher ? "Voucher gotowy!" : "Zamówienie opłacone", body, { eyebrow: "FASTLINE RACING ACADEMY", preheader: `Zamówienie #${o.number}` }));
   if (!c.ok) throw new Error(c.error);
 
   // ---- staff ----
   const toKey = isVoucher ? "voucher_to" : "order_to";
   const staff = listOf(await cfg(toKey, "lukasz.kazmierczak@greywolfgroup.pl"));
-  const sBody = `<p>${chip(isVoucher ? "NOWY VOUCHER" : "NOWE ZAMÓWIENIE")}</p>
+  const sBody = `<p>${chip(o.is_test ? "ZAMÓWIENIE TESTOWE" : isVoucher ? "NOWY VOUCHER" : "NOWE ZAMÓWIENIE")}</p>
     ${details}
     ${table([
       row("Klient", `<b>${esc(o.full_name)}</b>`),
@@ -121,5 +122,5 @@ export async function sendOrderMails(o: any) {
       row("Opłacono", o.paid_at ? new Date(o.paid_at).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" }) : "—"),
     ].join(""))}
     ${button(`${SITE}/admin`, "Otwórz w panelu")}`;
-  await sendMail(staff, `${isVoucher ? "Voucher" : "Zamówienie"} #${o.number} — ${o.full_name} — ${zl(o.total, o.currency)}`, shell(isVoucher ? `Voucher #${o.number}` : `Zamówienie #${o.number}`, sBody, { eyebrow: "PANEL SPRZEDAŻY" }), o.email);
+  await sendMail(staff, `${T}${isVoucher ? "Voucher" : "Zamówienie"} #${o.number} — ${o.full_name} — ${zl(o.total, o.currency)}`, shell(isVoucher ? `Voucher #${o.number}` : `Zamówienie #${o.number}`, sBody, { eyebrow: "PANEL SPRZEDAŻY" }), o.email);
 }

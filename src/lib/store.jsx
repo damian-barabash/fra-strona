@@ -211,6 +211,14 @@ export function StoreProvider({ children }) {
     if (row) setPosts((list) => (list.some((x) => x.id === row.id) ? list.map((x) => (x.id === row.id && !x._pending ? row : x)) : [...list, row]));
     return row;
   }, []);
+  // a test product (is_test) is never in the public lists — only its exact, long address brings it in
+  const [testProducts, setTestProducts] = useState([]);
+  const loadTestProduct = useCallback(async (slug) => {
+    if (!slug || slug.length < 32) return null;
+    const { data } = await supabase.rpc("test_product", { p_slug: slug }).then((r) => r, () => ({ data: null }));
+    if (data) setTestProducts((list) => (list.some((x) => x.id === data.id) ? list : [...list, data]));
+    return data || null;
+  }, []);
   const cars = allCars.filter((c) => (c.category || "sport") === "sport");
   const raceCars = allCars.filter((c) => c.category === "race");
 
@@ -309,7 +317,7 @@ export function StoreProvider({ children }) {
 
   const value = {
     lang, setLang, ready,
-    content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints, posts, loadPost, popup,
+    content, cars, allCars, raceCars, instructors, events, programs, banners, tracks, terms, mediaList, products, testProducts, loadTestProduct, icePackages, iceWindows, tripPackages, tripAttractions, tripPoints, posts, loadPost, popup,
     raw, t, media, L, reload: async () => { await load(true); if (admin) await loadAdmin(token); },
     token, admin, isAdmin: !!admin,
     // permissions: the owner (moderator) can do everything, an admin only what its perms allow
@@ -322,4 +330,17 @@ export function StoreProvider({ children }) {
     adminCall: call,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+/* a product by its address: the public ones from the start-up data, a test one (is_test) fetched by its
+   exact long slug. waiting = a test product may still be on its way (don't redirect yet). */
+export function useProductBySlug(slug) {
+  const { products, testProducts, loadTestProduct, ready } = useStore();
+  const p = products.find((x) => x.slug === slug) || testProducts.find((x) => x.slug === slug) || null;
+  const [tried, setTried] = useState("");
+  const maybeTest = !p && String(slug || "").length >= 32;
+  useEffect(() => {
+    if (maybeTest && ready && tried !== slug) loadTestProduct(slug).finally(() => setTried(slug));
+  }, [slug, ready, maybeTest]); // eslint-disable-line react-hooks/exhaustive-deps
+  return { p, waiting: maybeTest && tried !== slug };
 }

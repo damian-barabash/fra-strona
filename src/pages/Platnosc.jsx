@@ -41,7 +41,7 @@ export default function Platnosc() {
         if (r?.ok) {
           setOrder(r.order); misses = 0;
           if (r.order.status === "paid") {
-            if (!paidSeen) { purchase(r.order); forgetDiscount(); setPhase("paid"); }
+            if (!paidSeen) { if (!r.order.is_test) purchase(r.order); forgetDiscount(); setPhase("paid"); }
             // the Performance Lab account is set up right after the payment — wait a few polls for it
             if (r.order.club || ++paidSeen > CLUB_POLLS) return;
             await new Promise((res) => setTimeout(res, POLL_MS));
@@ -67,6 +67,7 @@ export default function Platnosc() {
   return (
     <div className="pl">
       <Nav />
+      {order?.is_test && <div className="test-strip" role="note"><b>TEST</b> Zamówienie testowe — w panelu oznaczone jako testowe i poza przychodem.</div>}
       <main className="pl-main">
         <div className="pl-flag" aria-hidden="true" />
         <div className="container pl-inner">

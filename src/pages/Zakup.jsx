@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useStore } from "../lib/store";
+import { useStore, useProductBySlug } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
@@ -36,7 +36,9 @@ function ZakupFlow() {
   const { products, ready, t, L, createProductBooking } = useStore();
 
   const slug = sp.get("produkt") || "";
-  const p = products.find((x) => x.slug === slug && x.buy_direct);
+  const { p: found, waiting } = useProductBySlug(slug);
+  const p = found?.buy_direct ? found : null;
+  const test = !!p?.is_test;   // test product: no Meta Pixel events, a TEST banner
   useSeo({ title: p ? `Zakup — ${p.title_pl}` : "Zakup", path: "/zakup", noindex: true });
 
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
@@ -57,10 +59,10 @@ function ZakupFlow() {
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
   const item = p ? { name: chosen ? `${p.title_pl} · ${chosen.name}` : p.title_pl, id: p.slug, price, currency: p.currency || "PLN", category: "product" } : null;
-  useEffect(() => { if (item) addToCart(item); }, [p?.slug]); // eslint-disable-line
+  useEffect(() => { if (item && !test) addToCart(item); }, [p?.slug]); // eslint-disable-line
 
   if (!p) {
-    if (ready && products.length) return (
+    if (ready && products.length && !waiting) return (
       <div className="d2 zk">
         <Nav />
         <main className="container zk-missing">
@@ -76,13 +78,14 @@ function ZakupFlow() {
   const valid = form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim();
   const goPay = () => {
     if (!valid) { setErr(t("zak.err")); return; }
-    setErr(""); setCart(item); setStep("platnosc");
+    setErr(""); if (!test) setCart(item); setStep("platnosc");
   };
 
   return (
     <div className="d2 zk">
       <ScrollProgress />
       <Nav />
+      {test && <div className="test-strip" role="note"><b>TEST</b> Produkt testowy — widoczny tylko z tego linku, niewidoczny dla Google. Zamówienia trafiają do panelu jako testowe.</div>}
       <main>
         <section className="zk-wrap">
           <div className="container">

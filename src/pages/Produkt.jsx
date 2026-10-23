@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
-import { useStore } from "../lib/store";
+import { useStore, useProductBySlug } from "../lib/store";
 import Nav from "../sections/Nav";
 import Footer from "../sections/Footer";
 import VideoBlock from "../components/YouTube";
@@ -29,14 +29,17 @@ export default function Produkt() {
   const { products, ready, L, t, cmsMode, isAdmin } = useStore();
   const openLightbox = useLightbox();
   const editing = cmsMode && isAdmin;
-  const p = products.find((x) => x.slug === slug);
+  // a test product (is_test) comes only by its long secret address and is never indexed
+  const { p, waiting } = useProductBySlug(slug);
+  const test = !!p?.is_test;
   useSeo({
     title: p ? `${nice(p.title_pl)}${p.tag_pl ? ` — ${nice(p.tag_pl).toLowerCase()}` : ""}` : "Oferta",
     path: `/produkty/${slug}`,
     description: p ? `${p.excerpt_pl || ""} ${p.intro_pl || ""}` : "",
     image: p?.photo,
     type: "product",
-    jsonld: p ? [
+    noindex: test || waiting,
+    jsonld: p && !test ? [
       { "@type": p.theme === "wyprawa" ? "TouristTrip" : "Course", "@id": `${SITE}/produkty/${p.slug}#product`, name: p.title_pl, description: clip(`${p.excerpt_pl || ""} ${p.intro_pl || ""}`, 300), image: p.photo ? `${SITE}${p.photo}` : `${SITE}/og.jpg`, url: `${SITE}/produkty/${p.slug}`, provider: { "@id": `${SITE}/#organization` },
         ...(p.theme !== "wyprawa" ? { courseMode: "Onsite", hasCourseInstance: { "@type": "CourseInstance", courseMode: "Onsite", location: p.places_pl || "Tor Łódź / Tor Poznań" } } : {}),
         ...(p.price ? { offers: { "@type": "Offer", price: p.price, priceCurrency: p.currency || "PLN", availability: "https://schema.org/InStock", url: `${SITE}/produkty/${p.slug}`, seller: { "@id": `${SITE}/#organization` } } } : {}) },
@@ -46,7 +49,7 @@ export default function Produkt() {
 
   useRevealOnScroll([p?.id, products.length]);
   useEffect(() => { window.scrollTo({ top: 0 }); }, [slug]);
-  useEffect(() => { if (p && !p.external_url) viewContent({ name: p.title_pl, id: p.slug, price: p.price, currency: p.currency || "PLN", category: p.theme || "product" }); }, [p?.slug]); // eslint-disable-line
+  useEffect(() => { if (p && !p.external_url && !test) viewContent({ name: p.title_pl, id: p.slug, price: p.price, currency: p.currency || "PLN", category: p.theme || "product" }); }, [p?.slug]); // eslint-disable-line
 
   // products can bring their own page style — Laponia is frozen, Driver2Racer is red-hot
   if (p && p.theme === "ice") return <Laponia p={p} />;
@@ -55,7 +58,7 @@ export default function Produkt() {
 
   if (!p) {
     // data still loading → keep the frame; loaded and still missing → back to the wall
-    if (ready && products.length) return <Navigate to="/produkty" replace />;
+    if (ready && products.length && !waiting) return <Navigate to="/produkty" replace />;
     return <div className="pd"><Nav /><main style={{ minHeight: "60vh" }} /><Footer /></div>;
   }
   if (p.external_url) return <Navigate to="/produkty" replace />;
@@ -77,6 +80,7 @@ export default function Produkt() {
     <div className={editing ? "cms-on pd" : "pd"} style={style} data-slug={p.slug}>
       <ScrollProgress />
       <Nav />
+      {test && <div className="test-strip" role="note"><b>TEST</b> Produkt testowy — widoczny tylko z tego linku, niewidoczny dla Google. Zamówienia trafiają do panelu jako testowe.</div>}
       <main>
         <Hero p={p} L={L} t={t} places={places} packages={packages} pkgLabel={pkgLabel} />
 

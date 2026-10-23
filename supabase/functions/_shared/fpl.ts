@@ -14,7 +14,7 @@ export type FplSync = { ok: true; account: "created" | "invited" | "existing"; m
 const describe = (o: any) => {
   const what = [o.car_name || o.product_name, o.package_name, o.sessions ? `${o.sessions} sesji` : "", o.term_label, o.voucher_for ? `voucher dla: ${o.voucher_for}` : ""]
     .filter(Boolean).join(" · ");
-  return `Sklep FRA #${o.number} · ${what}`.slice(0, 300);
+  return `${o.is_test ? "[TEST] " : ""}Sklep FRA #${o.number} · ${what}`.slice(0, 300);
 };
 
 async function payloadOf(o: any) {
