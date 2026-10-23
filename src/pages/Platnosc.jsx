@@ -12,7 +12,8 @@ import { purchase } from "../lib/pixel";
 import { forgetDiscount } from "../lib/discount";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
 
-const POLL_MS = 1800, GIVE_UP_MS = 90_000;
+const POLL_MS = 1800, GIVE_UP_MS = 90_000, CLUB_POLLS = 6;
+const FPL_LOGIN = "https://performancelab.fastlineracingacademy.pl/login";
 
 /* Return from the Tpay gateway. The browser never decides whether an order is paid — it polls
    the server until the webhook has confirmed the payment, then plays the "lights out" celebration. */
@@ -33,13 +34,19 @@ export default function Platnosc() {
     let stop = false;
     const t0 = Date.now();
     (async () => {
-      let misses = 0;
+      let misses = 0, paidSeen = 0;
       while (!stop) {
         const r = await orderStatus(id).catch(() => null);
         if (stop) return;
         if (r?.ok) {
           setOrder(r.order); misses = 0;
-          if (r.order.status === "paid") { purchase(r.order); forgetDiscount(); setPhase("paid"); return; }
+          if (r.order.status === "paid") {
+            if (!paidSeen) { purchase(r.order); forgetDiscount(); setPhase("paid"); }
+            // the Performance Lab account is set up right after the payment — wait a few polls for it
+            if (r.order.club || ++paidSeen > CLUB_POLLS) return;
+            await new Promise((res) => setTimeout(res, POLL_MS));
+            continue;
+          }
           if (r.order.status === "chargeback" || r.order.status === "cancelled") { setPhase("failed"); return; }
           if (isError) { setPhase("failed"); return; }
         } else if (r && !r.ok) { setPhase(isError ? "failed" : "empty"); return; }
@@ -85,6 +92,7 @@ export default function Platnosc() {
                   </div>
                 )}
                 <Receipt order={order} money={money} t={t} />
+                <Club order={order} t={t} />
                 <div className="pl-btns">
                   <Link to="/kalendarz" className="btn btn--red" onClick={() => window.scrollTo({ top: 0 })}>{t("pay.calendar")} <span className="btn__arrow">›</span></Link>
                   <Link to="/" className="btn btn--ghost" onClick={() => window.scrollTo({ top: 0 })}>{t("pay.home")}</Link>
@@ -127,6 +135,30 @@ export default function Platnosc() {
       </main>
       <Footer />
       <CmsBar />
+    </div>
+  );
+}
+
+/* after every paid order: the welcome to Fastline Racing Club + where the Performance Lab login is.
+   order.club = how Performance Lab handled the buyer: created / invited (login e-mail sent) / existing. */
+function Club({ order, t }) {
+  if (!order) return null;
+  const club = order.club;
+  const mailed = club === "created" || club === "invited";
+  return (
+    <div className={`pl-club${club ? "" : " is-pending"}`}>
+      <span className="pl-club__eyebrow">{t("pay.clubEyebrow")}</span>
+      <h2 className="pl-club__t">{t("pay.clubTitle")}</h2>
+      <p className="pl-club__p">{t("pay.clubLead")}</p>
+      {club === "existing" ? (
+        <p className="pl-club__p">{t("pay.clubExisting")}</p>
+      ) : (
+        <p className="pl-club__p">
+          {t(mailed ? "pay.clubMailed" : "pay.clubPending")} <b className="pl-club__mail">{order.email}</b>
+          {mailed && <>. {t("pay.clubSpam")}</>}
+        </p>
+      )}
+      <a className="pl-club__btn" href={FPL_LOGIN} target="_blank" rel="noreferrer">{t("pay.clubLogin")} <span aria-hidden="true">↗</span></a>
     </div>
   );
 }

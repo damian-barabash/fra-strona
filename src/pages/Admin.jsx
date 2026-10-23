@@ -472,6 +472,15 @@ function OrdersTab({ only }) {
   );
 }
 
+/* how the paid order landed in Performance Lab (bookings.meta.fpl, written by the edge function) */
+const FPL_ACCOUNT = { created: "nowe konto, wysłano dane do logowania", invited: "konto bez logowania — wysłano dane do logowania", existing: "dopisano do istniejącego konta" };
+function fplLabel(f) {
+  if (!f) return <span className="adm-muted">jeszcze nie wysłano</span>;
+  if (!f.ok) return <span className="adm-doc__err">błąd: {f.error}</span>;
+  const by = f.matchedBy === "phone" ? " (po telefonie)" : "";
+  return <>{FPL_ACCOUNT[f.account] || f.account}{by}{f.litres ? ` · +${f.litres} Race Litres` : ""}{f.enrolled ? " · zapisany na szkolenie" : ""}</>;
+}
+
 /* the payment document for one order — the Tpay transaction pulled live + our record */
 function OrderDrawer({ id, onClose, onChanged }) {
   const { adminCall } = useStore();
@@ -505,7 +514,7 @@ function OrderDrawer({ id, onClose, onChanged }) {
             <div className="adm-doc__grid">
               <section>
                 <h5>Klient</h5>
-                <dl><div><dt>Imię i nazwisko</dt><dd>{o.full_name}</dd></div><div><dt>E-mail</dt><dd><a href={`mailto:${o.email}`}>{o.email}</a></dd></div><div><dt>Telefon</dt><dd><a href={`tel:${o.phone}`}>{o.phone}</a></dd></div>{o.note && <div><dt>Uwagi</dt><dd>{o.note}</dd></div>}</dl>
+                <dl><div><dt>Imię i nazwisko</dt><dd>{o.full_name}</dd></div><div><dt>E-mail</dt><dd><a href={`mailto:${o.email}`}>{o.email}</a></dd></div><div><dt>Telefon</dt><dd><a href={`tel:${o.phone}`}>{o.phone}</a></dd></div>{o.note && <div><dt>Uwagi</dt><dd>{o.note}</dd></div>}{o.status === "paid" && <div><dt>Performance Lab</dt><dd>{fplLabel(o.meta?.fpl)}</dd></div>}</dl>
               </section>
               <section>
                 <h5>Przedmiot</h5>
@@ -558,6 +567,7 @@ function OrderDrawer({ id, onClose, onChanged }) {
             <div className="adm-doc__foot">
               {o.status !== "paid" && <button className="adm-btn adm-btn--green" disabled={!!busy} onClick={() => act("bookings.markPaid", "Oznaczyć zamówienie jako OPŁACONE (np. po przelewie)? Wyśle to potwierdzenie e-mail do klienta.")}>{busy === "bookings.markPaid" ? "…" : "Oznacz jako opłacone"}</button>}
               {o.status === "paid" && <button className="adm-btn" disabled={!!busy} onClick={() => act("bookings.resendMail")}>{busy === "bookings.resendMail" ? "…" : "Wyślij ponownie e-maile"}</button>}
+              {o.status === "paid" && !o.meta?.fpl?.ok && <button className="adm-btn" disabled={!!busy} onClick={() => act("bookings.fplSync")}>{busy === "bookings.fplSync" ? "…" : "Wyślij do Performance Lab"}</button>}
               {o.status === "pending" && <button className="adm-btn" disabled={!!busy} onClick={() => act("bookings.cancel", "Anulować zamówienie?")}>Anuluj</button>}
               <span style={{ flex: 1 }} />
               <button className="adm-btn adm-btn--danger" disabled={!!busy} onClick={() => act("bookings.delete", "Usunąć zamówienie bezpowrotnie?")}>Usuń</button>
@@ -1236,6 +1246,7 @@ const ACTION_LABEL = (a, tgt) => {
   if (a === "bookings.cancel") return ["Anulowano zamówienie", "warn"];
   if (a === "bookings.delete") return ["Usunięto zamówienie", "bad"];
   if (a === "bookings.resendMail") return ["Ponowna wysyłka maili zamówienia", "info"];
+  if (a === "bookings.fplSync") return ["Wysłanie zamówienia do Performance Lab", "info"];
   if (a === "messages.delete") return ["Usunięto wiadomość", "bad"];
   if (a === "messages.read") return ["Odczytano wiadomość", "info"];
   if (a === "admins.create") return ["Nowe konto administratora", "ok"];

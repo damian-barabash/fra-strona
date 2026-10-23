@@ -739,6 +739,14 @@ export const DEFAULTS = {
   "pay.copy": { pl: "KOPIUJ KOD", en: "COPY CODE", kind: "text" },
   "pay.copied": { pl: "SKOPIOWANO", en: "COPIED", kind: "text" },
   "pay.missing": { pl: "Brak zamówienia.", en: "No order found.", kind: "text" },
+  "pay.clubEyebrow": { pl: "FASTLINE RACING CLUB", en: "FASTLINE RACING CLUB", kind: "text" },
+  "pay.clubTitle": { pl: "WITAMY W FASTLINE RACING CLUB", en: "WELCOME TO FASTLINE RACING CLUB", kind: "text" },
+  "pay.clubLead": { pl: "Ten zakup otwiera Ci drzwi do klubu. W Fastline Performance Lab znajdziesz swoje szkolenia, postępy, osiągnięcia i Race Litres naliczane za każdy zakup.", en: "This purchase opens the club's doors for you. In Fastline Performance Lab you'll find your trainings, progress, achievements and the Race Litres you earn with every purchase.", kind: "text" },
+  "pay.clubMailed": { pl: "Założyliśmy Ci konto — dane do logowania wysłaliśmy na adres", en: "We've set up your account — the login details are on their way to", kind: "text" },
+  "pay.clubSpam": { pl: "Sprawdź skrzynkę, także folder spam.", en: "Check your inbox, and the spam folder too.", kind: "text" },
+  "pay.clubPending": { pl: "Za chwilę zakup trafi na Twoje konto. Jeśli nie masz jeszcze konta, dane do logowania wyślemy na adres", en: "Your purchase will land in your account in a moment. If you don't have one yet, we'll send the login details to", kind: "text" },
+  "pay.clubExisting": { pl: "Zakup jest już na Twoim koncie w Performance Lab, razem z naliczonymi Race Litres.", en: "The purchase is already in your Performance Lab account, together with the Race Litres it earned.", kind: "text" },
+  "pay.clubLogin": { pl: "PRZEJDŹ DO PERFORMANCE LAB", en: "GO TO PERFORMANCE LAB", kind: "text" },
 
   // --- voucher configurator (/voucher) ---
   "vch.eyebrow": { pl: "NA PREZENT", en: "AS A GIFT", kind: "text" },

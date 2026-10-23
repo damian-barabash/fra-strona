@@ -2,6 +2,7 @@
 // Used by the Tpay webhook (real payments) and by the admin (manual "mark as paid").
 import { db, cfg, listOf, sendMail, shell, table, row, button, chip, zl, esc } from "./mail.ts";
 import { spend } from "./discounts.ts";
+import { syncToFpl } from "./fpl.ts";
 
 const SITE = (Deno.env.get("SITE_URL") ?? "https://fastlineracingacademy.pl").replace(/\/$/, "");
 
@@ -55,7 +56,11 @@ export const zl2 = (n: number, currency = "PLN") => `${(Number(n) || 0).toLocale
 export async function fulfillOrder(orderId: string, paidAmount?: number, method?: string) {
   const { data: o } = await db.from("bookings").select("*").eq("id", orderId).maybeSingle();
   if (!o) throw new Error(`booking ${orderId} not found`);
-  if (o.status === "paid") return { already: true, order: o };
+  if (o.status === "paid") {
+    // a repeated notification is a good moment to retry a Performance Lab sync that failed before
+    if (!o.meta?.fpl?.ok) await syncToFpl(o);
+    return { already: true, order: o };
+  }
 
   const patch: Record<string, unknown> = { status: "paid", paid_at: new Date().toISOString() };
   if (paidAmount != null) patch.paid_amount = paidAmount;
@@ -65,6 +70,9 @@ export async function fulfillOrder(orderId: string, paidAmount?: number, method?
   if (o.discount_id && !(await spend(o))) patch.payment_error = `kod rabatowy ${o.discount_code} był już wykorzystany w innym zamówieniu`;
   const { data: upd, error } = await db.from("bookings").update(patch).eq("id", o.id).select("*").single();
   if (error) throw new Error(error.message);
+
+  // Performance Lab: account (or match by e-mail / phone), payment, Race Litres, training — best-effort
+  await syncToFpl(upd);
 
   // e-mails are best-effort: a failure never un-pays the order (the admin can resend)
   try {

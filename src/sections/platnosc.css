@@ -45,3 +45,18 @@
 .pl-confetti i { position: absolute; left: var(--x); top: -12px; width: 8px; height: 14px; background: var(--c); transform: rotate(var(--r)); opacity: 0; animation: plFall var(--d) ease-in forwards; animation-delay: calc(1.5s + var(--delay)); }
 @keyframes plFall { 0% { opacity: 1; transform: translateY(0) rotate(var(--r)); } 100% { opacity: 0; transform: translateY(110vh) rotate(calc(var(--r) + 300deg)); } }
 @media (prefers-reduced-motion: reduce) { .pl-check__ring, .pl-check__mark { stroke-dashoffset: 0; animation: none; } .pl-confetti { display: none; } }
+
+/* Fastline Racing Club — welcome + Performance Lab access after a paid order */
+.pl-club { position: relative; margin: 24px auto 0; max-width: 460px; text-align: left; padding: 20px 20px 22px; background: #0a0a0a; border: 1px solid rgba(255,255,255,.1); border-left: 3px solid var(--red); overflow: hidden; animation: plClubIn .7s cubic-bezier(.16,.8,.3,1) 1.4s both; }
+.pl-club::after { content: ""; position: absolute; top: 0; right: 0; width: 120px; height: 100%; background: repeating-linear-gradient(-45deg, rgba(255,255,255,.035) 0 10px, transparent 10px 20px); pointer-events: none; z-index: 0; }
+.pl-club > * { position: relative; z-index: 1; }
+.pl-club__eyebrow { font: 700 10px/1 var(--font-display); letter-spacing: .3em; color: var(--red); }
+.pl-club__t { margin-top: 10px; font: 900 clamp(18px, 2.2vw, 24px)/1.05 var(--font-display); text-transform: uppercase; color: #fff; }
+.pl-club__p { position: relative; margin-top: 10px; font-size: 14px; line-height: 1.65; color: rgba(255,255,255,.7); }
+.pl-club__mail { color: #fff; overflow-wrap: anywhere; }
+.pl-club__btn { position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 12px 18px; background: var(--red); color: #fff; font: 800 12px/1 var(--font-display); letter-spacing: .12em; text-decoration: none; text-transform: uppercase; transition: filter .2s; }
+.pl-club__btn:hover { filter: brightness(1.12); }
+@media (max-width: 560px) { .pl-club__btn { letter-spacing: .06em; padding: 12px 14px; white-space: nowrap; } }
+.pl-club.is-pending .pl-club__mail { color: rgba(255,255,255,.85); }
+@keyframes plClubIn { from { opacity: 0; transform: translateY(14px); } }
+@media (prefers-reduced-motion: reduce) { .pl-club { animation: none; } }

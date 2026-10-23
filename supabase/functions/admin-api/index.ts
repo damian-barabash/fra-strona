@@ -3,6 +3,7 @@
 import { db, cfg, listOf, sendMail, shell, table, row, chip, esc, zl } from "../_shared/mail.ts";
 import { tpayConfigured, tpayCreateTransaction, tpayToken, TPAY_API } from "../_shared/tpay.ts";
 import { fulfillOrder, sendOrderMails, VAT_RATE, gross, round2 } from "../_shared/orders.ts";
+import { syncToFpl } from "../_shared/fpl.ts";
 import { REASON, normCode, validCode, stateOf, findCode, fits, offFor, reserve, release, describeTarget, variantsOf, type Code } from "../_shared/discounts.ts";
 
 const cors = {
@@ -202,7 +203,7 @@ function allowed(a: Admin, action: string, table: string): boolean {
 }
 
 /* ---------------- audit log ---------------- */
-const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|cancel|read|create|update|generate|release)$/;
+const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|fplSync|cancel|read|create|update|generate|release)$/;
 async function audit(req: Request, a: Admin, action: string, target: string | null, details: unknown) {
   try {
     const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
@@ -450,10 +451,11 @@ async function orderStatus(p: any) {
   const id = String(p?.id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ ok: false, error: "not found" }, 404);
   const { data: o } = await db.from("bookings")
-    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at")
+    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at, meta")
     .eq("id", id).maybeSingle();
   if (!o) return json({ ok: false, error: "not found" }, 404);
-  return json({ ok: true, order: o });
+  const { meta, ...pub } = o as any;
+  return json({ ok: true, order: { ...pub, club: meta?.fpl?.ok ? meta.fpl.account : null } });
 }
 
 /* ---------------- ADMIN extras ---------------- */
@@ -672,6 +674,14 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
       if (o.status !== "paid") return json({ ok: false, error: "order not paid" }, 400);
       try { await sendOrderMails(o); await db.from("bookings").update({ mail_sent: true }).eq("id", o.id); return json({ ok: true }); }
       catch (e) { return json({ ok: false, error: String(e) }, 502); }
+    }
+    if (action === "bookings.fplSync") {
+      const { data: o } = await db.from("bookings").select("*").eq("id", payload?.id ?? "").maybeSingle();
+      if (!o) return json({ ok: false, error: "not found" }, 404);
+      if (o.status !== "paid") return json({ ok: false, error: "order not paid" }, 400);
+      const r = await syncToFpl(o, true);
+      if (!r) return json({ ok: false, error: "integracja z Performance Lab nie jest skonfigurowana" }, 400);
+      return r.ok ? json({ ok: true, fpl: r }) : json({ ok: false, error: r.error }, 502);
     }
     if (action === "bookings.cancel") {
       await release(String(payload?.id ?? ""));
