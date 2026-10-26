@@ -10,6 +10,8 @@ import { usePayRedirect } from "../lib/pay";
 import { addToCart, setCart } from "../lib/pixel";
 import { fmtZl } from "../lib/flota";
 import StepTag from "../components/StepTag";
+import InvoiceFields from "../components/InvoiceFields";
+import { EMPTY_INVOICE, invoiceProblem, invoicePayload } from "../lib/invoice";
 import { fmtGross, fmtMoney } from "../lib/vat";
 import { useDiscount } from "../lib/discount";
 import { DiscountField, DiscountLines } from "../components/Discount";
@@ -42,6 +44,7 @@ function ZakupFlow() {
   useSeo({ title: p ? `Zakup — ${p.title_pl}` : "Zakup", path: "/zakup", noindex: true });
 
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
+  const [inv, setInv] = useState(EMPTY_INVOICE);
   const [step, setStep] = useState("dane");     // dane | platnosc
   const variants = p ? parseVariants(L(p, "packages")) : [];
   const [variant, setVariant] = useState(() => { const i = parseInt(sp.get("wariant"), 10); return Number.isFinite(i) ? i : 0; });
@@ -75,9 +78,10 @@ function ZakupFlow() {
     return <div className="d2 zk"><Nav /><main style={{ minHeight: "60vh" }} /><Footer /></div>;
   }
 
-  const valid = form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim();
+  const payerOk = form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim();
+  const valid = !!(payerOk && !invoiceProblem(inv));
   const goPay = () => {
-    if (!valid) { setErr(t("zak.err")); return; }
+    if (!valid) { setErr(payerOk ? t(invoiceProblem(inv)) : t("zak.err")); return; }
     setErr(""); if (!test) setCart(item); setStep("platnosc");
   };
 
@@ -144,6 +148,7 @@ function ZakupFlow() {
                       <label className="zk-field zk-field--full"><span>{t("flota.bk.note")}</span>
                         <textarea rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                     </div>
+                    <InvoiceFields value={inv} onChange={setInv} f="zk" />
 
                     <DiscountField d={disc} preview={pv} />
 
@@ -161,7 +166,7 @@ function ZakupFlow() {
                 {step === "platnosc" && (
                   <>
                     <StepTag n={variants.length > 1 ? 3 : 2} of={variants.length > 1 ? 3 : 2} title={t("flota.bk.s4")} />
-                    <PayStep p={p} form={form} t={t} create={createProductBooking} variant={chosen?.name} code={pv?.ok ? disc.code?.code : undefined} dropCode={disc.clear} />
+                    <PayStep p={p} form={form} inv={inv} t={t} create={createProductBooking} variant={chosen?.name} code={pv?.ok ? disc.code?.code : undefined} dropCode={disc.clear} />
                   </>
                 )}
               </div>
@@ -197,8 +202,8 @@ function ZakupFlow() {
 }
 
 /* payment — the tank fills, the order + Tpay transaction are created server-side, then the gateway */
-function PayStep({ p, form, t, create, variant, code, dropCode }) {
-  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, { product_slug: p.slug, variant: variant || null, discount_code: code, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note }, { dropCode });
+function PayStep({ p, form, inv, t, create, variant, code, dropCode }) {
+  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, { product_slug: p.slug, variant: variant || null, discount_code: code, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note, invoice: invoicePayload(inv) }, { dropCode });
   return (
     <div className="zk-pay">
       <FuelTank fill={fill} done={phase === "redirect"} />

@@ -299,7 +299,52 @@ function payerOf(p: any) {
   const full_name = str(p.full_name, 120), email = str(p.email, 160), phone = str(p.phone, 60);
   if (!full_name || !email || !phone) return { err: "missing data" };
   if (!validEmail(email)) return { err: "bad email" };
-  return { full_name, email, phone, note: str(p.note, 1000) };
+  const inv = invoiceOf(p.invoice); if ("err" in inv) return { err: inv.err };
+  return { full_name, email, phone, note: str(p.note, 1000), invoice: inv.invoice };
+}
+
+/* ---------------- faktura VAT na firmę ---------------- */
+// NIP: 10 digits, the last one is the checksum (weights 6,5,7,2,3,4,5,6,7, modulo 11) — same as src/lib/invoice.js
+const normNip = (v: unknown) => String(v ?? "").replace(/^\s*PL/i, "").replace(/[\s-]/g, "");
+function nipValid(nip: string) {
+  if (!/^\d{10}$/.test(nip)) return false;
+  const sum = [6, 5, 7, 2, 3, 4, 5, 6, 7].reduce((s, k, i) => s + k * Number(nip[i]), 0) % 11;
+  return sum !== 10 && sum === Number(nip[9]);
+}
+/** Invoice data from the configurator: null = no invoice, { err } = something to fix. */
+function invoiceOf(raw: any): { invoice: Record<string, string> | null } | { err: string } {
+  if (!raw || typeof raw !== "object") return { invoice: null };
+  const t = (v: unknown, max: number) => String(v ?? "").trim().replace(/\s+/g, " ").slice(0, max);
+  const inv = { nip: normNip(raw.nip), company: t(raw.company, 200), street: t(raw.street, 200), postal: t(raw.postal, 6), city: t(raw.city, 100) };
+  if (!nipValid(inv.nip)) return { err: "Nieprawidłowy NIP — sprawdź cyfry." };
+  if (!inv.company) return { err: "Podaj nazwę firmy do faktury." };
+  if (!inv.street || !inv.city) return { err: "Podaj adres firmy do faktury." };
+  if (!/^\d{2}-\d{3}$/.test(inv.postal)) return { err: "Kod pocztowy w formacie 00-000." };
+  return { invoice: inv };
+}
+
+// MF register answers are kept in the instance memory — the public API has a daily request limit
+const nipCache = new Map<string, { at: number; data: Record<string, unknown> }>();
+/* PUBLIC: company name + address for a NIP from the MF "Biała lista podatników VAT" (no key needed).
+   Only a suggestion for the form — the customer can change everything, checkout checks the data again. */
+async function nipLookup(p: any) {
+  const nip = normNip(p.nip);
+  if (!nipValid(nip)) return json({ ok: false, reason: "bad", error: "Nieprawidłowy NIP" }, 400);
+  const hit = nipCache.get(nip);
+  if (hit && Date.now() - hit.at < 6 * 3600 * 1000) return json(hit.data);
+  let res: Response;
+  try {
+    res = await fetch(`https://wl-api.mf.gov.pl/api/search/nip/${nip}?date=${new Date().toISOString().slice(0, 10)}`, { signal: AbortSignal.timeout(6000) });
+  } catch { return json({ ok: false, reason: "down", error: "Rejestr MF nie odpowiada" }, 502); }
+  const body = await res.json().catch(() => null);
+  const subj = body?.result?.subject;
+  if (!subj) return json({ ok: false, reason: res.ok || res.status === 400 || res.status === 404 ? "notfound" : "down", error: "Nie znaleziono firmy" }, res.ok ? 404 : 502);
+  // the address comes as "ULICA 12, 00-916 MIASTO"
+  const addr = String(subj.workingAddress || subj.residenceAddress || "");
+  const m = addr.match(/^(.*),\s*(\d{2}-\d{3})\s+(.+)$/);
+  const data = { ok: true, nip, company: subj.name || "", vat_status: subj.statusVat || "", street: m ? m[1] : addr, postal: m ? m[2] : "", city: m ? m[3] : "" };
+  nipCache.set(nip, { at: Date.now(), data });
+  return json(data);
 }
 
 /* ---------------- PUBLIC: checkout flows ---------------- */
@@ -451,7 +496,7 @@ async function orderStatus(p: any) {
   const id = String(p?.id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ ok: false, error: "not found" }, 404);
   const { data: o } = await db.from("bookings")
-    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at, is_test, meta")
+    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at, is_test, meta, invoice")
     .eq("id", id).maybeSingle();
   if (!o) return json({ ok: false, error: "not found" }, 404);
   const { meta, ...pub } = o as any;
@@ -521,6 +566,7 @@ Deno.serve(async (req) => {
     if (action === "booking.createVoucher") return await createVoucherBooking(payload ?? {});
     if (action === "booking.status") return await orderStatus(payload ?? {});
     if (action === "discount.check") return await checkDiscount(payload ?? {}, req);
+    if (action === "nip.lookup") return await nipLookup(payload ?? {});
 
     // ---- ADMIN ----
     const me = await auth(req);

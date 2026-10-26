@@ -17,6 +17,8 @@ import { fmtMoney } from "../lib/vat";
 import { useRevealOnScroll } from "../lib/hooks";
 import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
+import InvoiceFields from "../components/InvoiceFields";
+import { EMPTY_INVOICE, invoiceProblem, invoicePayload } from "../lib/invoice";
 import { fmtGross } from "../lib/vat";
 import "../sections/productcard.css";
 import "../sections/flota.css";
@@ -38,6 +40,7 @@ export default function Voucher() {
   const [sessions, setSessions] = useState(null);
   const [gift, setGift] = useState({ voucher_for: "", voucher_message: "" });
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
+  const [inv, setInv] = useState(EMPTY_INVOICE);
   const [stepIdx, setStepIdx] = useState(0);
   const [err, setErr] = useState("");
   useRevealOnScroll([cars.length, stepIdx]);
@@ -53,9 +56,9 @@ export default function Voucher() {
   const discOn = !!(pv?.ok && pv.ready && pv.off > 0);
 
   const canNext = step === "auto" ? !!car : step === "pakiet" ? !!sessions : step === "gift" || step === "produkt" ? true
-    : step === "dane" ? (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim()) : true;
+    : step === "dane" ? !!(form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim() && !invoiceProblem(inv)) : true;
   const goNext = () => {
-    if (!canNext) { setErr(step === "auto" ? "Wybierz auto." : step === "pakiet" ? "Wybierz pakiet." : "Uzupełnij poprawnie: imię i nazwisko, e-mail oraz telefon."); return; }
+    if (!canNext) { setErr(step === "auto" ? "Wybierz auto." : step === "pakiet" ? "Wybierz pakiet." : (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim() && invoiceProblem(inv)) ? t(invoiceProblem(inv)) : "Uzupełnij poprawnie: imię i nazwisko, e-mail oraz telefon."); return; }
     if (step === "produkt") addToCart();
     setErr(""); setStepIdx((i) => Math.min(STEPS.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -176,6 +179,7 @@ export default function Voucher() {
                       <label className="fl-field fl-field--full"><span className="req">{t("flota.bk.email")}</span><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} autoComplete="email" /></label>
                       <label className="fl-field fl-field--full"><span>{t("flota.bk.note")}</span><textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                     </div>
+                    <InvoiceFields value={inv} onChange={setInv} f="fl" />
                   </div>
                 )}
 
@@ -187,7 +191,7 @@ export default function Voucher() {
                     discount_code: pv?.ok ? disc.code?.code : undefined,
                     car_id: car?.own ? null : car?.id, is_custom: !!car?.own, sessions, track,
                     voucher_for: gift.voucher_for, voucher_message: gift.voucher_message,
-                    full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
+                    full_name: form.full_name, email: form.email, phone: form.phone, note: form.note, invoice: invoicePayload(inv),
                   }} />
                 )}
               </div>

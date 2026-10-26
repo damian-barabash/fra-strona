@@ -9,6 +9,8 @@ import { fmtEur, fmtDay, addDays, startDates, iceDateRange } from "../lib/ice";
 import IceCalendar from "../components/IceCalendar";
 import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
+import InvoiceFields from "../components/InvoiceFields";
+import { EMPTY_INVOICE, invoiceProblem, invoicePayload } from "../lib/invoice";
 import { fmtGross } from "../lib/vat";
 import { usePayRedirect } from "../lib/pay";
 import { addToCart } from "../lib/pixel";
@@ -40,6 +42,7 @@ function RezerwacjaIceFlow() {
   const [start, setStart] = useState("");
   const [persons, setPersons] = useState(1);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
+  const [inv, setInv] = useState(EMPTY_INVOICE);
   const [stepIdx, setStepIdx] = useState(preset ? 1 : 0);
   const [err, setErr] = useState("");
 
@@ -72,14 +75,14 @@ function RezerwacjaIceFlow() {
     step === "pakiet" ? !!pkg :
     step === "termin" ? !!start :
     step === "produkt" ? true :
-    step === "dane" ? (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim()) :
+    step === "dane" ? !!(form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim() && !invoiceProblem(inv)) :
     true;
 
   const goNext = () => {
     if (!canNext) {
       setErr(
         step === "pakiet" ? t("ice.errPkg") :
-        step === "termin" ? t("ice.errDate") : t("ice.errData"),
+        step === "termin" ? t("ice.errDate") : (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim() && invoiceProblem(inv)) ? t(invoiceProblem(inv)) : t("ice.errData"),
       );
       return;
     }
@@ -197,6 +200,7 @@ function RezerwacjaIceFlow() {
                     <label className="ri-field ri-field--full"><span>{t("flota.bk.note")}</span>
                       <textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                   </div>
+                  <InvoiceFields value={inv} onChange={setInv} f="ri" />
                 </div>
               )}
 
@@ -207,7 +211,7 @@ function RezerwacjaIceFlow() {
                 <PayIce t={t} create={createIceBooking} dropCode={disc.clear} payload={{
                   discount_code: pv?.ok ? disc.code?.code : undefined,
                   package_id: pkg?.id, window_id: win?.id, date_from: start, persons,
-                  full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
+                  full_name: form.full_name, email: form.email, phone: form.phone, note: form.note, invoice: invoicePayload(inv),
                 }} />
               )}
             </div>

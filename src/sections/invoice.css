@@ -1,0 +1,71 @@
+/* Faktura VAT na firmę — the checkbox + panel in the DANE step (components/InvoiceFields.jsx).
+   The inputs reuse the configurator's own field classes (.fl-field / .ri-field / .zk-field / .zw-field). */
+.inv { --inv-acc: var(--red); --inv-ink: var(--text, #14161a); --inv-mut: var(--muted, #6c7075); --inv-line: var(--line, #e3e5e8);
+  margin-top: 18px; border: 1.5px solid var(--inv-line); background: #fff; position: relative; overflow: hidden;
+  transition: border-color .3s, box-shadow .3s; }
+.inv--ri { --inv-acc: var(--ice, #5ec8f0); --inv-ink: var(--deep, #08222f); --inv-mut: #55707d; --inv-line: var(--frost-2, #d6eaf2); }
+.inv--fl { --inv-h: 45px; }
+.inv--zw { --inv-acc: var(--pc, #c9a227); --inv-line: var(--ivory-2, #e6dfcf); }
+.inv::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--inv-acc);
+  transform: scaleY(0); transform-origin: top; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+.inv.is-on { border-color: var(--inv-acc); box-shadow: 0 14px 34px -22px rgba(0,0,0,.35); }
+.inv.is-on::before { transform: scaleY(1); }
+
+/* the toggle row */
+.inv-toggle { display: flex; align-items: center; gap: 14px; padding: 15px 18px; cursor: pointer; user-select: none; }
+.inv-toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.inv-toggle__box { flex: 0 0 auto; width: 22px; height: 22px; border: 2px solid var(--inv-line); background: #fff; display: grid; place-items: center;
+  transition: background .2s, border-color .2s, transform .2s; }
+.inv-toggle__box svg { width: 14px; height: 14px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: square;
+  stroke-dasharray: 16; stroke-dashoffset: 16; transition: stroke-dashoffset .3s .05s ease-out; }
+.inv-toggle:hover .inv-toggle__box { border-color: var(--inv-acc); }
+.inv-toggle input:focus-visible + .inv-toggle__box { outline: 2px solid var(--inv-acc); outline-offset: 2px; }
+.inv.is-on .inv-toggle__box { background: var(--inv-acc); border-color: var(--inv-acc); transform: scale(1.06); }
+.inv.is-on .inv-toggle__box svg { stroke-dashoffset: 0; }
+.inv-toggle__txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.inv-toggle__txt b { font: 800 12.5px/1.2 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--inv-ink); }
+.inv-toggle__txt small { font: 500 12.5px/1.35 var(--font-body); color: var(--inv-mut); }
+
+/* the panel opens with a height animation (grid 0fr → 1fr), the fields slide in one after another */
+.inv-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .45s cubic-bezier(.2,.8,.2,1); }
+.inv.is-on .inv-panel { grid-template-rows: 1fr; }
+.inv-panel__in { min-height: 0; overflow: hidden; padding: 0 18px; transition: padding .45s cubic-bezier(.2,.8,.2,1); }
+.inv.is-on .inv-panel__in { padding: 2px 18px 18px; }
+.inv-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 14px; }
+.inv-grid > * { opacity: 0; transform: translateY(10px); transition: opacity .35s, transform .35s; }
+.inv.is-on .inv-grid > * { opacity: 1; transform: none; }
+.inv.is-on .inv-grid > :nth-child(2) { transition-delay: .06s; }
+.inv.is-on .inv-grid > :nth-child(3) { transition-delay: .12s; }
+.inv.is-on .inv-grid > :nth-child(4) { transition-delay: .18s; }
+.inv.is-on .inv-grid > :nth-child(5) { transition-delay: .24s; }
+.inv.is-on .inv-grid > :nth-child(6) { transition-delay: .3s; }
+.inv-nip, .inv-full, .inv-msg { grid-column: 1 / -1; }
+.inv-field { min-width: 0; }
+.inv-field input[aria-invalid="true"] { border-color: var(--red); background: rgba(227,6,19,.04); }
+
+.inv-nip { display: flex; align-items: flex-end; gap: 10px; }
+.inv-nip .inv-field { flex: 1; }
+.inv-fetch { flex: 0 0 auto; height: var(--inv-h, 49px); padding: 0 18px; border: 1.5px solid var(--inv-ink); background: var(--inv-ink); color: #fff; cursor: pointer;
+  font: 800 11px/1 var(--font-display); letter-spacing: .12em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px;
+  transition: background .2s, color .2s, opacity .2s; }
+.inv-fetch:hover:not(:disabled) { background: var(--inv-acc); border-color: var(--inv-acc); }
+.inv-fetch:disabled { opacity: .35; cursor: default; }
+.inv-spin { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: inv-spin .7s linear infinite; }
+@keyframes inv-spin { to { transform: rotate(360deg); } }
+
+.inv-msg { margin: -4px 0 0; font: 600 12.5px/1.4 var(--font-body); padding-left: 10px; border-left: 3px solid; animation: inv-in .3s ease-out; }
+.inv-msg.is-ok { color: #178a55; border-color: #21b573; }
+.inv-msg.is-bad { color: var(--red); border-color: var(--red); }
+@keyframes inv-in { from { opacity: 0; transform: translateX(-6px); } }
+.inv-note { margin: 14px 0 0; font: 500 12px/1.45 var(--font-body); color: var(--inv-mut); }
+
+@media (max-width: 560px) {
+  .inv-toggle { padding: 14px; gap: 12px; }
+  .inv-panel__in, .inv.is-on .inv-panel__in { padding-left: 14px; padding-right: 14px; }
+  .inv-grid { grid-template-columns: minmax(0, 1fr); }
+  .inv-nip { flex-direction: column; align-items: stretch; }
+  .inv-fetch { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inv-panel, .inv-panel__in, .inv-grid > *, .inv::before { transition: none !important; }
+}

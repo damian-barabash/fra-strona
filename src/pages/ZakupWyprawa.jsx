@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useStore } from "../lib/store";
 import StepTag from "../components/StepTag";
+import InvoiceFields from "../components/InvoiceFields";
+import { EMPTY_INVOICE, invoiceProblem, invoicePayload } from "../lib/invoice";
 import { fmtGross, fmtMoney } from "../lib/vat";
 import { useDiscount } from "../lib/discount";
 import { DiscountField, DiscountLines } from "../components/Discount";
@@ -34,6 +36,7 @@ function ZakupWyprawaFlow() {
   const trip = pkg ? products.find((x) => x.slug === pkg.product_slug) : null;
 
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
+  const [inv, setInv] = useState(EMPTY_INVOICE);
   const [persons, setPersons] = useState(1);
   const [step, setStep] = useState("dane");
   const [err, setErr] = useState("");
@@ -61,9 +64,10 @@ function ZakupWyprawaFlow() {
 
   const style = { ["--pc"]: trip.color || "#c9a227" };
   const total = (pkg.price || 0) * persons;
-  const valid = form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim();
+  const payerOk = form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim();
+  const valid = !!(payerOk && !invoiceProblem(inv));
   const goPay = () => {
-    if (!valid) { setErr(t("zak.err")); return; }
+    if (!valid) { setErr(payerOk ? t(invoiceProblem(inv)) : t("zak.err")); return; }
     setErr(""); setCart(item); setStep("platnosc");
   };
 
@@ -115,6 +119,7 @@ function ZakupWyprawaFlow() {
                       <label className="zw-field zw-field--full"><span>{t("flota.bk.note")}</span>
                         <textarea rows={3} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                     </div>
+                    <InvoiceFields value={inv} onChange={setInv} f="zw" />
 
                     <DiscountField d={disc} preview={pv} />
 
@@ -130,7 +135,7 @@ function ZakupWyprawaFlow() {
                 ) : (
                   <>
                     <StepTag n={2} of={2} title={t("flota.bk.s4")} />
-                    <PayTrip pkg={pkg} trip={trip} persons={persons} total={total} form={form}
+                    <PayTrip pkg={pkg} trip={trip} persons={persons} total={total} form={form} inv={inv}
                       t={t} create={createTripBooking} code={pv?.ok ? disc.code?.code : undefined} dropCode={disc.clear} />
                   </>
                 )}
@@ -166,8 +171,8 @@ function ZakupWyprawaFlow() {
 }
 
 /* payment — a luxury "sealing" animation, then the order + Tpay transaction and the gateway */
-function PayTrip({ pkg, persons, form, t, create, code, dropCode }) {
-  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, { package_id: pkg.id, persons, discount_code: code, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note }, { dropCode });
+function PayTrip({ pkg, persons, form, inv, t, create, code, dropCode }) {
+  const { phase, fill, err, retry, payWithoutCode } = usePayRedirect(create, { package_id: pkg.id, persons, discount_code: code, full_name: form.full_name, email: form.email, phone: form.phone, note: form.note, invoice: invoicePayload(inv) }, { dropCode });
   return (
     <div className="zw-pay">
       <div className="zw-seal" style={{ ["--f"]: `${fill}%` }}>

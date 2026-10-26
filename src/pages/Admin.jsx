@@ -16,6 +16,7 @@ import { postDate, postState, todayIso } from "../lib/blog";
 import { plainText, wordCount } from "../lib/richtext";
 import "./admin.css";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
+import { fmtNip } from "../lib/invoice";
 
 /* =====================================================================================
    PANEL FRA — light dashboard: sidebar with icons, KPI cards + charts on the home screen,
@@ -458,7 +459,7 @@ function OrdersTab({ only }) {
             <div key={b.id} className={`adm-tr ${b.status === "pending" ? "is-pending" : ""} ${b.is_test ? "is-test" : ""}`}>
               <span className="adm-tr__no">#{b.number}{b.is_test && <i className="adm-badge adm-badge--test">TEST</i>}</span>
               <span className="adm-tr__date">{when(b.created_at)}</span>
-              <span className="adm-tr__who"><b>{b.full_name}</b><small>{b.email}</small></span>
+              <span className="adm-tr__who"><b>{b.full_name}{b.invoice?.nip && <i className="adm-badge adm-badge--fv" title={`Faktura VAT: ${b.invoice.company}`}>FV</i>}</b><small>{b.invoice?.nip ? b.invoice.company : b.email}</small></span>
               <span className="adm-tr__what"><span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span><b>{b.car_name || b.product_name}</b><small>{b.sessions ? `${b.sessions} sesji · ` : ""}{b.term_label || b.package_name || ""}{b.voucher_code ? ` · ${b.voucher_code}` : ""}</small></span>
               <span className="adm-tr__sum">{Number(b.discount_pln) > 0
                 ? <><b>{money2(b.amount_pln)}</b><small>kod {b.discount_code} −{money2(b.discount_pln)} · {money(b)} netto</small></>
@@ -517,6 +518,7 @@ function OrderDrawer({ id, onClose, onChanged }) {
               <section>
                 <h5>Klient</h5>
                 <dl><div><dt>Imię i nazwisko</dt><dd>{o.full_name}</dd></div><div><dt>E-mail</dt><dd><a href={`mailto:${o.email}`}>{o.email}</a></dd></div><div><dt>Telefon</dt><dd><a href={`tel:${o.phone}`}>{o.phone}</a></dd></div>{o.note && <div><dt>Uwagi</dt><dd>{o.note}</dd></div>}{o.status === "paid" && <div><dt>Performance Lab</dt><dd>{fplLabel(o.meta?.fpl)}</dd></div>}</dl>
+                {o.invoice?.nip && <div className="adm-doc__fv"><span>FAKTURA VAT NA FIRMĘ</span><b>{o.invoice.company}</b><small>NIP {fmtNip(o.invoice.nip)} · <button type="button" className="adm-doc__copy" onClick={() => navigator.clipboard?.writeText(o.invoice.nip)}>kopiuj NIP</button></small><small>{o.invoice.street}, {o.invoice.postal} {o.invoice.city}</small></div>}
               </section>
               <section>
                 <h5>Przedmiot</h5>

@@ -85,6 +85,18 @@ export async function fulfillOrder(orderId: string, paidAmount?: number, method?
   return { already: false, order: upd };
 }
 
+/* faktura VAT na firmę — the team issues it by hand, the customer sees which details it will carry */
+const fmtNip = (n: string) => (n && n.length === 10 ? `${n.slice(0, 3)}-${n.slice(3, 6)}-${n.slice(6, 8)}-${n.slice(8)}` : n || "");
+function invoiceBox(inv: any, staff: boolean) {
+  if (!inv?.nip) return "";
+  const lines = `<b>${esc(inv.company)}</b><br>NIP: ${esc(fmtNip(inv.nip))}<br>${esc(inv.street)}, ${esc(inv.postal)} ${esc(inv.city)}`;
+  return `<div style="margin:18px 0;padding:16px 18px;background:#f6f7f8;border-left:4px solid #e30613">
+    <div style="color:#e30613;font-size:10px;letter-spacing:2px;font-weight:bold">${staff ? "KLIENT PROSI O FAKTURĘ VAT" : "FAKTURA VAT NA DANE"}</div>
+    <div style="font-size:14px;line-height:1.7;margin-top:6px">${lines}</div>
+    ${staff ? "" : `<div style="color:#6c7075;font-size:12px;margin-top:6px">Fakturę wyślemy osobno na ten adres e-mail.</div>`}
+  </div>`;
+}
+
 export async function sendOrderMails(o: any) {
   const isVoucher = o.kind === "voucher";
   const details = summaryRows(o);
@@ -102,6 +114,7 @@ export async function sendOrderMails(o: any) {
     body += `<p>Płatność została zaksięgowana, a Twoje zamówienie jest potwierdzone. Skontaktujemy się przed terminem, żeby dopiąć szczegóły — do zobaczenia na torze!</p>`;
   }
   body += details;
+  body += invoiceBox(o.invoice, false);
   body += `<p style="font-size:13px;color:#6c7075">Pytania? Łukasz: <a href="tel:+48603102665" style="color:#e30613">+48 603 102 665</a> · <a href="mailto:racingacademy@fastline.pl" style="color:#e30613">racingacademy@fastline.pl</a></p>`;
   body += button(`${SITE}/kalendarz`, isVoucher ? "Zobacz terminy na torze" : "Kalendarz szkoleń");
   const T = o.is_test ? "[TEST] " : "";   // the hidden test product — never mistaken for a real sale
@@ -114,6 +127,7 @@ export async function sendOrderMails(o: any) {
   const staff = listOf(await cfg(toKey, "lukasz.kazmierczak@greywolfgroup.pl"));
   const sBody = `<p>${chip(o.is_test ? "ZAMÓWIENIE TESTOWE" : isVoucher ? "NOWY VOUCHER" : "NOWE ZAMÓWIENIE")}</p>
     ${details}
+    ${invoiceBox(o.invoice, true)}
     ${table([
       row("Klient", `<b>${esc(o.full_name)}</b>`),
       row("E-mail", `<a href="mailto:${esc(o.email)}" style="color:#e30613">${esc(o.email)}</a>`),
@@ -122,5 +136,5 @@ export async function sendOrderMails(o: any) {
       row("Opłacono", o.paid_at ? new Date(o.paid_at).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" }) : "—"),
     ].join(""))}
     ${button(`${SITE}/admin`, "Otwórz w panelu")}`;
-  await sendMail(staff, `${T}${isVoucher ? "Voucher" : "Zamówienie"} #${o.number} — ${o.full_name} — ${zl(o.total, o.currency)}`, shell(isVoucher ? `Voucher #${o.number}` : `Zamówienie #${o.number}`, sBody, { eyebrow: "PANEL SPRZEDAŻY" }), o.email);
+  await sendMail(staff, `${T}${isVoucher ? "Voucher" : "Zamówienie"} #${o.number} — ${o.full_name} — ${zl(o.total, o.currency)}${o.invoice?.nip ? " — FAKTURA" : ""}`, shell(isVoucher ? `Voucher #${o.number}` : `Zamówienie #${o.number}`, sBody, { eyebrow: "PANEL SPRZEDAŻY" }), o.email);
 }

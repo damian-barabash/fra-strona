@@ -11,6 +11,7 @@ import "../sections/platnosc.css";
 import { purchase } from "../lib/pixel";
 import { forgetDiscount } from "../lib/discount";
 import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
+import { fmtNip } from "../lib/invoice";
 
 const POLL_MS = 1800, GIVE_UP_MS = 90_000, CLUB_POLLS = 6;
 const FPL_LOGIN = "https://performancelab.fastlineracingacademy.pl/login";
@@ -174,6 +175,7 @@ function Receipt({ order, money, t }) {
       {order.package_name && <div className="pl-receipt__row"><span>{order.package_name}{order.persons > 1 ? ` · ${order.persons} os.` : ""}</span></div>}
       {order.voucher_for && <div className="pl-receipt__row"><span>Voucher dla: {order.voucher_for}</span></div>}
       {Number(order.discount_pln) > 0 && <div className="pl-receipt__row"><span>{t("disc.line")} · {order.discount_code}</span><b>−{fmtMoney(order.discount_pln)}</b></div>}
+      {order.invoice?.nip && <div className="pl-receipt__row"><span>{t("inv.line")} · {order.invoice.company} · NIP {fmtNip(order.invoice.nip)}</span></div>}
       <div className="pl-receipt__mail">{order.email}</div>
     </div>
   );

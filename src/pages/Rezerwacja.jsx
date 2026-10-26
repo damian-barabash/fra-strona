@@ -8,6 +8,8 @@ import ScrollProgress from "../sections/ScrollProgress";
 import CarSlider from "../sections/CarSlider";
 import ProductCard from "../components/ProductCard";
 import StepTag from "../components/StepTag";
+import InvoiceFields from "../components/InvoiceFields";
+import { EMPTY_INVOICE, invoiceProblem, invoicePayload } from "../lib/invoice";
 import { fmtGross } from "../lib/vat";
 import { Speedo, FuelTank } from "../components/Fuel";
 import { PACKAGES, packageOf, trackLabel, carPrice, customPrice, fmtZl, isPoznan } from "../lib/flota";
@@ -57,6 +59,7 @@ function RezerwacjaFlow() {
   const [sessions, setSessions] = useState(packageOf(sessionsQ) ? sessionsQ : null);
   const [carName, setCarName] = useState("");
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
+  const [inv, setInv] = useState(EMPTY_INVOICE);
   const [stepIdx, setStepIdx] = useState(0);
   const [err, setErr] = useState("");
 
@@ -92,13 +95,13 @@ function RezerwacjaFlow() {
     step === "termin" ? !!termSel :
     step === "pakiet" ? !!sessions :
     step === "produkt" ? true :
-    step === "dane" ? (form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim() && (!custom || carName.trim())) :
+    step === "dane" ? !!(form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim() && (!custom || carName.trim()) && !invoiceProblem(inv)) :
     true;
 
   const goNext = () => {
     if (!canNext) {
       setErr(step === "auto" ? "Wybierz auto." : step === "termin" ? "Wybierz termin." : step === "pakiet" ? "Wybierz pakiet."
-        : (custom && !carName.trim()) ? "Podaj model swojego auta." : "Uzupełnij poprawnie: imię i nazwisko, e-mail oraz telefon.");
+        : (custom && !carName.trim()) ? "Podaj model swojego auta." : invoiceProblem(inv) && form.full_name.trim() && /.+@.+\..+/.test(form.email) && form.phone.trim() ? t(invoiceProblem(inv)) : "Uzupełnij poprawnie: imię i nazwisko, e-mail oraz telefon.");
       return;
     }
     if (step === "produkt") addToCart();
@@ -235,6 +238,7 @@ function RezerwacjaFlow() {
                     <label className="fl-field fl-field--full"><span>{t("flota.bk.note")}</span>
                       <textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></label>
                   </div>
+                  <InvoiceFields value={inv} onChange={setInv} f="fl" />
                 </div>
               )}
 
@@ -247,7 +251,7 @@ function RezerwacjaFlow() {
                   car_id: custom ? null : carSel?.id, car_name: custom ? carName : carSel?.name, is_custom: custom, sessions,
                   term_id: (termSel && !termSel.noDate) ? termSel.id : null, track,
                   term_label: termSel?.noDate ? "Termin do ustalenia" : termSel ? `${termSel.location_pl || trackLabel(termSel.track, "pl")} · ${termSel.date} · ${termSel.time}` : "",
-                  full_name: form.full_name, email: form.email, phone: form.phone, note: form.note,
+                  full_name: form.full_name, email: form.email, phone: form.phone, note: form.note, invoice: invoicePayload(inv),
                 }} />
               )}
             </div>
