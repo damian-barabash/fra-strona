@@ -2,8 +2,9 @@
 // One-way: the site is the source, Google only shows it. Every change in the panel runs `gcalSync()` in the background, which rebuilds the wanted set of events from the database and
 // pushes only what changed (hash per event in `gcal_events`).
 //
-// Secrets: GCAL_SA = service-account JSON (raw or base64), optional GCAL_SUBJECT = a user of the
-// Workspace domain to act as (domain-wide delegation). Calendar id: app_config `gcal_id` (or GCAL_ID).
+// Secrets (one of): GCAL_OAUTH = {client_id, client_secret, refresh_token} (raw or base64) — the site acts
+// as a person who can edit the calendar (no Workspace admin needed); or GCAL_SA = service-account JSON,
+// optionally with GCAL_SUBJECT = a Workspace user to act as (domain-wide delegation). Calendar id: app_config `gcal_id` (or GCAL_ID).
 // Event ids are derived from the source key, so two syncs running at once never create a duplicate.
 import { db, cfg } from "./mail.ts";
 
@@ -23,11 +24,28 @@ const b64url = (b: ArrayBuffer | Uint8Array | string) => {
   let s = ""; bytes.forEach((x) => { s += String.fromCharCode(x); });
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 };
+type OAuth = { client_id: string; client_secret: string; refresh_token: string; token_uri?: string };
+function oauthKey(): OAuth | null {
+  const raw = (Deno.env.get("GCAL_OAUTH") ?? "").trim();
+  if (!raw) return null;
+  try { const o = JSON.parse(raw.startsWith("{") ? raw : atob(raw)); return o?.refresh_token ? o : null; } catch (_) { return null; }
+}
 let tokenCache: { token: string; exp: number } | null = null;
 async function accessToken(): Promise<string> {
   if (tokenCache && tokenCache.exp > Date.now() + 60_000) return tokenCache.token;
+  const oa = oauthKey();
+  if (oa) {
+    const r = await fetch(oa.token_uri || "https://oauth2.googleapis.com/token", {
+      method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: oa.refresh_token, client_id: oa.client_id, client_secret: oa.client_secret }),
+    });
+    const t = await r.json().catch(() => ({}));
+    if (!t.access_token) throw new Error(`token Google (konto): ${t.error_description || t.error || r.status} — trzeba ponownie zalogować konto Google`);
+    tokenCache = { token: t.access_token, exp: Date.now() + (t.expires_in ?? 3600) * 1000 };
+    return t.access_token;
+  }
   const sa = saKey();
-  if (!sa) throw new Error("brak sekretu GCAL_SA");
+  if (!sa) throw new Error("brak sekretu GCAL_OAUTH / GCAL_SA");
   const pem = sa.private_key.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "");
   const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
   const key = await crypto.subtle.importKey("pkcs8", der, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
@@ -48,7 +66,7 @@ async function accessToken(): Promise<string> {
 }
 
 async function calId() { return (Deno.env.get("GCAL_ID") ?? "").trim() || (await cfg("gcal_id", "")).trim(); }
-export async function gcalConfigured() { return !!saKey() && !!(await calId()); }
+export async function gcalConfigured() { return (!!oauthKey() || !!saKey()) && !!(await calId()); }
 
 /* ---------------- helpers ---------------- */
 const esc = (s: unknown) => String(s ?? "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] as string));
