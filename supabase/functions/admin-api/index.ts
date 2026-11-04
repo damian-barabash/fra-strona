@@ -4,6 +4,7 @@ import { db, cfg, listOf, sendMail, shell, table, row, chip, esc, zl } from "../
 import { tpayConfigured, tpayCreateTransaction, tpayToken, TPAY_API } from "../_shared/tpay.ts";
 import { fulfillOrder, sendOrderMails, VAT_RATE, gross, round2 } from "../_shared/orders.ts";
 import { syncToFpl } from "../_shared/fpl.ts";
+import { gcalSync, gcalLater, gcalConfigured } from "../_shared/gcal.ts";
 import { REASON, normCode, validCode, stateOf, findCode, fits, offFor, reserve, release, describeTarget, variantsOf, type Code } from "../_shared/discounts.ts";
 
 const cors = {
@@ -162,6 +163,7 @@ async function triggerDeploy() {
 }
 const background = (p: Promise<unknown>) => { try { (globalThis as any).EdgeRuntime.waitUntil(p); } catch (_) { /* local run: let it float */ } };
 
+const GCAL_TABLES = ["terms", "ice_windows", "products"];   // what the Google Calendar mirror is built from
 /* ---------------- auth ---------------- */
 type Admin = { id: string; login: string; name: string | null; role: string; perms: Record<string, boolean> | null; position?: string | null };
 async function auth(req: Request): Promise<Admin | null> {
@@ -188,7 +190,7 @@ const TABLE_PERM: Record<string, string> = {
 };
 // which permission a named action needs (prefix match); actions missing here are open to every admin (reads)
 const ACTION_PERM: [RegExp, string][] = [
-  [/^config\./, "settings"], [/^bookings\./, "orders"], [/^discounts\./, "discounts"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
+  [/^config\./, "settings"], [/^gcal\./, "settings"], [/^bookings\./, "orders"], [/^discounts\./, "discounts"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
 ];
 const UPLOAD_PERMS = ["content", "products", "cars", "terms", "tracks", "instructors", "blog"];
 function allowed(a: Admin, action: string, table: string): boolean {
@@ -203,7 +205,7 @@ function allowed(a: Admin, action: string, table: string): boolean {
 }
 
 /* ---------------- audit log ---------------- */
-const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|fplSync|cancel|read|create|update|generate|release)$/;
+const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|fplSync|cancel|read|create|update|generate|release|sync)$/;
 async function audit(req: Request, a: Admin, action: string, target: string | null, details: unknown) {
   try {
     const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
@@ -504,7 +506,7 @@ async function orderStatus(p: any) {
 }
 
 /* ---------------- ADMIN extras ---------------- */
-const CONFIG_KEYS = ["contact_to", "firma_to", "voucher_to", "order_to", "contact_from", "eur_pln"];
+const CONFIG_KEYS = ["contact_to", "firma_to", "voucher_to", "order_to", "contact_from", "eur_pln", "gcal_id"];
 
 // test orders (is_test — the hidden test product) stay out of revenue, paid and pending numbers
 async function stats() {
@@ -690,6 +692,14 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
       return json({ ok: true, rows: data ?? [], admins: admins ?? [] });
     }
 
+    // Google Calendar mirror (terms, Laponia seasons, trips)
+    if (action === "gcal.status") {
+      const raw = await cfg("gcal_status", "");
+      let last = null; try { last = raw ? JSON.parse(raw) : null; } catch (_) { /* old value */ }
+      return json({ ok: true, configured: await gcalConfigured(), last });
+    }
+    if (action === "gcal.sync") return json({ ok: true, result: await gcalSync(true) });
+
     if (action === "config.get") {
       const { data } = await db.from("app_config").select("key, value").in("key", CONFIG_KEYS);
       return json({ ok: true, rows: data ?? [] });
@@ -697,7 +707,10 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
     if (action === "config.set") {
       const key = String(payload?.key ?? ""), value = String(payload?.value ?? "").slice(0, 2000);
       if (!CONFIG_KEYS.includes(key)) return json({ ok: false, error: "bad key" }, 400);
+      const prev = key === "gcal_id" ? await cfg("gcal_id", "") : "";
       const { error } = await db.from("app_config").upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+      // another calendar: the old event map means nothing there — start clean and push everything
+      if (!error && key === "gcal_id" && prev.trim() !== value.trim()) { await db.from("gcal_events").delete().neq("key", ""); gcalLater(); }
       return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
     }
 
@@ -822,11 +835,13 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
           if (postShort.length || bodyChanged) background(translateRich(table, res.data, postShort, bodyChanged));
           if (table === "posts") background(triggerDeploy());
         }
+        if (!res.error && GCAL_TABLES.includes(table)) gcalLater();
         return res.error ? json({ ok: false, error: res.error.message }, 500) : json({ ok: true, row: res.data });
       }
       if (op === "delete") {
         const { error } = await db.from(table).delete().eq("id", payload.id);
         if (table === "posts" && !error) background(triggerDeploy());
+        if (!error && GCAL_TABLES.includes(table)) gcalLater();
         return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
       }
       if (op === "reorder") {

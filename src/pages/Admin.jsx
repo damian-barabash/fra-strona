@@ -630,6 +630,7 @@ const CONFIG_FIELDS = [
   { k: "firma_to", l: "E-maile z zapytań firmowych" },
   { k: "contact_from", l: "Nadawca wiadomości (Resend)", hint: "np. Fastline Racing Academy <kontakt.na.stronie@fastlineracingacademy.pl>" },
   { k: "eur_pln", l: "Kurs EUR → PLN do płatności (Laponia, wyprawy)", hint: "np. 4.35 — kwota w euro × kurs = kwota do zapłaty w Tpay" },
+  { k: "gcal_id", l: "Kalendarz Google — ID kalendarza", hint: "terminy, sezon Laponii i wyprawy trafiają tam same; ID z ustawień kalendarza → „Integracja kalendarza”" },
 ];
 function SettingsTab() {
   const { adminCall } = useStore();
@@ -652,10 +653,37 @@ function SettingsTab() {
             {f.hint && <small className="adm-hint">{f.hint}</small>}
           </label>
         ))}
+        <GcalCard />
         <div className="adm-note" style={{ marginTop: 6 }}>
           Hasło administratora, klucze Tpay i Resend zmienia się po stronie serwera (Supabase). Prosimy o kontakt z administratorem technicznym.
         </div>
       </div>
+    </div>
+  );
+}
+
+/* Google Calendar mirror: last sync + "sync now" */
+function GcalCard() {
+  const { adminCall } = useStore();
+  const [st, setSt] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => adminCall("gcal.status").then((r) => r.ok && setSt(r));
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  const sync = async () => { setBusy(true); await adminCall("gcal.sync"); await load(); setBusy(false); };
+  if (!st) return null;
+  const l = st.last;
+  const when = l?.at ? new Date(l.at).toLocaleString("pl-PL", { dateStyle: "short", timeStyle: "short" }) : "";
+  return (
+    <div className={`adm-gcal ${l && !l.ok && !l.skipped ? "adm-gcal--err" : ""}`}>
+      <div className="adm-gcal__txt">
+        <b>Synchronizacja z Kalendarzem Google</b>
+        {!st.configured ? <span>Nie skonfigurowana — brak ID kalendarza albo klucza serwera.</span>
+          : !l ? <span>Jeszcze nie synchronizowano.</span>
+          : l.ok ? <span>✓ {when} · utworzone {l.created}, zmienione {l.updated}, usunięte {l.deleted}, bez zmian {l.same}</span>
+          : <span>✕ {when} · {l.error}</span>}
+        <small className="adm-hint">Każda zmiana w Terminach, sezonie Laponii i wyprawach trafia do Google sama, w kilka sekund.</small>
+      </div>
+      <button className="adm-btn adm-btn--sm" disabled={busy || !st.configured} onClick={sync}>{busy ? "Synchronizuję…" : "Synchronizuj teraz"}</button>
     </div>
   );
 }
@@ -1246,6 +1274,7 @@ const ACTION_LABEL = (a, tgt) => {
   if (a === "content.save") return ["Edycja treści strony", "info"];
   if (a === "media.upload") return ["Wgranie pliku", "info"];
   if (a === "config.set") return ["Zmiana ustawienia", "warn"];
+  if (a === "gcal.sync") return ["Synchronizacja z Kalendarzem Google", "info"];
   if (a === "bookings.markPaid") return ["Oznaczono zamówienie jako opłacone", "ok"];
   if (a === "bookings.cancel") return ["Anulowano zamówienie", "warn"];
   if (a === "bookings.delete") return ["Usunięto zamówienie", "bad"];
