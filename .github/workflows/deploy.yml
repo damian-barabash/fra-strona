@@ -28,6 +28,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      # Storage bucket "media" copied into public/media by scripts/media-mirror.mjs (part of npm run build).
+      # Kept between runs so only new uploads are downloaded — the copy must not eat the Supabase egress it saves.
+      - uses: actions/cache@v4
+        with:
+          path: public/media
+          key: media-${{ github.run_id }}
+          restore-keys: media-
       # Chromium for the SEO prerender step (scripts/postbuild.mjs); the build still succeeds without it
       - run: npx playwright install --with-deps chromium
       - run: npm run build

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/postbuild.mjs",
+    "build": "node scripts/media-mirror.mjs && vite build && node scripts/postbuild.mjs",
     "build:spa": "vite build",
     "preview": "vite preview --port 4173",
     "test:e2e": "playwright test"

@@ -40,6 +40,101 @@
     </script>
   </head>
   <body>
+    <!-- First-entry preloader (once per visit). Shown before any JS bundle loads; on the home page it waits
+         until the hero video can play without stalling (max 8 s), elsewhere until the page markup and fonts are ready (max 4 s).
+         Never for bots / prerender / tests (navigator.webdriver) or in the panel. Force: localStorage fra_pre_force=1 -->
+    <style>
+      .fpre{position:fixed;inset:0;z-index:2147483000;background:#0d0d0d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(26px,4vh,44px);font-family:Montserrat,Arial,sans-serif;overflow:hidden;transition:transform .8s cubic-bezier(.7,0,.2,1),opacity .8s}
+      .fpre::before{content:"";position:absolute;inset:-20%;background:repeating-linear-gradient(115deg,transparent 0 46px,rgba(255,255,255,.025) 46px 48px);animation:fpreLines 1.6s linear infinite}
+      .fpre::after{content:"";position:absolute;left:0;right:0;bottom:0;height:10px;background:conic-gradient(#fff 25%,#0d0d0d 0 50%,#fff 0 75%,#0d0d0d 0) 0 0/10px 10px;opacity:.16}
+      .fpre__logo{position:relative;width:clamp(170px,22vw,250px);height:auto;opacity:0;transform:translateY(10px);animation:fpreIn .7s .05s forwards cubic-bezier(.16,.8,.3,1)}
+      .fpre__gantry{position:relative;display:flex;gap:clamp(8px,1.4vw,14px);padding:12px clamp(12px,1.8vw,18px);background:#1b1c1f;border-top:3px solid #2c2d31;opacity:0;animation:fpreIn .7s .15s forwards cubic-bezier(.16,.8,.3,1)}
+      .fpre__pod{display:flex;flex-direction:column;gap:7px;padding:7px;background:#08080a}
+      .fpre__pod i{display:block;width:clamp(18px,2.6vw,30px);aspect-ratio:1;border-radius:50%;background:#2a0306;box-shadow:inset 0 2px 4px rgba(0,0,0,.7);transition:background .18s,box-shadow .18s}
+      .fpre__pod.on i{background:radial-gradient(circle at 38% 34%,#ff7a7f,#e30613 55%,#a3000b);box-shadow:0 0 18px rgba(227,6,19,.85),0 0 4px #ff3b45}
+      .fpre__bar{position:relative;width:min(420px,76vw);height:4px;background:rgba(255,255,255,.12);opacity:0;animation:fpreIn .7s .25s forwards}
+      .fpre__fill{position:absolute;inset:0 auto 0 0;width:0;background:#e30613;box-shadow:0 0 12px rgba(227,6,19,.7)}
+      .fpre__fill::after{content:"";position:absolute;right:-18px;top:-4px;width:18px;height:12px;background:conic-gradient(#fff 25%,#0d0d0d 0 50%,#fff 0 75%,#0d0d0d 0) 0 0/6px 6px}
+      .fpre__meta{position:relative;display:flex;justify-content:space-between;width:min(420px,76vw);margin-top:-18px;font-size:11px;font-weight:800;letter-spacing:.22em;opacity:0;animation:fpreIn .7s .3s forwards}
+      .fpre__meta b{font-weight:900;color:#e30613;font-variant-numeric:tabular-nums;letter-spacing:.08em}
+      .fpre.out .fpre__pod i{background:#2a0306;box-shadow:inset 0 2px 4px rgba(0,0,0,.7);transition-duration:.05s}
+      .fpre.go{transform:translateX(104%) skewX(-8deg)}
+      @keyframes fpreIn{to{opacity:1;transform:none}}
+      @keyframes fpreLines{to{transform:translateX(98px)}}
+      @media (prefers-reduced-motion:reduce){.fpre::before{animation:none}.fpre.go{transform:none;opacity:0}}
+      html.fra-pre,html.fra-pre body{overflow:hidden}
+      html.fra-pre .hero *{animation-play-state:paused!important}
+    </style>
+    <script>
+      (function () {
+        try {
+          var force = localStorage.getItem("fra_pre_force") === "1";
+          var bot = navigator.webdriver || /bot|crawl|spider|slurp|lighthouse|headless|prerender/i.test(navigator.userAgent || "");
+          var path = location.pathname.replace(/\/+$/, "") || "/";
+          if (!force && (bot || sessionStorage.getItem("fra_pre") || /^\/admin/.test(path))) return;
+          sessionStorage.setItem("fra_pre", "1");
+        } catch (e) { return; }
+        var home = path === "/";
+        var en = (function () { try { return localStorage.getItem("fra_lang") === "en"; } catch (e) { return false; } })();
+        var root = document.documentElement;
+        var el = document.createElement("div");
+        el.className = "fpre";
+        el.setAttribute("role", "progressbar");
+        el.setAttribute("aria-label", en ? "Loading" : "Ładowanie strony");
+        var pods = "";
+        for (var k = 0; k < 5; k++) pods += '<span class="fpre__pod"><i></i><i></i></span>';
+        el.innerHTML = '<img class="fpre__logo" src="/assets/ui/logo_dark.webp" alt="Fastline Racing Academy">' +
+          '<div class="fpre__gantry">' + pods + '</div>' +
+          '<div class="fpre__bar"><span class="fpre__fill"></span></div>' +
+          '<div class="fpre__meta"><span>' + (en ? "WARMING UP THE TYRES" : "ROZGRZEWAMY OPONY") + '</span><b>0%</b></div>';
+        document.body.appendChild(el);
+        root.classList.add("fra-pre");
+        var fill = el.querySelector(".fpre__fill"), num = el.querySelector("b"), podEls = el.querySelectorAll(".fpre__pod");
+        var t0 = Date.now(), MIN = home ? 1300 : 900, MAX = home ? 8000 : 4000, NEED = 6;   // NEED = seconds of hero video buffered ahead
+        var shown = 0, done = false, ready = false, video = null;
+        function target() {
+          var el2 = Date.now() - t0;
+          var creep = 90 * (1 - Math.exp(-el2 / (home ? 2600 : 1200)));      // never looks stuck
+          if (!home) return ready ? 100 : Math.min(creep, 90);
+          var v = document.querySelector(".hero video[src]");
+          if (!v) return Math.min(creep, 30);
+          if (v !== video) { video = v; v.addEventListener("canplaythrough", function () { ready = true; }); }
+          if (v.readyState >= 4) ready = true;
+          var buf = 0;
+          try { for (var i = 0; i < v.buffered.length; i++) if (v.buffered.start(i) <= v.currentTime + 0.1) buf = Math.max(buf, v.buffered.end(i) - v.currentTime); } catch (e) {}
+          var need = Math.min(NEED, (v.duration || NEED) - 0.2);
+          if (buf >= need) ready = true;
+          return ready ? 100 : Math.max(Math.min(creep, 30), 30 + 68 * Math.min(1, buf / need));
+        }
+        if (!home) {                                                         // no hero video: page markup + fonts are enough
+          var fin = function () { (document.fonts && document.fonts.ready || Promise.resolve()).then(function () { ready = true; }); };
+          if (document.readyState !== "loading") fin(); else addEventListener("DOMContentLoaded", fin);
+        }
+        function finish() {
+          done = true;
+          var v = document.querySelector(".hero video");
+          if (v) { try { v.currentTime = 0; v.play().catch(function () {}); } catch (e) {} }
+          el.classList.add("out");                                           // lights out…
+          setTimeout(function () {
+            el.classList.add("go");                                          // …and away
+            root.classList.remove("fra-pre");
+            window.dispatchEvent(new Event("fra:preloaded"));
+            setTimeout(function () { el.remove(); }, 900);
+          }, 380);
+        }
+        (function tick() {
+          if (done) return;
+          var goal = Date.now() - t0 > MAX ? 100 : target();
+          shown += (goal - shown) * (goal >= 100 ? 0.22 : 0.08);
+          if (goal >= 100 && shown > 99.4) shown = 100;
+          fill.style.width = shown + "%";
+          num.textContent = Math.round(shown) + "%";
+          for (var j = 0; j < 5; j++) podEls[j].classList.toggle("on", shown >= (j + 1) * 19);
+          if (shown >= 100 && Date.now() - t0 >= MIN) { setTimeout(finish, 260); return; }
+          requestAnimationFrame(tick);
+        })();
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

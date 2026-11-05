@@ -13,7 +13,7 @@ import { carPrice, fmtZl } from "../lib/flota";
 import { tint, isLight } from "../lib/util";
 import "../sections/auto.css";
 import { viewContent } from "../lib/pixel";
-import { useSeo, breadcrumbs, SITE, clip } from "../lib/seo";
+import { useSeo, breadcrumbs, SITE, clip, abs } from "../lib/seo";
 
 /* /flota/:slug — one car. Fully CMS-driven (panel → Samochody): sport cars link to the configurator
    and the voucher, race cars (category "race") are read-only — no prices, contact instead. */
@@ -30,7 +30,7 @@ export default function Auto() {
     image: car ? (Array.isArray(car.photos) && car.photos[0]) || car.png : undefined,
     type: "product",
     jsonld: car ? [
-      { "@type": "Product", "@id": `${SITE}/flota/${car.slug}#product`, name: `${car.name} — szkolenie jazdy na torze`, description: clip(car.description_pl || car.intro_pl, 300), image: (Array.isArray(car.photos) ? car.photos : [car.png]).filter(Boolean).map((u) => `${SITE}${u}`), brand: { "@type": "Brand", name: car.name.split(" ")[0] }, category: car.category === "race" ? "Samochód wyścigowy" : "Szkolenie jazdy sportowej",
+      { "@type": "Product", "@id": `${SITE}/flota/${car.slug}#product`, name: `${car.name} — szkolenie jazdy na torze`, description: clip(car.description_pl || car.intro_pl, 300), image: (Array.isArray(car.photos) ? car.photos : [car.png]).filter(Boolean).map(abs), brand: { "@type": "Brand", name: car.name.split(" ")[0] }, category: car.category === "race" ? "Samochód wyścigowy" : "Szkolenie jazdy sportowej",
         ...(car.category !== "race" && car.price_3 ? { offers: { "@type": "AggregateOffer", priceCurrency: "PLN", lowPrice: car.price_3, highPrice: car.price_9 || car.price_3, offerCount: 3, availability: "https://schema.org/InStock", url: `${SITE}/rezerwacja`, seller: { "@id": `${SITE}/#organization` } } } : {}) },
       breadcrumbs([{ name: "Flota", path: "/flota" }, { name: car.name, path: `/flota/${car.slug}` }]),
     ] : undefined,

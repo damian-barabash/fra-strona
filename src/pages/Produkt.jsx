@@ -13,7 +13,7 @@ import D2R from "./D2R";
 import Wyprawa from "./Wyprawa";
 import "../sections/produkty.css";
 import { viewContent } from "../lib/pixel";
-import { useSeo, breadcrumbs, SITE, clip, nice } from "../lib/seo";
+import { useSeo, breadcrumbs, SITE, clip, nice, abs } from "../lib/seo";
 
 const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
 /* a field may start with "## Own heading" — the page then shows that instead of the default label */
@@ -40,7 +40,7 @@ export default function Produkt() {
     type: "product",
     noindex: test || waiting,
     jsonld: p && !test ? [
-      { "@type": p.theme === "wyprawa" ? "TouristTrip" : "Course", "@id": `${SITE}/produkty/${p.slug}#product`, name: p.title_pl, description: clip(`${p.excerpt_pl || ""} ${p.intro_pl || ""}`, 300), image: p.photo ? `${SITE}${p.photo}` : `${SITE}/og.jpg`, url: `${SITE}/produkty/${p.slug}`, provider: { "@id": `${SITE}/#organization` },
+      { "@type": p.theme === "wyprawa" ? "TouristTrip" : "Course", "@id": `${SITE}/produkty/${p.slug}#product`, name: p.title_pl, description: clip(`${p.excerpt_pl || ""} ${p.intro_pl || ""}`, 300), image: abs(p.photo), url: `${SITE}/produkty/${p.slug}`, provider: { "@id": `${SITE}/#organization` },
         ...(p.theme !== "wyprawa" ? { courseMode: "Onsite", hasCourseInstance: { "@type": "CourseInstance", courseMode: "Onsite", location: p.places_pl || "Tor Łódź / Tor Poznań" } } : {}),
         ...(p.price ? { offers: { "@type": "Offer", price: p.price, priceCurrency: p.currency || "PLN", availability: "https://schema.org/InStock", url: `${SITE}/produkty/${p.slug}`, seller: { "@id": `${SITE}/#organization` } } } : {}) },
       breadcrumbs([{ name: "Oferta", path: "/oferta" }, { name: p.title_pl, path: `/produkty/${p.slug}` }]),

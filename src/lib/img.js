@@ -1,5 +1,5 @@
 import VARIANTS from "./img-variants.json";
-import { SUPABASE_URL } from "../config";
+import { STORAGE, LOCAL } from "./media";
 
 /* Responsive images without touching the markup. scripts/img-variants.mjs writes smaller copies
    (`<name>@480.webp`, `@960`, `@1600`) next to each image and lists them in img-variants.json
@@ -9,7 +9,6 @@ import { SUPABASE_URL } from "../config";
    Uploads from the panel carry their width in the file name (`…_w2000.webp`, copies `…_w2000@480.webp`;
    Supabase Storage rejects `~` in object names). */
 export const WIDTHS = [480, 960, 1600];
-const STORAGE = `${SUPABASE_URL}/storage/v1/object/public/media/`;
 const SITE = /^https?:\/\/(?:www\.)?(?:[a-z0-9-]+\.)?fastlineracingacademy\.pl(?=\/)/;
 const stem = (u) => u.replace(/\.(webp|jpe?g|png)$/i, "");
 
@@ -17,6 +16,7 @@ function widthsOf(src) {
   const own = src.match(/_w(\d{3,5})\.webp$/);          // panel upload: "…_w2000.webp"
   if (own) { const w = Number(own[1]); return [w, ...WIDTHS.filter((v) => v < w * 0.92)]; }
   if (src.startsWith(STORAGE)) return VARIANTS[`st:${src.slice(STORAGE.length)}`];
+  if (src.startsWith(LOCAL)) return VARIANTS[`st:${src.slice(LOCAL.length)}`];   // Storage file copied to Pages (lib/media.js)
   return VARIANTS[src.replace(SITE, "")];
 }
 

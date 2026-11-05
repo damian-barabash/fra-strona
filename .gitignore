@@ -11,3 +11,6 @@ test-results
 .vite
 backup
 supabase/.temp/
+# Storage bucket copied at build time (scripts/media-mirror.mjs)
+public/media/
+src/lib/media-mirror.json

@@ -1,3 +1,4 @@
+import { local } from "./media";
 import { useEffect } from "react";
 
 /* Per-page SEO: title, description, canonical, Open Graph, Twitter, robots and JSON-LD.
@@ -27,7 +28,12 @@ const ORG = {
   address: { "@type": "PostalAddress", streetAddress: "ul. Wita Stwosza 48", addressLocality: "Warszawa", addressCountry: "PL" },
 };
 
-export const abs = (u) => (!u ? OG_DEFAULT : /^https?:/i.test(u) ? u : `${SITE}${u.startsWith("/") ? "" : "/"}${u}`);
+/** absolute URL of a page picture; a Storage file copied to GitHub Pages is pointed at the copy (lib/media.js) */
+export const abs = (u) => {
+  if (!u) return OG_DEFAULT;
+  const l = local(u);
+  return /^https?:/i.test(l) ? l : `${SITE}${l.startsWith("/") ? "" : "/"}${l}`;
+};
 
 const strip = (s) => String(s || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 /** "SZKOLENIE JAZDY SPORTOWEJ" → "Szkolenie jazdy sportowej" (CMS titles are shouted; <title> should not be) */
