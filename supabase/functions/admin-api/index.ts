@@ -190,7 +190,7 @@ const TABLE_PERM: Record<string, string> = {
 };
 // which permission a named action needs (prefix match); actions missing here are open to every admin (reads)
 const ACTION_PERM: [RegExp, string][] = [
-  [/^config\./, "settings"], [/^gcal\./, "settings"], [/^bookings\./, "orders"], [/^discounts\./, "discounts"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
+  [/^config\./, "settings"], [/^gcal\./, "settings"], [/^bookings\./, "orders"], [/^gifts\./, "orders"], [/^discounts\./, "discounts"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
 ];
 const UPLOAD_PERMS = ["content", "products", "cars", "terms", "tracks", "instructors", "blog"];
 function allowed(a: Admin, action: string, table: string): boolean {
@@ -205,7 +205,7 @@ function allowed(a: Admin, action: string, table: string): boolean {
 }
 
 /* ---------------- audit log ---------------- */
-const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|fplSync|cancel|read|create|update|generate|release|sync)$/;
+const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|fplSync|cancel|read|create|update|generate|release|sync|ship|unship|use|unuse|mode)$/;
 async function audit(req: Request, a: Admin, action: string, target: string | null, details: unknown) {
   try {
     const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
@@ -242,25 +242,30 @@ const shortDesc = (o: any) => {
 const phoneOf = (s: string) => { const d = s.replace(/[^\d+]/g, ""); return /^\+?\d{9,15}$/.test(d) ? d : undefined; };
 
 /** Insert the pending booking and open the Tpay transaction. Returns what the browser needs. */
-async function startPayment(rowIn: Record<string, unknown>, p: any) {
+async function startPayment(rowIn: Record<string, unknown>, p: any, opts: { test?: boolean } = {}) {
   const row: Record<string, unknown> = { ...rowIn, id: crypto.randomUUID(), status: "pending", lang: p.lang === "en" ? "en" : "pl" };
+  const trackHint = row._track; delete row._track;   // only for matching a voucher code, not a column
   // list prices are net — the gateway charges gross (23% VAT), converted to PLN for EUR trips
   row.vat_rate = VAT_RATE;
   row.total_gross = gross(Number(row.total));
   if (row.currency === "EUR") row.amount_pln = round2(Number(row.total_gross) * (await eurRate()));
   else row.amount_pln = Number(row.total_gross);
+  // printed holiday voucher sent to an InPost locker — a PLN net fee on top of the product
+  if (Number(row.delivery_fee) > 0) row.amount_pln = round2(Number(row.amount_pln) + gross(Number(row.delivery_fee)));
 
   // discount code: checked again here (the browser's word means nothing), reserved for this order before
   // it exists, spent when the order is paid. Worth one person's place on multi-person orders.
   let code: Code | null = null;
   if (p.discount_code) {
     code = await findCode(String(p.discount_code));
-    const why = !code ? "notfound" : stateOf(code, String(row.email)) ?? (fits(code, row) ? null : "target");
+    const why = !code ? "notfound" : stateOf(code, String(row.email)) ?? (fits(code, { ...row, _track: trackHint }) ? null : "target");
     if (why) return json({ ok: false, discount_error: true, reason: why, error: REASON[why] }, 409);
     const base = Number(row.amount_pln), persons = Math.max(1, Number(row.persons) || 1);
     const off = offFor(code!, base, round2(base / persons));
     if (!(await reserve(code!, row.id as string, String(row.email)))) return json({ ok: false, discount_error: true, reason: "reserved", error: REASON.reserved }, 409);
     Object.assign(row, { discount_id: code!.id, discount_code: code!.code, discount_pln: off, amount_pln: round2(base - off) });
+    // what is booked with a TEST holiday voucher is a test order too (only the customer gets an e-mail)
+    if ((code as any).batch === "voucher-test") Object.assign(row, { is_test: true, meta: { ...((row.meta as any) || {}), gift_test: true } });
   }
 
   const { data: o, error } = await db.from("bookings").insert(row).select("*").single();
@@ -270,6 +275,12 @@ async function startPayment(rowIn: Record<string, unknown>, p: any) {
   if (code && Number(o.amount_pln) <= 0) {
     const r = await fulfillOrder(o.id, 0, "kod rabatowy");
     return json({ ok: true, id: o.id, number: o.number, paid: true, free: true, status: r.order?.status });
+  }
+
+  // the holiday page in test mode: no gateway, the voucher is created (and e-mailed) right away
+  if (opts.test) {
+    const r = await fulfillOrder(o.id, 0, "test");
+    return json({ ok: true, id: o.id, number: o.number, paid: true, test: true, status: r.order?.status, voucher_code: r.order?.voucher_code });
   }
 
   if (TEST_PAYMENTS || !tpayConfigured()) {
@@ -375,7 +386,7 @@ async function createBooking(p: any) {
     total = num((car as any)[col]); carName = (car as any).name; carId = p.car_id;
   }
   if (!total) return json({ ok: false, error: "no price" }, 400);
-  return startPayment({ kind: "track", car_id: carId, car_name: carName, is_custom: isCustom, sessions, term_id: p.term_id ?? null, term_label: termLabel, ...payer, total, currency: "PLN" }, p);
+  return startPayment({ kind: "track", car_id: carId, car_name: carName, is_custom: isCustom, sessions, term_id: p.term_id ?? null, term_label: termLabel, ...payer, total, currency: "PLN", _track: poznan ? "poznan" : "lodz" }, p);
 }
 
 async function createIceBooking(p: any) {
@@ -465,6 +476,182 @@ async function createVoucherBooking(p: any) {
     voucher_for: str(p.voucher_for, 120), voucher_message: str(p.voucher_message, 600),
     ...payer, total, currency: "PLN",
   }, p);
+}
+
+
+/* ---------------- VOUCHERY ŚWIĄTECZNE (/swieta-2026) ----------------
+   A gift voucher for any product sold online. The browser sends what was chosen; the price, the label
+   printed on the voucher and the redemption target are worked out here. Paid → fulfillOrder issues the code. */
+const GIFT_CAMPAIGN = "swieta-2026";
+const PKG_NAME: Record<number, string> = { 3: "EXPERIENCE", 6: "SPORT", 9: "PERFORMANCE" };
+const todayWaw = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" });
+const sessWord = (n: number) => (n === 3 ? "3 sesje" : `${n} sesji`);
+async function giftMode() { return (await cfg("gift_mode", "test")) === "live" ? "live" : "test"; }
+async function giftFee() { const v = parseFloat((await cfg("gift_inpost_net", "50")).replace(",", ".")); return Number.isFinite(v) && v >= 0 ? v : 50; }
+
+type GiftItem = { total: number; currency: string; label: string; carName: string; productName: string; packageName: string | null; sessions: number | null; target: Record<string, unknown>; termId?: string | null; dateFrom?: string | null; productSlug?: string | null; packageId?: string | null; tripPackageId?: string | null };
+async function giftItem(g: any): Promise<GiftItem | { err: string }> {
+  const kind = String(g?.kind ?? "");
+  if (kind === "track") {
+    const sessions = parseInt(g.sessions, 10);
+    if (!SESSIONS.includes(sessions)) return { err: "Wybierz pakiet 3, 6 lub 9 sesji." };
+    let poznan = String(g.track) === "poznan", termId: string | null = null, termTxt = "";
+    if (g.term_id) {
+      const { data: term } = await db.from("terms").select("id, track, date, time, location_pl, visible").eq("id", g.term_id).maybeSingle();
+      if (!term || term.visible === false || String(term.date) < todayWaw()) return { err: "Ten termin nie jest już dostępny — wybierz inny albo voucher bez daty." };
+      termId = term.id; poznan = term.track === "poznan"; termTxt = `${String(term.date).split("-").reverse().join(".")}${term.time ? ` ${term.time}` : ""}`;
+    }
+    let total = 0, carName = "", carId: string | null = null;
+    if (g.is_custom) {
+      const { data } = await db.from("content").select("pl").eq("key", (poznan ? CUSTOM_KEY_PZ : CUSTOM_KEY)[sessions]).maybeSingle();
+      total = num(data?.pl); carName = "Własne auto";
+    } else {
+      const col = (poznan ? PRICE_COL_PZ : PRICE_COL)[sessions];
+      const { data: car } = await db.from("cars").select(`id, name, visible, category, ${col}`).eq("id", g.car_id ?? "").maybeSingle();
+      if (!car || (car as any).visible === false || (car as any).category === "race") return { err: "Wybierz auto." };
+      total = num((car as any)[col]); carName = (car as any).name; carId = (car as any).id;
+    }
+    if (!total) return { err: "Brak ceny dla tego wyboru." };
+    const track = poznan ? "poznan" : "lodz";
+    const label = `Szkolenie jazdy sportowej na torze · ${carName} · Pakiet ${PKG_NAME[sessions]} — ${sessWord(sessions)} · ${poznan ? "Tor Poznań" : "Tor Łódź"}${termTxt ? ` · ${termTxt}` : ""}`;
+    return { total, currency: "PLN", label, carName, productName: "SZKOLENIE JAZDY SPORTOWEJ NA TORZE", packageName: `${PKG_NAME[sessions]} — ${sessWord(sessions)}`, sessions,
+      target: { kind: "track", car_id: g.is_custom ? "own" : carId, sessions, track, term_id: termId, label }, termId };
+  }
+  if (kind === "ice") {
+    const { data: pkg } = await db.from("ice_packages").select("*").eq("id", g.package_id ?? "").maybeSingle();
+    if (!pkg || pkg.visible === false) return { err: "Wybierz pakiet Laponii." };
+    let dateFrom: string | null = null;
+    if (g.date_from) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(g.date_from))) return { err: "Zła data." };
+      const { data: wins } = await db.from("ice_windows").select("date_from, date_to, sold_out, visible").eq("visible", true);
+      const days = Math.max(1, pkg.days ?? 1);
+      const end = new Date(g.date_from + "T00:00:00Z"); end.setUTCDate(end.getUTCDate() + days - 1);
+      const endIso = end.toISOString().slice(0, 10);
+      const ok = (wins ?? []).some((w: any) => g.date_from >= w.date_from && endIso <= w.date_to && !((w.sold_out ?? []) as string[]).some((d) => String(d) >= g.date_from && String(d) <= endIso));
+      if (!ok) return { err: "Ten termin w Laponii nie jest dostępny — wybierz inny dzień." };
+      dateFrom = g.date_from;
+    }
+    const label = `Ice Driving Experience — Laponia · ${pkg.name_pl}${dateFrom ? ` · od ${dateFrom.split("-").reverse().join(".")}` : ""}`;
+    return { total: Number(pkg.price) || 0, currency: pkg.currency ?? "EUR", label, carName: "Ice Driving Experience — Laponia", productName: "ICE DRIVING EXPERIENCE — LAPONIA", packageName: pkg.name_pl, sessions: null,
+      target: { kind: "ice", package_id: pkg.id, date_from: dateFrom, label }, dateFrom, productSlug: "ice-driving-laponia", packageId: pkg.id };
+  }
+  if (kind === "product") {
+    const { data: prod } = await db.from("products").select("slug, title_pl, price, currency, buy_direct, packages_pl, is_test, theme, visible").eq("slug", String(g.slug ?? "")).maybeSingle();
+    if (!prod || !prod.buy_direct || prod.is_test || prod.visible === false || prod.theme === "wyprawa") return { err: "Ten produkt nie jest dostępny." };
+    const variants = String(prod.packages_pl ?? "").split("\n").map((l: string) => l.trim()).filter((l: string) => l && !l.startsWith("## ")).map((l: string) => {
+      const m = l.match(/^(.+?)\s*[—–-]\s*(\d[\d\s]*)\s*zł/i); return m ? { name: m[1].trim(), price: parseInt(m[2].replace(/\s/g, ""), 10) } : null;
+    }).filter(Boolean) as { name: string; price: number }[];
+    let total = Number(prod.price) || 0, variant = "";
+    if (variants.length) { const v = variants.find((x) => x.name === String(g.variant ?? "")) ?? variants[0]; total = v.price; variant = v.name; }
+    if (!total) return { err: "Ten produkt nie jest dostępny." };
+    const label = `${prod.title_pl}${variant ? ` · ${variant}` : ""}`;
+    return { total, currency: prod.currency ?? "PLN", label, carName: variant || prod.title_pl, productName: prod.title_pl, packageName: variant || null, sessions: null,
+      target: { kind: "product", slug: prod.slug, variant: variant || null, label }, productSlug: prod.slug };
+  }
+  if (kind === "trip") {
+    const { data: pkg } = await db.from("trip_packages").select("*").eq("id", g.package_id ?? "").maybeSingle();
+    if (!pkg || pkg.visible === false) return { err: "Wybierz pakiet wyprawy." };
+    const { data: prod } = await db.from("products").select("slug, title_pl, trip_status, visible, date_from").eq("slug", pkg.product_slug).maybeSingle();
+    if (!prod || prod.visible === false || prod.trip_status === "past" || (prod.date_from && String(prod.date_from) < todayWaw())) return { err: "Ta wyprawa nie jest już dostępna." };
+    const label = `${prod.title_pl} · ${pkg.name_pl}`;
+    return { total: Number(pkg.price) || 0, currency: pkg.currency ?? "EUR", label, carName: label, productName: prod.title_pl, packageName: pkg.name_pl, sessions: null,
+      target: { kind: "trip", package_id: pkg.id, slug: prod.slug, label }, productSlug: prod.slug, tripPackageId: pkg.id };
+  }
+  return { err: "Wybierz prezent." };
+}
+
+async function createGiftBooking(p: any, req: Request) {
+  const payer = payerOf(p); if ("err" in payer) return json({ ok: false, error: payer.err }, 400);
+  const item = await giftItem(p.gift); if ("err" in item) return json({ ok: false, error: item.err }, 400);
+  if (!item.total) return json({ ok: false, error: "Brak ceny." }, 400);
+  const forName = str(p.voucher_for, 40).replace(/\s+/g, " ");
+  if (forName.length < 2) return json({ ok: false, error: "Wpisz imię osoby obdarowanej." }, 400);
+  const delivery = p.delivery === "inpost" ? "inpost" : "email";
+  let deliveryData: Record<string, string> | null = null, fee = 0;
+  if (delivery === "inpost") {
+    const locker = String(p.delivery_data?.locker ?? "").toUpperCase().replace(/\s+/g, "").slice(0, 12);
+    const phone = str(p.delivery_data?.phone, 30), name = str(p.delivery_data?.name, 120);
+    if (!/^[A-Z]{3}[0-9]{1,4}[A-Z]{0,3}$/.test(locker)) return json({ ok: false, error: "Podaj kod Paczkomatu InPost (np. WAW01M)." }, 400);
+    if (!phoneOf(phone)) return json({ ok: false, error: "Podaj numer telefonu do powiadomień InPost." }, 400);
+    deliveryData = { locker, phone, name: name || payer.full_name }; fee = await giftFee();
+  }
+  const mode = await giftMode();
+  const test = mode === "test";
+  if (test) {
+    // nobody pays in test mode — keep a lid on how many free vouchers a stranger could mint
+    const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "?";
+    const since = new Date(Date.now() - 3600e3).toISOString();
+    const { count } = await db.from("bookings").select("id", { count: "exact", head: true }).eq("voucher_campaign", GIFT_CAMPAIGN).eq("is_test", true).gte("created_at", since);
+    if ((count ?? 0) >= 40) return json({ ok: false, error: "Za dużo testowych voucherów w ostatniej godzinie — spróbuj później." }, 429);
+    console.log("gift test voucher from", ip);
+  }
+  return startPayment({
+    kind: "voucher", voucher_campaign: GIFT_CAMPAIGN, voucher_target: item.target, is_test: test, meta: test ? { gift_test: true } : null,
+    car_id: (item.target as any).car_id && (item.target as any).car_id !== "own" ? (item.target as any).car_id : null, is_custom: (item.target as any).car_id === "own",
+    car_name: item.carName, product_name: item.productName, package_name: item.packageName, sessions: item.sessions, persons: 1,
+    product_slug: item.productSlug ?? null, package_id: item.packageId ?? null, trip_package_id: item.tripPackageId ?? null,
+    term_id: item.termId ?? null, date_from: item.dateFrom ?? null, term_label: item.label,
+    voucher_for: forName, delivery, delivery_fee: fee, delivery_data: deliveryData,
+    ...payer, total: item.total, currency: item.currency,
+  }, p, { test });
+}
+
+/** the order of a holiday voucher is cancelled / deleted → its code stops working (removed if never used) */
+async function dropGiftCode(id: string, remove: boolean) {
+  const { data: o } = await db.from("bookings").select("voucher_code, voucher_campaign").eq("id", id).maybeSingle();
+  if (!o?.voucher_campaign || !o.voucher_code) return;
+  if (remove) await db.from("discount_codes").delete().eq("code", o.voucher_code).is("used_at", null);
+  await db.from("discount_codes").update({ active: false }).eq("code", o.voucher_code);
+}
+
+/* PUBLIC: how the holiday page behaves (test = no payment) and what the printed voucher costs */
+async function giftInfo() { return json({ ok: true, mode: await giftMode(), inpost_net: await giftFee() }); }
+
+/* ADMIN: Vouchery świąteczne — list with the code state, shipping and offline redemption */
+async function giftsAdmin(action: string, p: any, me: Admin): Promise<Response> {
+  if (action === "gifts.list") {
+    const { data: rows, error } = await db.from("bookings").select("*").eq("voucher_campaign", String(p?.campaign || GIFT_CAMPAIGN)).order("created_at", { ascending: false }).limit(1000);
+    if (error) return json({ ok: false, error: error.message }, 500);
+    const codes = (rows ?? []).map((r: any) => r.voucher_code).filter(Boolean);
+    const { data: dc } = codes.length ? await db.from("discount_codes").select("id, code, active, valid_to, used_at, used_booking, used_email, used_note, reserved_until").in("code", codes) : { data: [] as any[] };
+    const usedIds = (dc ?? []).map((c: any) => c.used_booking).filter(Boolean);
+    const { data: ub } = usedIds.length ? await db.from("bookings").select("id, number, term_label, full_name").in("id", usedIds) : { data: [] as any[] };
+    const byCode = new Map((dc ?? []).map((c: any) => [c.code, { ...c, used_order: (ub ?? []).find((b: any) => b.id === c.used_booking) ?? null }]));
+    return json({ ok: true, mode: await giftMode(), inpost_net: await giftFee(), rows: (rows ?? []).map((r: any) => ({ ...r, code_state: byCode.get(r.voucher_code) ?? null })) });
+  }
+  const id = String(p?.id ?? "");
+  const { data: o } = id ? await db.from("bookings").select("*").eq("id", id).maybeSingle() : { data: null };
+  if (action === "gifts.mode") {
+    if (!can(me, "settings")) return json({ ok: false, error: "forbidden", perm: true }, 403);
+    const v = p?.mode === "live" ? "live" : "test";
+    await db.from("app_config").upsert({ key: "gift_mode", value: v });
+    if (p?.inpost_net != null && Number.isFinite(Number(p.inpost_net))) await db.from("app_config").upsert({ key: "gift_inpost_net", value: String(Math.max(0, Number(p.inpost_net))) });
+    return json({ ok: true, mode: v });
+  }
+  if (!o || !o.voucher_campaign) return json({ ok: false, error: "not found" }, 404);
+  if (action === "gifts.ship") {
+    const { data, error } = await db.from("bookings").update({ shipped_at: new Date().toISOString(), shipping_no: str(p.shipping_no, 60) || null }).eq("id", id).select("*").single();
+    return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true, row: data });
+  }
+  if (action === "gifts.unship") {
+    const { data, error } = await db.from("bookings").update({ shipped_at: null, shipping_no: null }).eq("id", id).select("*").single();
+    return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true, row: data });
+  }
+  if (action === "gifts.use" || action === "gifts.unuse") {
+    if (o.status !== "paid" || !o.voucher_code) return json({ ok: false, error: "Voucher nie jest opłacony." }, 400);
+    const { data: c } = await db.from("discount_codes").select("*").eq("code", o.voucher_code).maybeSingle();
+    if (!c) return json({ ok: false, error: "Brak kodu vouchera." }, 404);
+    if (action === "gifts.use") {
+      if (c.used_at) return json({ ok: false, error: "Voucher był już wykorzystany." }, 409);
+      const note = `${str(p.note, 200) || "Na miejscu"} · ${me.name || me.login}`;
+      const { error } = await db.from("discount_codes").update({ used_at: new Date().toISOString(), used_note: note, reserved_booking: null, reserved_email: null, reserved_until: null }).eq("id", c.id).is("used_at", null);
+      return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
+    }
+    if (c.used_booking) return json({ ok: false, error: "Voucher wykorzystano online (zamówienie) — cofnij to zamówienie w Zamówieniach." }, 409);
+    const { error } = await db.from("discount_codes").update({ used_at: null, used_note: null }).eq("id", c.id);
+    return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
+  }
+  return json({ ok: false, error: "unknown action" }, 400);
 }
 
 /* PUBLIC: what a discount code is (the configurator shows it and computes the preview; checkout decides).
@@ -566,6 +753,8 @@ Deno.serve(async (req) => {
     if (action === "booking.createProduct") return await createProductBooking(payload ?? {});
     if (action === "booking.createTrip") return await createTripBooking(payload ?? {});
     if (action === "booking.createVoucher") return await createVoucherBooking(payload ?? {});
+    if (action === "booking.createGift") return await createGiftBooking(payload ?? {}, req);
+    if (action === "gift.info") return await giftInfo();
     if (action === "booking.status") return await orderStatus(payload ?? {});
     if (action === "discount.check") return await checkDiscount(payload ?? {}, req);
     if (action === "nip.lookup") return await nipLookup(payload ?? {});
@@ -720,6 +909,7 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
     }
     if (action === "bookings.delete") {
       await release(String(payload?.id ?? ""));
+      await dropGiftCode(String(payload?.id ?? ""), true);
       const { error } = await db.from("bookings").delete().eq("id", payload?.id ?? "");
       return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
     }
@@ -745,11 +935,13 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
     }
     if (action === "bookings.cancel") {
       await release(String(payload?.id ?? ""));
+      await dropGiftCode(String(payload?.id ?? ""), false);
       const { error } = await db.from("bookings").update({ status: "cancelled" }).eq("id", payload?.id ?? "");
       return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true });
     }
 
     if (action.startsWith("discounts.")) return await discountsAdmin(action, payload, me);
+    if (action.startsWith("gifts.")) return await giftsAdmin(action, payload, me);
 
     if (action === "messages.list") {
       const { data, error } = await db.from("messages").select("*").order("created_at", { ascending: false }).limit(300);

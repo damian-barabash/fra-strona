@@ -38,7 +38,7 @@ export const saveTimeOnSite = (ms) => put(sessionStorage, SS_TIME, String(Math.r
 export const firstView = (id) => { if (get(sessionStorage, SS_SEEN) === String(id)) return false; put(sessionStorage, SS_SEEN, String(id)); return true; };
 
 /* never in the panel, in the checkout or on the legal pages — an advert must not interrupt a purchase */
-const QUIET = /^\/(admin|platnosc|zakup|zakup-wyprawa|rezerwacja|rezerwacja-ice|voucher|polityka-prywatnosci|regulamin-platnosci)(\/|$)/;
+const QUIET = /^\/(admin|platnosc|zakup|zakup-wyprawa|rezerwacja|rezerwacja-ice|voucher|swieta-2026|polityka-prywatnosci|regulamin-platnosci)(\/|$)/;
 export const popupAllowedOn = (p, pathname) => !QUIET.test(pathname) && (p.pages !== "home" || pathname === "/");
 
 /** on / scheduled (starts later) / ended / off — the campaign window is optional */

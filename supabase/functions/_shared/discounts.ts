@@ -17,7 +17,9 @@ export type Code = {
   target: Target | null; valid_from: string | null; valid_to: string | null; active: boolean;
   reserved_booking: string | null; reserved_email: string | null; reserved_until: string | null; used_at: string | null; used_booking: string | null;
 };
-export type Target = { kind: "track" | "ice" | "product" | "trip"; car_id?: string | null; sessions?: number | null; package_id?: string | null; slug?: string | null; variant?: string | null };
+export type Target = { kind: "track" | "ice" | "product" | "trip"; car_id?: string | null; sessions?: number | null; package_id?: string | null; slug?: string | null; variant?: string | null;
+  // gift vouchers (/swieta-2026) also carry the circuit group the price was set for, and an optional preset date
+  track?: "lodz" | "poznan" | null; term_id?: string | null; date_from?: string | null };
 
 export const REASON: Record<string, string> = {
   notfound: "Nie znamy takiego kodu. Sprawdź, czy został wpisany bez błędów.",
@@ -58,6 +60,8 @@ export function fits(c: Code, row: Record<string, any>): boolean {
     if (row.kind !== "track") return false;
     if (t.car_id === "own" && !row.is_custom) return false;
     if (t.car_id && t.car_id !== "own" && row.car_id !== t.car_id) return false;
+    // a voucher bought at Łódź prices does not cover a Poznań term (row._track is set by the checkout)
+    if (t.track && row._track && row._track !== t.track) return false;
     return !t.sessions || Number(row.sessions) === Number(t.sessions);
   }
   if (t.kind === "ice") return row.kind === "ice" && (!t.package_id || row.package_id === t.package_id);
@@ -109,8 +113,9 @@ export async function describeTarget(c: Code): Promise<{ label: string; url: str
     let car = "dowolne auto";
     if (t.car_id === "own") car = "własne auto";
     else if (t.car_id) { const { data } = await db.from("cars").select("name").eq("id", t.car_id).maybeSingle(); car = data?.name || car; }
-    const q = [t.car_id === "own" ? "custom=1" : t.car_id ? `car=${t.car_id}` : "", t.sessions ? `sessions=${t.sessions}` : "", k].filter(Boolean).join("&");
-    return { label: `Szkolenie na torze · ${car}${t.sessions ? ` · ${t.sessions} sesji` : ""}`, url: `/rezerwacja?${q}` };
+    const q = [t.car_id === "own" ? "custom=1" : t.car_id ? `car=${t.car_id}` : "", t.sessions ? `sessions=${t.sessions}` : "", t.term_id ? `term=${t.term_id}` : "", k].filter(Boolean).join("&");
+    const where = t.track === "poznan" ? " · tory wyścigowe (Poznań)" : t.track === "lodz" ? " · tory sportowe (Łódź)" : "";
+    return { label: `Szkolenie na torze · ${car}${t.sessions ? ` · ${t.sessions} sesji` : ""}${where}`, url: `/rezerwacja?${q}` };
   }
   if (t.kind === "ice") {
     let pkg = "dowolny pakiet";

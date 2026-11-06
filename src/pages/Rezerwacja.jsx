@@ -81,7 +81,7 @@ function RezerwacjaFlow() {
   const total = sessions ? priceFor(sessions) : 0;
   const pkg = packageOf(sessions);
   const disc = useDiscount({ kind: "track", firstStep: stepIdx === 0 });
-  const pv = disc.preview({ car_id: carSel?.id, custom, sessions, net: total, currency: "PLN" });
+  const pv = disc.preview({ car_id: carSel?.id, custom, sessions, track: isPoznan(track) ? "poznan" : "lodz", net: total, currency: "PLN" });
   const discOn = !!(pv?.ok && pv.ready && pv.off > 0);
 
   const dateLabel = termSel?.noDate ? t("flota.bk.noDate")

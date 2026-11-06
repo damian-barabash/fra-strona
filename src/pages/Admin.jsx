@@ -12,6 +12,7 @@ import { windowMonths, isoOf } from "../lib/ice";
 import RichEditor from "../components/RichEditor";
 import PopupsTab from "./AdminPopups";
 import CodesTab from "./AdminCodes";
+import GiftsTab from "./AdminGifts";
 import { postDate, postState, todayIso } from "../lib/blog";
 import { plainText, wordCount } from "../lib/richtext";
 import "./admin.css";
@@ -200,7 +201,7 @@ const CFG = {
 const GROUPS = [
   { id: "pulpit", label: "Pulpit", tabs: [{ t: "dashboard", l: "Pulpit", i: "home" }] },
   { id: "sprzedaz", label: "Sprzedaż", tabs: [
-    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart", p: "orders" }, { t: "vouchery", l: "Vouchery", i: "gift", p: "orders" }, { t: "kody", l: "Kody rabatowe", i: "tag", p: "discounts" },
+    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart", p: "orders" }, { t: "vouchery", l: "Vouchery", i: "gift", p: "orders" }, { t: "swieta", l: "Vouchery świąteczne", i: "gift", p: "orders" }, { t: "kody", l: "Kody rabatowe", i: "tag", p: "discounts" },
     { t: "wiadomosci", l: "Wiadomości", i: "mail", p: "messages" }, { t: "firmy", l: "Zapytania firmowe", i: "biz", p: "messages" }, { t: "ustawienia", l: "Ustawienia", i: "cog", p: "settings" },
   ] },
   { id: "oferta", label: "Oferta", tabs: [{ t: "products", l: "Produkty", i: "box", p: "products" }, { t: "ice_packages", l: "Laponia — pakiety", i: "snow", p: "products" }, { t: "ice_windows", l: "Laponia — sezon", i: "snow", p: "products" }, { t: "programs", l: "Kafelki na głównej", i: "grid", p: "content" }] },
@@ -303,6 +304,7 @@ function Shell() {
           : tab === "logs" ? <LogsTab />
           : tab === "zamowienia" ? <OrdersTab />
           : tab === "vouchery" ? <OrdersTab only="voucher" />
+          : tab === "swieta" ? <GiftsTab OrderDrawer={OrderDrawer} />
           : tab === "kody" ? <CodesTab />
           : tab === "wiadomosci" ? <MessagesTab kind="contact" />
           : tab === "firmy" ? <MessagesTab kind="firma" />

@@ -12,6 +12,7 @@ const MOBILE = new Set([
   "/assets/szkola/hero.webm",
   "/assets/monaco/hero.webm",
   "/assets/laponia/hero.webm",
+  "/assets/swieta/loop.webm",
 ]);
 
 const narrow = () => typeof window !== "undefined" && window.matchMedia("(max-width: 900px)").matches;

@@ -43,7 +43,8 @@ export const button = (href: string, label: string) =>
 export const chip = (s: string, color = "#e30613") =>
   `<span style="display:inline-block;background:${color};color:#fff;font-size:10px;font-weight:bold;letter-spacing:2px;padding:5px 9px;text-transform:uppercase">${esc(s)}</span>`;
 
-export async function sendMail(to: string | string[], subject: string, html: string, replyTo?: string) {
+export type Attachment = { filename: string; path?: string; content?: string };
+export async function sendMail(to: string | string[], subject: string, html: string, replyTo?: string, attachments?: Attachment[]) {
   const key = Deno.env.get("RESEND_KEY") || (await cfg("resend_key"));
   const from = await cfg("contact_from", "Fastline Racing Academy <kontakt.na.stronie@fastlineracingacademy.pl>");
   const list = Array.isArray(to) ? to : listOf(to);
@@ -52,7 +53,7 @@ export async function sendMail(to: string | string[], subject: string, html: str
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: list, subject, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
+    body: JSON.stringify({ from, to: list, subject, html, ...(replyTo ? { reply_to: replyTo } : {}), ...(attachments?.length ? { attachments } : {}) }),
   });
   const body = await r.json().catch(() => ({}));
   if (!r.ok) return { ok: false, error: body?.message || `resend ${r.status}` };

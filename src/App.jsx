@@ -10,7 +10,7 @@ import SitePopup from "./components/SitePopup";
 import { pageView } from "./lib/pixel";
 
 const { Mariusz, MediaPage, Szkola, Flota, Auto, Rezerwacja, Kalendarz, Produkty, Produkt, RezerwacjaIce,
-  Cennik, Kontakt, Zakup, ZakupWyprawa, Legal, Platnosc, Voucher, DlaFirm, Blog, BlogPost, Admin } = Pages;
+  Cennik, Kontakt, Zakup, ZakupWyprawa, Legal, Platnosc, Voucher, Swieta, SwietaVoucher, DlaFirm, Blog, BlogPost, Admin } = Pages;
 
 /* Old WordPress paths (still in Google and in old links) land on the matching new page; anything
    else that does not exist goes to the home page instead of a blank screen. */
@@ -111,6 +111,8 @@ function AnimatedRoutes() {
         <Route path="/oferta" element={<Produkty />} />
         <Route path="/dla-firm" element={<DlaFirm />} />
         <Route path="/voucher" element={<Voucher />} />
+        <Route path="/swieta-2026" element={<Swieta />} />
+        <Route path="/swieta-2026/voucher" element={<SwietaVoucher />} />
         <Route path="/platnosc" element={<Platnosc />} />
         <Route path="/produkty/:slug" element={<Produkt />} />
         <Route path="/rezerwacja" element={<Rezerwacja />} />

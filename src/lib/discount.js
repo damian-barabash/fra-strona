@@ -27,6 +27,7 @@ export function fits(code, ctx) {
   if (t.kind === "track") {
     if (t.car_id === "own" && !ctx.custom) return false;
     if (t.car_id && t.car_id !== "own" && ctx.car_id !== t.car_id) return false;
+    if (t.track && ctx.track && ctx.track !== t.track) return false;   // a holiday voucher is priced for Łódź or Poznań
     return !t.sessions || Number(ctx.sessions) === Number(t.sessions);
   }
   if (t.kind === "ice") return !t.package_id || ctx.package_id === t.package_id;
