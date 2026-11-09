@@ -51,3 +51,6 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        # ~160 MB site: when Pages is slow the default 10 min wait runs out ("Timeout reached, aborting!")
+        with:
+          timeout: 1800000
