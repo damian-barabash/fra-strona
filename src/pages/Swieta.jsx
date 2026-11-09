@@ -36,7 +36,7 @@ export default function Swieta() {
               <EText id="sw.body" as="p" className="sw-body reveal-up rv-d3" multiline />
               <div className="sw-hero__row reveal-up rv-d4">
                 <Link to={go} className="sw-btn"><GiftIcon />{t("sw.cta")}<span className="btn__arrow">›</span></Link>
-                <span className="sw-fast"><Stopwatch /><EText id="sw.fast" /></span>
+                <a href="#jak-to-dziala" className="sw-btn sw-btn--ghost" onClick={(e) => { e.preventDefault(); document.getElementById("jak-to-dziala")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><EText id="sw.how" /></a>
               </div>
               <EText id="sw.tag" as="p" className="sw-tag reveal-up rv-d5" />
             </div>
@@ -58,7 +58,7 @@ export default function Swieta() {
           </div>
         </section>
 
-        <section className="sw-steps">
+        <section className="sw-steps" id="jak-to-dziala">
           <div className="sw-steps__bg" />
           <div className="container">
             <div className="sw-steps__head">
@@ -144,7 +144,4 @@ const PenIcon = () => (
 );
 const MailIcon = () => (
   <svg className="sw-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v12H3zM3 7l9 7 9-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
-);
-const Stopwatch = () => (
-  <svg className="sw-ico sw-ico--watch" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M10 3h4M12 3v3M18.5 6.5l1.5-1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path className="sw-watch__hand" d="M12 13.5V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
 );

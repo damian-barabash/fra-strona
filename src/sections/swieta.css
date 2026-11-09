@@ -71,14 +71,8 @@ html.sw-lock, html.sw-lock body { overflow: hidden; }
 .sw-hero > .container { position: relative; z-index: 2; }
 .sw-hero__grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 70px); align-items: center; }
 .sw-hero__row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 22px; margin-top: 26px; }
-.sw-fast {
-  display: inline-flex; align-items: center; gap: 10px; padding: 11px 16px 11px 12px;
-  border: 1.5px solid rgba(246,220,142,.55); color: var(--sw-gold-2);
-  font: 900 12px/1 var(--font-display); letter-spacing: .14em;
-}
-.sw-ico--watch { width: 24px; height: 24px; }
-.sw-watch__hand { transform-origin: 12px 13.5px; animation: sw-tick 3s steps(12) infinite; }
-@keyframes sw-tick { to { transform: rotate(360deg); } }
+.sw-hero__row .sw-btn--ghost { box-shadow: inset 0 0 0 1.5px rgba(246,220,142,.6); color: var(--sw-gold-2); }
+#jak-to-dziala { scroll-margin-top: 70px; }
 
 .sw-hero__cars { position: relative; aspect-ratio: 1.45; }
 .sw-hero__flake { position: absolute; width: 34%; right: 2%; top: 0; color: var(--sw-gold); opacity: .9; animation: sw-spin 26s linear infinite; filter: drop-shadow(0 6px 18px rgba(0,0,0,.3)); }
@@ -426,7 +420,6 @@ body:has(.sw-foot) .wa-fab { bottom: 92px; }
 }
 @media (max-width: 520px) {
   .sw-h1 { font-size: clamp(34px, 10.4vw, 46px); }
-  .sw-fast { font-size: 10.5px; }
   .sw-pkgs { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .sw-pkg { padding: 12px 10px; }
   .sw-pkg__n { font-size: 30px; }

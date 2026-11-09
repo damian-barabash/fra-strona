@@ -36,7 +36,10 @@ test("landing: hidden (noindex), fleet without hats and no falling snow, looped 
   await expect(page.locator(".snow")).toHaveCount(0);
   await expect(page.locator(".sw-hero__flake")).toHaveCount(2);
   await expect(page.locator(".sw-video video")).toHaveAttribute("loop", "");
-  await page.locator(".sw-hero .sw-btn").click();
+  await expect(page.locator(".sw-hero h1")).toContainText("NA ŚWIĘTA.");
+  await page.evaluate(() => document.querySelector("a[href='#jak-to-dziala']").click());   // "Jak to działa" → scrolls to the steps
+  await expect.poll(() => page.evaluate(() => Math.abs(document.getElementById("jak-to-dziala").getBoundingClientRect().top))).toBeLessThan(120);
+  await page.locator(".sw-hero .sw-btn:not(.sw-btn--ghost)").click();
   await expect(page).toHaveURL(/\/swieta-2026\/voucher$/);
   await expect(page.locator(".sw-cat").first()).toBeVisible();
 });
