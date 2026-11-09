@@ -50,7 +50,6 @@ export default function Swieta() {
                 <img src="/assets/swieta/supra.webp" alt="" width="900" height="283" />
               </div>
               <div className="sw-road"><span /></div>
-              <div className="sw-gifts"><Gift c="#0e4a2f" /><Gift c="#e30613" big /><Gift c="#d8ae4f" /></div>
             </div>
           </div>
 
@@ -140,12 +139,6 @@ function VideoCard({ tag }) {
   );
 }
 
-const Gift = ({ c, big }) => (
-  <svg className={`sw-gift ${big ? "is-big" : ""}`} viewBox="0 0 60 60" aria-hidden="true">
-    <rect x="6" y="22" width="48" height="34" fill={c} /><rect x="3" y="14" width="54" height="11" fill={c} style={{ filter: "brightness(1.15)" }} />
-    <rect x="26" y="14" width="8" height="42" fill="#f3d58a" /><path d="M30 14 C 18 2, 8 8, 16 14 Z M30 14 C 42 2, 52 8, 44 14 Z" fill="#f3d58a" />
-  </svg>
-);
 const PenIcon = () => (
   <svg className="sw-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L16 4.6a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8 4 20zM14.5 6l3.5 3.5M4 20h16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
 );
