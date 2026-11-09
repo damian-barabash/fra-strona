@@ -4,9 +4,11 @@ import { useStore } from "../lib/store";
 import { adminCall } from "../lib/api";
 import Nav from "../sections/Nav";
 import CmsBar from "../sections/CmsBar";
-import { GiftVoucher, Snow, Bow, Flake, GiftIcon } from "../components/GiftVoucher";
+import { GiftVoucher, Bow, Flake, GiftIcon } from "../components/GiftVoucher";
 import IceCalendar from "../components/IceCalendar";
 import InvoiceFields from "../components/InvoiceFields";
+import LockerPicker from "../components/LockerPicker";
+import { addressOf } from "../lib/inpost";
 import { DiscountField } from "../components/Discount";
 import { EMPTY_INVOICE, invoiceProblem, invoicePayload } from "../lib/invoice";
 import { PACKAGES, carPrice, customPrice, fmtZl, isPoznan } from "../lib/flota";
@@ -44,12 +46,12 @@ const TX = {
     noTerms: "Na tym torze nie ma teraz otwartych terminów — wybierz voucher otwarty.", iceStart: "Kliknij pierwszy dzień pobytu",
     forT: "DLA KOGO?", forS: "Wpisz imię tak, jak ma się pojawić na voucherze — po słowie „DLA”, np. Łukasza, Ani, Taty.", forPh: "np. Łukasza", tips: "Podpowiedzi:",
     delT: "JAK DOSTARCZYĆ VOUCHER?", mail: "E-MAIL", mailD: "Voucher z kodem od razu po zamówieniu", mailP: "0 zł", inpost: "WYDRUK + PACZKOMAT", inpostD: "Elegancki wydruk w kopercie do Paczkomatu InPost (plus e-mail od razu)",
-    locker: "Kod Paczkomatu", lockerPh: "np. WAW01M", lockerFind: "Znajdź paczkomat ›", lockerPhone: "Telefon do powiadomień InPost", lockerName: "Odbiorca paczki",
+    locker: "Paczkomat", lockerPhone: "Telefon do powiadomień InPost", lockerName: "Odbiorca paczki",
     dataT: "TWOJE DANE", dataS: "Na ten adres wyślemy voucher i potwierdzenie.", name: "Imię i nazwisko", email: "E-mail", phone: "Telefon", note: "Uwagi (opcjonalnie)",
     sumT: "SPRAWDŹ I ZAPAKUJ", gift: "Prezent", forW: "Dla", deliv: "Dostawa", valid: "Ważność", validV: "12 miesięcy od zakupu", value: "Wartość", ship: "Wysyłka InPost", vat: "w tym VAT 23%", toPay: "Do zapłaty", disc: "Kod rabatowy",
     packTest: "ZAPAKUJ VOUCHER", packTestSub: "TRYB TESTOWY — bez płatności", packLive: "ZAPAKUJ I ZAPŁAĆ", eurNote: "Kwota w euro zostanie przeliczona na złote po kursie z dnia zakupu.",
     next: "DALEJ", back: "WSTECZ", testStrip: "TRYB TESTOWY · voucher powstaje bez płatności, e-mail trafia tylko na podany adres",
-    err: { pick: "Wybierz prezent.", opt: "Wybierz wszystkie opcje.", term: "Wybierz termin albo voucher otwarty.", name: "Wpisz imię osoby obdarowanej.", locker: "Podaj kod paczkomatu i telefon.", data: "Uzupełnij imię i nazwisko, e-mail i telefon." },
+    err: { pick: "Wybierz prezent.", opt: "Wybierz wszystkie opcje.", term: "Wybierz termin albo voucher otwarty.", name: "Wpisz imię osoby obdarowanej.", locker: "Wybierz paczkomat i podaj telefon.", data: "Uzupełnij imię i nazwisko, e-mail i telefon." },
     packing: "Pakujemy prezent…", flying: "Leci do Ciebie!", doneT: "WSZYSTKO JEST NA MAILU", doneS: "Dziękujemy! Voucher z kodem właśnie poleciał na", doneCode: "Kod vouchera", doneInpost: "Drukowany voucher wyślemy do Paczkomatu", again: "ZAMÓW KOLEJNY", home: "WRÓĆ NA STRONĘ", fail: "Ups — nie udało się zapakować vouchera.", retry: "SPRÓBUJ PONOWNIE",
   },
   en: {
@@ -63,12 +65,12 @@ const TX = {
     noTerms: "No open dates on these circuits right now — choose an open voucher.", iceStart: "Click the first day of the stay",
     forT: "FOR WHOM?", forS: "Type the name exactly as it should appear on the voucher.", forPh: "e.g. Luke", tips: "Ideas:",
     delT: "HOW TO DELIVER IT?", mail: "E-MAIL", mailD: "The voucher with its code right after the order", mailP: "0 zł", inpost: "PRINT + LOCKER", inpostD: "A printed voucher in an envelope to an InPost locker (plus the e-mail right away)",
-    locker: "Locker code", lockerPh: "e.g. WAW01M", lockerFind: "Find a locker ›", lockerPhone: "Phone for InPost notifications", lockerName: "Parcel recipient",
+    locker: "Parcel locker", lockerPhone: "Phone for InPost notifications", lockerName: "Parcel recipient",
     dataT: "YOUR DETAILS", dataS: "We will send the voucher and the confirmation here.", name: "Full name", email: "E-mail", phone: "Phone", note: "Notes (optional)",
     sumT: "CHECK AND WRAP", gift: "Gift", forW: "For", deliv: "Delivery", valid: "Valid", validV: "12 months from purchase", value: "Value", ship: "InPost shipping", vat: "incl. 23% VAT", toPay: "To pay", disc: "Discount code",
     packTest: "WRAP THE VOUCHER", packTestSub: "TEST MODE — no payment", packLive: "WRAP AND PAY", eurNote: "The euro amount is converted to PLN at the rate of the purchase day.",
     next: "NEXT", back: "BACK", testStrip: "TEST MODE · the voucher is created without payment, the e-mail goes only to the address given",
-    err: { pick: "Pick a gift.", opt: "Choose all options.", term: "Pick a date or an open voucher.", name: "Type the recipient's name.", locker: "Give the locker code and a phone number.", data: "Fill in your name, e-mail and phone." },
+    err: { pick: "Pick a gift.", opt: "Choose all options.", term: "Pick a date or an open voucher.", name: "Type the recipient's name.", locker: "Pick a locker and give a phone number.", data: "Fill in your name, e-mail and phone." },
     packing: "Wrapping your gift…", flying: "On its way!", doneT: "IT'S ALL IN YOUR INBOX", doneS: "Thank you! The voucher with its code has just flown to", doneCode: "Voucher code", doneInpost: "The printed voucher goes to locker", again: "ORDER ANOTHER", home: "BACK TO THE PAGE", fail: "Oops — the voucher could not be wrapped.", retry: "TRY AGAIN",
   },
 };
@@ -118,7 +120,7 @@ export default function SwietaVoucher() {
   const [iceStart, setIceStart] = useState("");
   const [forName, setForName] = useState("");
   const [delivery, setDelivery] = useState("email");
-  const [inpost, setInpost] = useState({ locker: "", phone: "", name: "" });
+  const [inpost, setInpost] = useState({ locker: "", phone: "", name: "", point: null });
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", note: "" });
   const [inv, setInv] = useState(EMPTY_INVOICE);
   const [stepIdx, setStepIdx] = useState(0);
@@ -212,7 +214,7 @@ export default function SwietaVoucher() {
       date_from: cat.kind === "ice" && dateMode === "date" ? iceStart : null,
       slug: cat.slug, variant: variant?.name || null,
     },
-    voucher_for: forName.trim(), delivery, delivery_data: delivery === "inpost" ? { ...inpost, locker: inpost.locker.toUpperCase().replace(/\s/g, ""), name: inpost.name || form.full_name } : null,
+    voucher_for: forName.trim(), delivery, delivery_data: delivery === "inpost" ? { locker: inpost.locker.toUpperCase().replace(/\s/g, ""), phone: inpost.phone, name: inpost.name || form.full_name, address: addressOf(inpost.point) } : null,
     full_name: form.full_name, email: form.email, phone: form.phone, note: form.note, invoice: invoicePayload(inv),
     discount_code: pv?.ok ? disc.code?.code : undefined,
   });
@@ -231,7 +233,6 @@ export default function SwietaVoucher() {
       <main>
         <section className="sw-cfg__head">
           <div className="sw-velvet" />
-          <Snow count={26} />
           <div className="container">
             <span className="sw-eyebrow sw-eyebrow--gold">ŚWIĘTA 2026 · FASTLINE RACING ACADEMY</span>
             <h1 className="sw-h2">{X.head}</h1>
@@ -388,8 +389,8 @@ export default function SwietaVoucher() {
                     </div>
                     {delivery === "inpost" && (
                       <div className="fl-form sw-inpost">
-                        <label className="fl-field"><span className="req">{X.locker}</span><input value={inpost.locker} onChange={(e) => setInpost({ ...inpost, locker: e.target.value.toUpperCase().slice(0, 12) })} placeholder={X.lockerPh} />
-                          <a href="https://inpost.pl/znajdz-paczkomat" target="_blank" rel="noreferrer" className="sw-link">{X.lockerFind}</a></label>
+                        <div className="sw-lockerf"><span className="sw-lockerf__l req">{X.locker}</span>
+                          <LockerPicker en={en} value={inpost.point} onPick={(p) => { setInpost((o) => ({ ...o, point: p, locker: p.code })); setErr(""); }} /></div>
                         <label className="fl-field"><span className="req">{X.lockerPhone}</span><input value={inpost.phone} onChange={(e) => setInpost({ ...inpost, phone: e.target.value })} autoComplete="tel" inputMode="tel" /></label>
                         <label className="fl-field fl-field--full"><span>{X.lockerName}</span><input value={inpost.name} onChange={(e) => setInpost({ ...inpost, name: e.target.value })} placeholder={form.full_name || ""} /></label>
                       </div>
@@ -415,7 +416,7 @@ export default function SwietaVoucher() {
                     <dl className="sw-sum">
                       <div><dt>{X.gift}</dt><dd>{[vText.title, ...vText.lines].filter(Boolean).join(" · ")}</dd></div>
                       <div><dt>{X.forW}</dt><dd><b>{forName}</b></dd></div>
-                      <div><dt>{X.deliv}</dt><dd>{delivery === "inpost" ? `${X.inpost} · ${inpost.locker.toUpperCase()}` : `${X.mail} · ${form.email}`}</dd></div>
+                      <div><dt>{X.deliv}</dt><dd>{delivery === "inpost" ? `${X.inpost} · ${inpost.locker.toUpperCase()}${inpost.point ? ` (${addressOf(inpost.point)})` : ""}` : `${X.mail} · ${form.email}`}</dd></div>
                       <div><dt>{X.valid}</dt><dd>{X.validV}</dd></div>
                       <div><dt>{X.value}</dt><dd>{money(net)} {X.net} · {money(gross(net))} {X.gross}</dd></div>
                       {fee > 0 && <div><dt>{X.ship}</dt><dd>{fmtZl(fee)} {X.net} · {fmtMoney(gross(fee))} {X.gross}</dd></div>}
@@ -505,7 +506,6 @@ function PackShow({ X, en, lang, forName, vText, email, delivery, locker, create
   return (
     <div className={`sw-pk is-${phase}`} role="dialog" aria-live="polite">
       <div className="sw-pk__bg" />
-      <Snow count={30} />
       {phase !== "done" && (
         <div className="sw-pk__stage">
           <div className="sw-env">

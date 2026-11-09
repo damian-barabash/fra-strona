@@ -63,16 +63,6 @@ html.sw-lock, html.sw-lock body { overflow: hidden; }
 .sw-btn--ghost::after { display: none; }
 .sw-btn.is-locked { filter: saturate(.6); opacity: .82; }
 
-/* snow (pure CSS) */
-.snow { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
-.snow i {
-  position: absolute; top: -12px; border-radius: 50%; background: #fff; filter: blur(.3px);
-  animation: sw-fall linear infinite; will-change: transform;
-}
-.snow i.is-gold { background: var(--sw-gold-2); box-shadow: 0 0 6px rgba(246,220,142,.8); }
-.snow--soft i { opacity: .35 !important; }
-@keyframes sw-fall { from { transform: translate3d(0, -20px, 0); } to { transform: translate3d(var(--drift), 110vh, 0); } }
-@media (prefers-reduced-motion: reduce) { .snow { display: none; } }
 .sw-spark { position: absolute; width: 14px; height: 14px; z-index: 1; pointer-events: none; background: var(--sw-gold-2); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%); animation: sw-twinkle 2.8s ease-in-out infinite; }
 @keyframes sw-twinkle { 0%, 100% { transform: scale(.4) rotate(0); opacity: .3; } 50% { transform: scale(1.1) rotate(45deg); opacity: 1; } }
 
@@ -92,6 +82,7 @@ html.sw-lock, html.sw-lock body { overflow: hidden; }
 
 .sw-hero__cars { position: relative; aspect-ratio: 1.45; }
 .sw-hero__flake { position: absolute; width: 34%; right: 2%; top: 0; color: var(--sw-gold); opacity: .9; animation: sw-spin 26s linear infinite; filter: drop-shadow(0 6px 18px rgba(0,0,0,.3)); }
+.sw-hero__flake--2 { width: 17%; right: auto; left: 6%; top: -4%; opacity: .6; animation-duration: 34s; animation-direction: reverse; }
 @keyframes sw-spin { to { transform: rotate(360deg); } }
 .sw-car { position: absolute; }
 .sw-car img { width: 100%; height: auto; filter: drop-shadow(0 26px 22px rgba(0,0,0,.42)); }
@@ -305,7 +296,8 @@ html.sw-lock, html.sw-lock body { overflow: hidden; }
 .sw-tips button { padding: 7px 12px; border: 1px solid #eadfcf; background: #fff; font: 700 12px var(--font-display); transition: background .2s, color .2s; }
 .sw-tips button:hover { background: var(--sw-green); color: var(--sw-gold-2); }
 .sw-inpost { margin-top: 16px; }
-.sw-link { margin-top: 4px; font: 700 12px var(--font-display); color: var(--sw-red-2); }
+.sw-lockerf { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sw-lockerf__l { font: 700 11px var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 
 /* summary */
 .sw-sum { margin: 0 0 22px; }
@@ -338,7 +330,6 @@ body:has(.sw-foot) .wa-fab { bottom: 92px; }
 .sw-pk { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; color: #fff; }
 .sw-pk__bg { position: absolute; inset: 0; background: radial-gradient(80% 70% at 50% 40%, rgba(180,10,20,.92), rgba(40,2,5,.97)); animation: sw-fade .4s both; }
 @keyframes sw-fade { from { opacity: 0; } }
-.sw-pk .snow { z-index: 1; }
 .sw-pk__stage { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 26px; width: min(620px, 88vw); }
 .sw-pk__msg { font: 900 14px/1 var(--font-display); letter-spacing: .22em; text-transform: uppercase; color: var(--sw-gold-2); text-align: center; min-height: 14px; }
 .sw-pk__err { text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; }

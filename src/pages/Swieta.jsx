@@ -6,7 +6,7 @@ import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
-import { GiftVoucher, SantaHat, Snow, Flake, Bow, GiftIcon } from "../components/GiftVoucher";
+import { GiftVoucher, Flake, Bow, GiftIcon } from "../components/GiftVoucher";
 import { useRevealOnScroll } from "../lib/hooks";
 import { vsrc } from "../lib/video";
 import { useSeo } from "../lib/seo";
@@ -27,7 +27,6 @@ export default function Swieta() {
       <main>
         <section className="sw-hero">
           <div className="sw-velvet" />
-          <Snow />
           <span className="sw-spark" style={{ left: "8%", top: "22%" }} /><span className="sw-spark" style={{ left: "46%", top: "12%", animationDelay: "-1.2s" }} /><span className="sw-spark" style={{ left: "90%", top: "30%", animationDelay: "-2.1s" }} />
           <div className="container sw-hero__grid">
             <div className="sw-hero__text">
@@ -43,13 +42,12 @@ export default function Swieta() {
             </div>
             <div className="sw-hero__cars" aria-hidden="true">
               <Flake className="sw-hero__flake" />
+              <Flake className="sw-hero__flake sw-hero__flake--2" />
               <div className="sw-car sw-car--back">
                 <img src="/assets/swieta/porsche.webp" alt="" width="900" height="300" fetchpriority="high" />
-                <SantaHat className="sw-car__hat" style={{ left: "45%", top: "-20%", width: "19%" }} />
               </div>
               <div className="sw-car sw-car--front">
                 <img src="/assets/swieta/supra.webp" alt="" width="900" height="283" />
-                <SantaHat className="sw-car__hat" style={{ left: "47%", top: "-23%", width: "18%", animationDelay: "-.8s" }} />
               </div>
               <div className="sw-road"><span /></div>
               <div className="sw-gifts"><Gift c="#0e4a2f" /><Gift c="#e30613" big /><Gift c="#d8ae4f" /></div>
@@ -63,7 +61,6 @@ export default function Swieta() {
 
         <section className="sw-steps">
           <div className="sw-steps__bg" />
-          <Snow count={18} className="snow--soft" />
           <div className="container">
             <div className="sw-steps__head">
               <EText id="sw.stepsEyebrow" as="span" className="sw-eyebrow sw-eyebrow--gold reveal-up" />
@@ -89,7 +86,6 @@ export default function Swieta() {
 
         <section className="sw-final">
           <div className="sw-final__stripes" />
-          <Snow count={22} />
           <div className="container sw-final__grid">
             <div className="sw-final__card reveal-scale">
               <Bow className="sw-final__bow" />

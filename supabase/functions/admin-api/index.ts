@@ -573,7 +573,7 @@ async function createGiftBooking(p: any, req: Request) {
     const phone = str(p.delivery_data?.phone, 30), name = str(p.delivery_data?.name, 120);
     if (!/^[A-Z]{3}[0-9]{1,4}[A-Z]{0,3}$/.test(locker)) return json({ ok: false, error: "Podaj kod Paczkomatu InPost (np. WAW01M)." }, 400);
     if (!phoneOf(phone)) return json({ ok: false, error: "Podaj numer telefonu do powiadomień InPost." }, 400);
-    deliveryData = { locker, phone, name: name || payer.full_name }; fee = await giftFee();
+    deliveryData = { locker, phone, name: name || payer.full_name, address: str(p.delivery_data?.address, 160) }; fee = await giftFee();
   }
   const mode = await giftMode();
   const test = mode === "test";

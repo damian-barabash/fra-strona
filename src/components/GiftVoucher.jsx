@@ -40,21 +40,6 @@ export function SantaHat({ className = "", style }) {
   );
 }
 
-/* light snowfall: a fixed number of flakes with random lanes, sizes and timing (pure CSS animation) */
-const FLAKES = Array.from({ length: 46 }, (_, i) => {
-  const r = (n) => ((Math.sin(i * 999 + n * 77) + 1) / 2);
-  return { x: r(1) * 100, s: 3 + r(2) * 6, d: 9 + r(3) * 12, delay: -r(4) * 20, drift: (r(5) - 0.5) * 80, o: 0.35 + r(6) * 0.6, gold: i % 7 === 0 };
-});
-export function Snow({ count = 46, className = "" }) {
-  return (
-    <div className={`snow ${className}`} aria-hidden="true">
-      {FLAKES.slice(0, count).map((f, i) => (
-        <i key={i} className={f.gold ? "is-gold" : ""} style={{ left: `${f.x}%`, width: f.s, height: f.s, opacity: f.o, animationDuration: `${f.d}s`, animationDelay: `${f.delay}s`, ["--drift"]: `${f.drift}px` }} />
-      ))}
-    </div>
-  );
-}
-
 /* gold snowflake like the one on the voucher */
 export function Flake({ className = "", style }) {
   return (

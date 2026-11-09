@@ -137,7 +137,7 @@ export default function GiftsTab({ OrderDrawer }) {
                 <span className="adm-tr__what"><b>{b.term_label}</b><small>{Number(b.amount_pln) ? money2(b.amount_pln) : "0 zł"}{b.discount_code ? ` · kod ${b.discount_code}` : ""}{b.invoice?.nip ? " · FV" : ""}</small></span>
                 <span className="adm-gift-code">{b.voucher_code ? <><b>{b.voucher_code}</b><small>do {day(b.code_state?.valid_to || b.voucher_valid_to)}</small></> : <small>—</small>}</span>
                 <span className="adm-gift-del">{b.delivery === "inpost"
-                  ? <><b>InPost {b.delivery_data?.locker}</b><small>{b.shipped_at ? `wysłane ${when(b.shipped_at)}${b.shipping_no ? ` · ${b.shipping_no}` : ""}` : <i className="adm-badge adm-badge--warn">DO WYSŁANIA</i>}</small><small>{b.delivery_data?.name} · {b.delivery_data?.phone}</small></>
+                  ? <><b>InPost {b.delivery_data?.locker}</b>{b.delivery_data?.address && <small>{b.delivery_data.address}</small>}<small>{b.shipped_at ? `wysłane ${when(b.shipped_at)}${b.shipping_no ? ` · ${b.shipping_no}` : ""}` : <i className="adm-badge adm-badge--warn">DO WYSŁANIA</i>}</small><small>{b.delivery_data?.name} · {b.delivery_data?.phone}</small></>
                   : <b>E-mail</b>}</span>
                 <span><i className={`adm-badge adm-badge--${STATE[s][1]}`}>{STATE[s][0]}</i>
                   {s === "used" && <small className="adm-gift-used">{b.code_state?.used_order ? `online · #${b.code_state.used_order.number}` : b.code_state?.used_note || ""}</small>}</span>

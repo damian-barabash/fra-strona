@@ -24,7 +24,7 @@ function summaryRows(o: any) {
     rows.push(row("Voucher na", esc(o.term_label || o.car_name)));
     if (o.voucher_for) rows.push(row("Dla", `<b>${esc(o.voucher_for)}</b>`));
     if (o.voucher_valid_to) rows.push(row("Ważny do", fmtDay(o.voucher_valid_to)));
-    rows.push(row("Odbiór", o.delivery === "inpost" ? `Wydruk w Paczkomacie InPost <b>${esc(o.delivery_data?.locker)}</b>` : "E-mail"));
+    rows.push(row("Odbiór", o.delivery === "inpost" ? `Wydruk w Paczkomacie InPost <b>${esc(o.delivery_data?.locker)}</b>${o.delivery_data?.address ? ` · ${esc(o.delivery_data.address)}` : ""}` : "E-mail"));
   } else if (o.kind === "voucher") {
     rows.push(row("Voucher na", esc(o.car_name)));
     if (o.sessions) rows.push(row("Pakiet", `${o.sessions} sesji`));
@@ -165,7 +165,7 @@ async function sendGiftMails(o: any) {
       <li><b>Online</b> — wpisz kod w polu „Mam kod” w konfiguratorze na stronie i wybierz termin (za 0 zł).</li>
       <li><b>U nas</b> — zadzwoń lub napisz, podaj kod, a my zarezerwujemy termin.</li>
     </ol>`;
-  if (o.delivery === "inpost") body += `<p style="background:#fff7e6;border-left:4px solid ${gold};padding:12px 14px;font-size:14px">📦 Drukowany voucher wyślemy do Paczkomatu InPost <b>${esc(o.delivery_data?.locker)}</b>. Dostaniesz SMS od InPost, gdy przesyłka będzie gotowa do odbioru.</p>`;
+  if (o.delivery === "inpost") body += `<p style="background:#fff7e6;border-left:4px solid ${gold};padding:12px 14px;font-size:14px">📦 Drukowany voucher wyślemy do Paczkomatu InPost <b>${esc(o.delivery_data?.locker)}</b>${o.delivery_data?.address ? ` (${esc(o.delivery_data.address)})` : ""}. Dostaniesz SMS od InPost, gdy przesyłka będzie gotowa do odbioru.</p>`;
   body += details + invoiceBox(o.invoice, false);
   body += `<p style="font-size:13px;color:#6c7075">Pytania? Łukasz: <a href="tel:+48603102665" style="color:#e30613">+48 603 102 665</a> · <a href="mailto:racingacademy@fastline.pl" style="color:#e30613">racingacademy@fastline.pl</a></p>`;
   body += button(link, "Wykorzystaj voucher online");
@@ -183,7 +183,7 @@ async function sendGiftMails(o: any) {
       row("Klient", `<b>${esc(o.full_name)}</b>`),
       row("E-mail", `<a href="mailto:${esc(o.email)}" style="color:#e30613">${esc(o.email)}</a>`),
       row("Telefon", `<a href="tel:${esc(o.phone)}" style="color:#e30613">${esc(o.phone)}</a>`),
-      ...(o.delivery === "inpost" ? [row("Paczkomat", `<b>${esc(o.delivery_data?.locker)}</b> · ${esc(o.delivery_data?.name || o.full_name)} · ${esc(o.delivery_data?.phone || o.phone)}`)] : []),
+      ...(o.delivery === "inpost" ? [row("Paczkomat", `<b>${esc(o.delivery_data?.locker)}</b>${o.delivery_data?.address ? ` · ${esc(o.delivery_data.address)}` : ""} · ${esc(o.delivery_data?.name || o.full_name)} · ${esc(o.delivery_data?.phone || o.phone)}`)] : []),
       row("Kod", `<b>${esc(o.voucher_code)}</b>`),
     ].join(""))}
     ${button(`${SITE}/admin`, "Vouchery świąteczne w panelu")}`;
