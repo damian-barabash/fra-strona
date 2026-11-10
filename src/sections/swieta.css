@@ -141,21 +141,24 @@ html.sw-lock, html.sw-lock body { overflow: hidden; }
 .sw-final__text .sw-btn { margin-top: 28px; }
 
 /* ---------- the voucher (blank template + typed text) ---------- */
-.gvc { position: relative; aspect-ratio: 3187 / 1502; container-type: inline-size; background: #c40a16; user-select: none; }
+.gvc { position: relative; aspect-ratio: 1996 / 961; container-type: inline-size; background: #8a0710; user-select: none; overflow: hidden; }
 .gvc__bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* left text column of the 2026 template (white Montserrat on the red flag); the gold snowflake is part of the image */
 .gvc__txt {
-  position: absolute; left: 29.25%; width: 43%; top: 39%; height: 34%;
+  position: absolute; left: 2%; width: 40.2%; top: 16.1%; bottom: 3%;
   display: flex; flex-direction: column; align-items: center; text-align: center; color: #fff;
-  font-family: var(--font-display); text-shadow: 0 1px 4px rgba(80,0,0,.35);
+  font-family: var(--font-display); text-shadow: 0 .15cqw .6cqw rgba(40,0,0,.45);
 }
-.gvc__v { font-weight: 800; font-size: 2.05cqw; letter-spacing: .02em; line-height: 1.1; }
-.gvc__s { font-weight: 600; font-size: 1.02cqw; margin-top: 1.05cqw; letter-spacing: .04em; }
-.gvc__name { font-weight: 800; font-size: 1.75cqw; margin-top: .45cqw; line-height: 1.05; max-width: 100%; overflow-wrap: anywhere; animation: gvc-pop .45s cubic-bezier(.2,1.6,.4,1); }
+.gvc__v { font-weight: 800; font-size: 3.97cqw; letter-spacing: 0; line-height: .9; text-transform: uppercase; max-width: 9em; }
+.gvc__s { font-weight: 500; font-size: max(1.35cqw, 6px); line-height: 1.2; margin-top: 1.6cqw; letter-spacing: .02em; }
+.gvc__s + .gvc__s, .gvc__name + .gvc__s { margin-top: .7cqw; }
+.gvc__name { font-weight: 800; font-size: 2.7cqw; margin-top: .55cqw; line-height: 1.05; max-width: 100%; overflow-wrap: anywhere; animation: gvc-pop .45s cubic-bezier(.2,1.6,.4,1); }
 .gvc__name.is-empty { opacity: .55; letter-spacing: .3em; animation: none; }
 @keyframes gvc-pop { from { transform: scale(.7); opacity: 0; } }
-.gvc__title { font-weight: 700; font-size: 1.42cqw; margin-top: .55cqw; line-height: 1.15; }
-.gvc__lines { display: flex; flex-direction: column; gap: .2cqw; margin-top: 1.1cqw; font-weight: 600; font-size: 1.08cqw; line-height: 1.2; }
-.gvc__code { position: absolute; bottom: -2cqw; left: 0; right: 0; font-size: .72cqw; font-weight: 700; letter-spacing: .12em; color: #ffe3a6; }
+.gvc__title { font-weight: 500; font-size: max(1.46cqw, 6.5px); margin-top: 1.1cqw; line-height: 1.2; max-width: 100%; letter-spacing: .01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gvc__lines { position: absolute; left: -2%; right: -2%; bottom: 3.3%; display: flex; flex-direction: column; align-items: center; font-weight: 500; font-size: max(1.25cqw, 6px); line-height: 1.15; }
+.gvc__lines > span { max-width: 100%; text-wrap: balance; }
+.gvc__code { position: absolute; bottom: -1.6%; left: 0; right: 0; font-size: .72cqw; font-weight: 700; letter-spacing: .12em; color: #ffe3a6; }
 
 /* ============ CONFIGURATOR ============ */
 .sw-cfg { background: #f7f1e6; color: var(--text); }
@@ -188,7 +191,7 @@ html.sw-lock, html.sw-lock body { overflow: hidden; }
 .sw-cfg__side { position: sticky; top: 96px; display: flex; flex-direction: column; gap: 14px; }
 .sw-cfg__preview { position: relative; box-shadow: 0 30px 60px rgba(80,10,10,.25); transform: rotate(-1.2deg); transition: transform .4s; }
 .sw-cfg__preview:hover { transform: rotate(0) scale(1.02); }
-.sw-cfg__previewLbl { position: absolute; left: 10px; top: 10px; padding: 6px 9px; background: rgba(0,0,0,.55); color: #fff; font: 800 9px/1 var(--font-display); letter-spacing: .2em; }
+.sw-cfg__previewLbl { position: absolute; right: 10px; top: 10px; padding: 6px 9px; background: rgba(0,0,0,.55); color: #fff; font: 800 9px/1 var(--font-display); letter-spacing: .2em; }
 .sw-cfg__price { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 4px 12px; padding: 16px 18px; background: #fff; border-left: 4px solid var(--sw-gold); }
 .sw-cfg__price span { font: 800 10.5px/1 var(--font-display); letter-spacing: .18em; color: var(--muted); }
 .sw-cfg__price b { font: 900 24px/1 var(--font-display); color: var(--sw-red-2); }
