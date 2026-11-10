@@ -93,3 +93,14 @@ test("every product page renders (all slugs)", async ({ page }) => {
     await expect(page.locator(".pd-hero__code")).not.toBeEmpty();
   }
 });
+
+test("side list on /oferta opens the product page directly (no scroll to the plate)", async ({ page, request }) => {
+  const products = await visibleProducts(request);
+  const target = products.find((p) => !p.external_url);
+  await page.goto("/oferta");
+  await page.waitForSelector(".pr-menu__i", { timeout: 10000 });
+  const ext = products.find((p) => p.external_url);
+  if (ext) await expect(page.locator(".pr-menu__i", { hasText: ext.title_pl }).first()).toHaveAttribute("target", "_blank");
+  await page.locator(".pr-menu__i", { hasText: target.title_pl }).first().click();
+  await expect(page).toHaveURL(new RegExp(`/produkty/${target.slug}$`));
+});

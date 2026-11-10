@@ -34,11 +34,6 @@ export default function Produkty() {
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
   useEffect(() => { if (hash) document.querySelector(hash)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [hash, products.length]);
 
-  const jump = (p) => (e) => {
-    e.preventDefault();
-    if (filter !== "all" && (filter === "trips") !== isTrip(p)) setFilter("all");
-    setTimeout(() => document.getElementById(`p-${p.slug}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
-  };
 
   return (
     <div className={editing ? "cms-on pr" : "pr"}>
@@ -76,12 +71,17 @@ export default function Produkty() {
                 ))}
               </div>
               <nav className="pr-menu__list">
-                {products.map((p, i) => (
-                  <a key={p.id} href={`#p-${p.slug}`} className={`pr-menu__i ${filter !== "all" && (filter === "trips") !== isTrip(p) ? "dim" : ""}`} style={{ ["--pc"]: p.color || "var(--red)" }} onClick={jump(p)}>
+                {products.map((p, i) => {
+                  // a click opens the product page right away (Heels = its own site)
+                  const cls = `pr-menu__i ${filter !== "all" && (filter === "trips") !== isTrip(p) ? "dim" : ""}`;
+                  const style = { ["--pc"]: p.color || "var(--red)" };
+                  const inner = (<>
                     <i>{pad2(i + 1)}</i>
                     <span><b>{L(p, "title")}</b><small>{isTrip(p) ? t("prod.filterTrips") : (L(p, "tag") || p.code)}</small></span>
-                  </a>
-                ))}
+                  </>);
+                  if (p.external_url) return <a key={p.id} href={p.external_url} target="_blank" rel="noreferrer" className={cls} style={style} onClick={(e) => editing && e.preventDefault()}>{inner}</a>;
+                  return <Link key={p.id} to={`/produkty/${p.slug}`} className={cls} style={style} onClick={(e) => { if (editing) { e.preventDefault(); return; } window.scrollTo({ top: 0 }); }}>{inner}</Link>;
+                })}
               </nav>
               <span className="pr-menu__hint">{t("prod.menuHint")}</span>
             </aside>

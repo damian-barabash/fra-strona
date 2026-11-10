@@ -6,7 +6,7 @@ import Footer from "../sections/Footer";
 import CmsBar from "../sections/CmsBar";
 import ScrollProgress from "../sections/ScrollProgress";
 import { EText } from "../components/Editable";
-import { GiftVoucher, Flake, Bow, GiftIcon } from "../components/GiftVoucher";
+import { GiftVoucher, Flake, GiftIcon } from "../components/GiftVoucher";
 import { useRevealOnScroll } from "../lib/hooks";
 import { vsrc } from "../lib/video";
 import { useSeo } from "../lib/seo";
@@ -87,7 +87,6 @@ export default function Swieta() {
           <div className="sw-final__stripes" />
           <div className="container sw-final__grid">
             <div className="sw-final__card reveal-scale">
-              <Bow className="sw-final__bow" />
               <GiftVoucher lang={lang} name={lang === "en" ? "Your loved one" : "Twojego bliskiego"} title={lang === "en" ? "SPORT DRIVING TRAINING ON TRACK" : "SZKOLENIE JAZDY SPORTOWEJ NA TORZE"} lines={[lang === "en" ? "Tor Łódź" : "Tor Łódź", lang === "en" ? "Package Experience - 3 sessions" : "Pakiet Experience - 3 sesje", "Porsche / Supra / Alpine"]} />
               <span className="sw-final__shine" />
             </div>
@@ -106,7 +105,7 @@ export default function Swieta() {
   );
 }
 
-/* the looped campaign film in a gift-wrapped card: ribbons cross it, a bow on top, tilts flat as it scrolls in */
+/* the looped campaign film in a gift-wrapped card: ribbons cross it, tilts flat as it scrolls in */
 function VideoCard({ tag }) {
   const ref = useRef(null);
   const vid = useRef(null);
@@ -134,7 +133,6 @@ function VideoCard({ tag }) {
         <span className="sw-video__rib sw-video__rib--v" /><span className="sw-video__rib sw-video__rib--h" />
         <span className="sw-video__tag">{tag}</span>
       </div>
-      <Bow className="sw-video__bow" />
     </div>
   );
 }

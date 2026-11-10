@@ -4,7 +4,7 @@ import { useStore } from "../lib/store";
 import { adminCall } from "../lib/api";
 import Nav from "../sections/Nav";
 import CmsBar from "../sections/CmsBar";
-import { GiftVoucher, Bow, Flake, GiftIcon } from "../components/GiftVoucher";
+import { GiftVoucher, Flake, GiftIcon } from "../components/GiftVoucher";
 import IceCalendar from "../components/IceCalendar";
 import InvoiceFields from "../components/InvoiceFields";
 import LockerPicker from "../components/LockerPicker";
@@ -527,7 +527,6 @@ function PackShow({ X, en, lang, forName, vText, email, delivery, locker, create
       )}
       {phase === "done" && (
         <div className="sw-done">
-          <Bow className="sw-done__bow" />
           <Flake className="sw-done__flake" />
           <span className="sw-eyebrow sw-eyebrow--gold">{res?.test ? "TEST · " : ""}{en ? "THANK YOU" : "DZIĘKUJEMY"}</span>
           <h2 className="sw-h2">{X.doneT}</h2>

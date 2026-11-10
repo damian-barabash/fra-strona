@@ -662,7 +662,7 @@ export const DEFAULTS = {
   "prod.filterTrips": { pl: "WYPRAWY", en: "TRIPS", kind: "text" },
   "prod.pick": { pl: "WYBIERZ SWÓJ PRODUKT", en: "CHOOSE YOUR PRODUCT", kind: "text" },
   "prod.menuLabel": { pl: "NASZA OFERTA", en: "OUR OFFER", kind: "text" },
-  "prod.menuHint": { pl: "Kliknij, aby przejść do programu.", en: "Click to jump to a programme.", kind: "text" },
+  "prod.menuHint": { pl: "Kliknij, aby przejść do programu.", en: "Click to open a programme.", kind: "text" },
 
   // --- product card inside the configurator (step before the customer data) ---
   "card.step": { pl: "PRODUKT", en: "PRODUCT", kind: "text" },
