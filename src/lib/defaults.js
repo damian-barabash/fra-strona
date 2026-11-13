@@ -950,7 +950,6 @@ export const DEFAULTS = {
   "sw.how": { pl: "JAK TO DZIAŁA", en: "HOW IT WORKS", kind: "text" },
   "sw.cta": { pl: "ZAMÓW VOUCHER", en: "ORDER A VOUCHER", kind: "text" },
   "sw.how": { pl: "JAK TO DZIAŁA", en: "HOW IT WORKS", kind: "text" },
-  "sw.videoTag": { pl: "FASTLINE · ŚWIĘTA NA TORZE", en: "FASTLINE · CHRISTMAS ON TRACK", kind: "text" },
   "sw.stepsEyebrow": { pl: "TRZY KROKI DO PREZENTU", en: "THREE STEPS TO THE GIFT", kind: "text" },
   "sw.stepsTitle": { pl: "JAK TO DZIAŁA?", en: "HOW DOES IT WORK?", kind: "text" },
   "sw.s1t": { pl: "WYBIERZ PREZENT", en: "PICK THE GIFT", kind: "text" },

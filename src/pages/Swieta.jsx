@@ -54,7 +54,7 @@ export default function Swieta() {
           </div>
 
           <div className="container">
-            <VideoCard tag={t("sw.videoTag")} />
+            <VideoCard />
           </div>
         </section>
 
@@ -106,7 +106,7 @@ export default function Swieta() {
 }
 
 /* the looped campaign film in a gift-wrapped card: ribbons cross it, tilts flat as it scrolls in */
-function VideoCard({ tag }) {
+function VideoCard() {
   const ref = useRef(null);
   const vid = useRef(null);
   useEffect(() => {
@@ -131,7 +131,6 @@ function VideoCard({ tag }) {
       <div className="sw-video__frame">
         <video ref={vid} src={vsrc("/assets/swieta/loop.webm")} poster="/assets/swieta/loop-poster.webp" muted loop playsInline autoPlay preload="metadata" />
         <span className="sw-video__rib sw-video__rib--v" /><span className="sw-video__rib sw-video__rib--h" />
-        <span className="sw-video__tag">{tag}</span>
       </div>
     </div>
   );
