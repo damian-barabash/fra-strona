@@ -235,6 +235,7 @@ export function StoreProvider({ children }) {
   const createProductBooking = checkout("booking.createProduct");
   const createVoucherBooking = checkout("booking.createVoucher");
   const createGiftBooking = checkout("booking.createGift");   // /swieta-2026 holiday voucher
+  const createBwBooking = checkout("booking.createBw");       // /black-week (Black Friday Weeks)
   const orderStatus = (id) => adminCall("", "booking.status", { id });
 
   /* ---- optimistic collection edits ----
@@ -327,7 +328,7 @@ export function StoreProvider({ children }) {
     cmsMode, setCmsMode: (v) => setCmsMode((cur) => { const next = typeof v === "function" ? v(cur) : v; return next && !(admin?.role === "owner" || admin?.perms?.content) ? false : next; }),
     login, logout,
     setContentLocal, saveContent,
-    upsertEntity, deleteEntity, reorderEntity, getters, createBooking, createIceBooking, createTripBooking, createProductBooking, createVoucherBooking, createGiftBooking, orderStatus,
+    upsertEntity, deleteEntity, reorderEntity, getters, createBooking, createIceBooking, createTripBooking, createProductBooking, createVoucherBooking, createGiftBooking, createBwBooking, orderStatus,
     adminCall: call,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

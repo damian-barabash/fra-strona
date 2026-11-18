@@ -202,9 +202,12 @@ await ctx.addInitScript(() => { window.__FRA_PRERENDER = true; try { localStorag
 // keep media out of the snapshot run — faster and no autoplay video buffering
 await ctx.route(/\.(mp4|webm)(\?|$)/, (r) => r.abort());
 
+// campaign pages: prerendered (ads land on a real 200 page, not the SPA 404 fallback) but kept out of
+// the sitemap and llms-full.txt; the page itself sets noindex
+const HIDDEN = [{ path: "/black-week", hidden: true }];
 let full = `# Fastline Racing Academy — pełna treść strony\n\nWygenerowano ${TODAY}. Krótszy przewodnik: ${SITE}/llms.txt\n`;
 let ok = 0;
-for (const r of routes) {
+for (const r of [...routes, ...HIDDEN]) {
   const page = await ctx.newPage();
   try {
     await page.goto(`http://127.0.0.1:${port}${r.path}`, { waitUntil: "networkidle", timeout: 45000 });
@@ -226,7 +229,7 @@ for (const r of routes) {
     const out = r.path === "/" ? join(DIST, "index.html") : join(DIST, `${r.path.slice(1)}.html`);
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, html);
-    full += `\n\n---\n\n# ${title}\nURL: ${SITE}${r.path === "/" ? "/" : r.path}\n\n${text}\n`;
+    if (!r.hidden) full += `\n\n---\n\n# ${title}\nURL: ${SITE}${r.path === "/" ? "/" : r.path}\n\n${text}\n`;
     ok++;
   } catch (e) {
     console.warn(`[seo] prerender failed for ${r.path}: ${e.message}`);

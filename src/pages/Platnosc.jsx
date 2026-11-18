@@ -93,6 +93,7 @@ export default function Platnosc() {
                     <button className="pl-code__copy" onClick={copy}>{copied ? t("pay.copied") : t("pay.copy")}</button>
                   </div>
                 )}
+                {order?.promo && <BwGift order={order} />}
                 <Receipt order={order} money={money} t={t} />
                 <Club order={order} t={t} />
                 <div className="pl-btns">
@@ -203,6 +204,28 @@ function Confetti() {
       {Array.from({ length: 26 }, (_, i) => (
         <i key={i} style={{ ["--x"]: `${(i * 37) % 100}%`, ["--d"]: `${1.6 + (i % 5) * .35}s`, ["--r"]: `${(i * 53) % 360}deg`, ["--c"]: i % 3 ? (i % 2 ? "#e30613" : "#14161a") : "#fff", ["--delay"]: `${(i % 7) * .12}s` }} />
       ))}
+    </div>
+  );
+}
+
+/* Black Friday Weeks: what the customer gets for free (+ the second Race Taxi voucher code) */
+function BwGift({ order }) {
+  const [copied, setCopied] = useState(false);
+  const d = order.promo_data || {};
+  const gifts = (d.gifts || []).map((g) => String(g.label || "").replace(/ — (dopisać|wręczyć|umówić).*$/, "").replace(/ — kod.*$/, ""));
+  const copy = () => { navigator.clipboard?.writeText(d.taxi_code || ""); setCopied(true); setTimeout(() => setCopied(false), 1800); };
+  return (
+    <div className="pl-bw">
+      <span className="pl-bw__t">TWÓJ PREZENT · BLACK FRIDAY WEEKS</span>
+      <ul>{gifts.map((g) => <li key={g}>{g}</li>)}</ul>
+      {d.taxi_code && (
+        <div className="pl-bw__code">
+          <small>DRUGI VOUCHER RACE TAXI — DO PODAROWANIA</small>
+          <b>{d.taxi_code}</b>
+          <button className="pl-code__copy" onClick={copy}>{copied ? "Skopiowano ✓" : "Kopiuj kod"}</button>
+        </div>
+      )}
+      <p>{d.taxi_code ? "Kod jest też w mailu. Osoba obdarowana wpisuje go na stronie Race Taxi w polu „Mam kod”." : "Skontaktujemy się, żeby przekazać prezent."}</p>
     </div>
   );
 }

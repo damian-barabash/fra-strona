@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useStore } from "../lib/store";
 import { supabase } from "../lib/supabase";
 import { cookieChoice } from "./CookieBar";
+import { bwOn } from "../lib/blackweek";
 import { automated, dismiss, firstView, isExternal, popupAllowedOn, saveTimeOnSite, timeOnSite, touch, wasDismissed } from "../lib/popup";
 
 // the layout (and the text sanitiser it needs) is fetched only when there is a pop-up to show
@@ -14,7 +15,8 @@ const hit = (id, kind) => { try { supabase.rpc("popup_hit", { p_id: id, p_kind: 
    reloads of one visit. Closing it (cross, dark area, Esc, or following its button) keeps it closed
    for the rest of the visit; see lib/popup.js for what counts as a new visit. */
 export default function SitePopup() {
-  const { popup, lang, cmsMode, isAdmin } = useStore();
+  const { popup, lang, cmsMode, isAdmin, raw } = useStore();
+  const bw = bwOn(raw);   // Black Friday Weeks has its own pop-up — the regular one waits
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -28,7 +30,7 @@ export default function SitePopup() {
 
   // wait: the clock runs only while the visitor can actually see the site
   useEffect(() => {
-    if (!id || closed || open) return;
+    if (!id || closed || open || bw) return;
     const need = Math.max(0, Number(popup.delay_sec) || 0) * 1000;
     // the photo is fetched during the wait, so the block never opens half-empty
     const narrow = window.matchMedia("(max-width: 760px)").matches;
@@ -48,7 +50,7 @@ export default function SitePopup() {
     }, 250);
     return () => { clearInterval(iv); saveTimeOnSite(spent); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, closed, open, popup?.delay_sec, popup?.image, popup?.image_mobile, popup?.pages]);
+  }, [id, closed, open, bw, popup?.delay_sec, popup?.image, popup?.image_mobile, popup?.pages]);
 
   useEffect(() => { if (open && id && !isAdmin && firstView(id)) hit(id, "view"); }, [open, id, isAdmin]);
 
@@ -75,6 +77,6 @@ export default function SitePopup() {
     close();
   };
 
-  if (!popup || !open) return null;
+  if (!popup || !open || bw) return null;
   return <Suspense fallback={null}><PopupView p={popup} lang={lang} onClose={close} onGo={go} out={out} /></Suspense>;
 }

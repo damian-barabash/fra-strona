@@ -3,6 +3,7 @@
 import { db, cfg, listOf, sendMail, shell, table, row, button, chip, zl, esc } from "./mail.ts";
 import { spend } from "./discounts.ts";
 import { syncToFpl } from "./fpl.ts";
+import { BW, bwAfterPaid, sendBwMails } from "./blackweek.ts";
 
 const SITE = (Deno.env.get("SITE_URL") ?? "https://fastlineracingacademy.pl").replace(/\/$/, "");
 
@@ -113,6 +114,14 @@ export async function fulfillOrder(orderId: string, paidAmount?: number, method?
     }
   }
 
+  // Black Week: Race Taxi gets its second voucher code (the other gifts are handed over by the team)
+  if (upd.promo === BW) {
+    try { upd = await bwAfterPaid(upd); } catch (e) {
+      console.error("black week", e);
+      await db.from("bookings").update({ payment_error: `black week: ${String(e).slice(0, 200)}` }).eq("id", o.id);
+    }
+  }
+
   // Performance Lab: account (or match by e-mail / phone), payment, Race Litres, training — best-effort
   // (a test voucher from the holiday page and what is booked with it never leave the shop)
   if (!isGiftTest(upd)) await syncToFpl(upd);
@@ -197,6 +206,9 @@ export async function sendOrderMails(o: any) {
   const details = summaryRows(o);
 
   // ---- customer ----
+  // Black Week: its own customer e-mail (gifts, second Race Taxi voucher) + the e-mail to Mariusz; the team mail below stays
+  const bw = o.promo === BW;
+  if (bw) await sendBwMails(o, { summaryRows, invoiceBox, isTest: isGiftTest(o) });
   let body = `<p>Cześć ${esc((o.full_name || "").split(" ")[0])}!</p>`;
   if (isVoucher) {
     body += `<p>Dziękujemy za zakup vouchera Fastline Racing Academy. Poniżej Twój kod — obdarowana osoba podaje go przy rezerwacji terminu na torze (telefonicznie, mailowo lub w konfiguratorze na stronie).</p>
@@ -214,15 +226,18 @@ export async function sendOrderMails(o: any) {
   body += button(`${SITE}/kalendarz`, isVoucher ? "Zobacz terminy na torze" : "Kalendarz szkoleń");
   const T = o.is_test ? "[TEST] " : "";   // the hidden test product — never mistaken for a real sale
   const custSubject = T + (isVoucher ? `Twój voucher ${o.voucher_code} — Fastline Racing Academy` : `Potwierdzenie zamówienia #${o.number} — Fastline Racing Academy`);
-  const c = await sendMail(o.email, custSubject, shell(isVoucher ? "Voucher gotowy!" : "Zamówienie opłacone", body, { eyebrow: "FASTLINE RACING ACADEMY", preheader: `Zamówienie #${o.number}` }));
-  if (!c.ok) throw new Error(c.error);
+  if (!bw) {
+    const c = await sendMail(o.email, custSubject, shell(isVoucher ? "Voucher gotowy!" : "Zamówienie opłacone", body, { eyebrow: "FASTLINE RACING ACADEMY", preheader: `Zamówienie #${o.number}` }));
+    if (!c.ok) throw new Error(c.error);
+  }
 
   // ---- staff ----
   if (isGiftTest(o)) return;   // booked with a TEST holiday voucher — only the customer hears about it
   const toKey = isVoucher ? "voucher_to" : "order_to";
   const staff = listOf(await cfg(toKey, "lukasz.kazmierczak@greywolfgroup.pl"));
-  const sBody = `<p>${chip(o.is_test ? "ZAMÓWIENIE TESTOWE" : isVoucher ? "NOWY VOUCHER" : "NOWE ZAMÓWIENIE")}</p>
-    ${details}
+  const bwTodo = bw ? `<div style="margin:14px 0;padding:14px 16px;background:#0b0b0c;color:#fff;border-left:4px solid #c9ccd1"><div style="font-size:10px;letter-spacing:2px;font-weight:bold;color:#c9ccd1">BLACK WEEK — PREZENT DLA KLIENTA</div><ul style="margin:8px 0 0;padding-left:18px;font-size:14px;line-height:1.6">${(o.promo_data?.gifts || []).map((g: any) => `<li>${esc(g.label)}</li>`).join("")}</ul></div>` : "";
+  const sBody = `<p>${chip(o.is_test ? "ZAMÓWIENIE TESTOWE" : isVoucher ? "NOWY VOUCHER" : "NOWE ZAMÓWIENIE")}${bw ? " " + chip("BLACK WEEK", "#0b0b0c") : ""}</p>
+    ${bwTodo}${details}
     ${invoiceBox(o.invoice, true)}
     ${table([
       row("Klient", `<b>${esc(o.full_name)}</b>`),
@@ -232,5 +247,5 @@ export async function sendOrderMails(o: any) {
       row("Opłacono", o.paid_at ? new Date(o.paid_at).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" }) : "—"),
     ].join(""))}
     ${button(`${SITE}/admin`, "Otwórz w panelu")}`;
-  await sendMail(staff, `${T}${isVoucher ? "Voucher" : "Zamówienie"} #${o.number} — ${o.full_name} — ${zl(o.total, o.currency)}${o.invoice?.nip ? " — FAKTURA" : ""}`, shell(isVoucher ? `Voucher #${o.number}` : `Zamówienie #${o.number}`, sBody, { eyebrow: "PANEL SPRZEDAŻY" }), o.email);
+  await sendMail(staff, `${T}${bw ? "[BLACK WEEK] " : ""}${isVoucher ? "Voucher" : "Zamówienie"} #${o.number} — ${o.full_name} — ${zl(o.total, o.currency)}${o.invoice?.nip ? " — FAKTURA" : ""}`, shell(isVoucher ? `Voucher #${o.number}` : `Zamówienie #${o.number}`, sBody, { eyebrow: "PANEL SPRZEDAŻY" }), o.email);
 }

@@ -13,6 +13,7 @@ import RichEditor from "../components/RichEditor";
 import PopupsTab from "./AdminPopups";
 import CodesTab from "./AdminCodes";
 import GiftsTab from "./AdminGifts";
+import BlackWeekTab from "./AdminBlackWeek";
 import { postDate, postState, todayIso } from "../lib/blog";
 import { plainText, wordCount } from "../lib/richtext";
 import "./admin.css";
@@ -26,6 +27,7 @@ import { fmtNip } from "../lib/invoice";
 
 /* ---- icons (inline, 18px) ---- */
 const I = {
+  bw: <svg viewBox="0 0 24 24"><path d="M4 21V4M4 4h14l-3 4 3 4H4" /><path d="M8 4v8M12 4v8M16 4v4" /></svg>,
   users: <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><circle cx="17" cy="9" r="2.6" /><path d="M15.5 14.2A5 5 0 0 1 22 19" /></svg>,
   log: <svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5z" /><path d="M15 3v4h4M8 12h8M8 16h8M8 8h3" /></svg>,
   home: <svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z" /></svg>,
@@ -201,7 +203,7 @@ const CFG = {
 const GROUPS = [
   { id: "pulpit", label: "Pulpit", tabs: [{ t: "dashboard", l: "Pulpit", i: "home" }] },
   { id: "sprzedaz", label: "Sprzedaż", tabs: [
-    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart", p: "orders" }, { t: "vouchery", l: "Vouchery", i: "gift", p: "orders" }, { t: "swieta", l: "Vouchery świąteczne", i: "gift", p: "orders" }, { t: "kody", l: "Kody rabatowe", i: "tag", p: "discounts" },
+    { t: "zamowienia", l: "Zamówienia i płatności", i: "cart", p: "orders" }, { t: "vouchery", l: "Vouchery", i: "gift", p: "orders" }, { t: "blackweek", l: "Black Week", i: "bw", p: "orders" }, { t: "swieta", l: "Vouchery świąteczne", i: "gift", p: "orders" }, { t: "kody", l: "Kody rabatowe", i: "tag", p: "discounts" },
     { t: "wiadomosci", l: "Wiadomości", i: "mail", p: "messages" }, { t: "firmy", l: "Zapytania firmowe", i: "biz", p: "messages" }, { t: "ustawienia", l: "Ustawienia", i: "cog", p: "settings" },
   ] },
   { id: "oferta", label: "Oferta", tabs: [{ t: "products", l: "Produkty", i: "box", p: "products" }, { t: "ice_packages", l: "Laponia — pakiety", i: "snow", p: "products" }, { t: "ice_windows", l: "Laponia — sezon", i: "snow", p: "products" }, { t: "programs", l: "Kafelki na głównej", i: "grid", p: "content" }] },
@@ -304,6 +306,7 @@ function Shell() {
           : tab === "logs" ? <LogsTab />
           : tab === "zamowienia" ? <OrdersTab />
           : tab === "vouchery" ? <OrdersTab only="voucher" />
+          : tab === "blackweek" ? <BlackWeekTab OrderDrawer={OrderDrawer} />
           : tab === "swieta" ? <GiftsTab OrderDrawer={OrderDrawer} />
           : tab === "kody" ? <CodesTab />
           : tab === "wiadomosci" ? <MessagesTab kind="contact" />

@@ -1,3 +1,4 @@
+import "./giftvoucher.css";
 /* Holiday voucher (/swieta-2026) drawn on the blank template: the boss's placeholder with its text removed
    (public/assets/swieta/voucher-blank.webp). Name, product and code are typed on top in the red panel, so the
    live preview, the envelope animation and the final CTA all show the voucher the customer is buying.

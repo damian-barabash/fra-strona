@@ -1,0 +1,83 @@
+/* Black Friday Weeks — pop-up + the badge in the bottom-left corner (components/BlackWeekPopup.jsx).
+   Look of the key visual: pure black, brushed silver letters, white light. No red. */
+
+/* brushed-metal button, shared with the /black-week page */
+.bw-silver {
+  position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: .55em;
+  border: 0; border-radius: 0; cursor: pointer; color: #0b0b0c; text-transform: uppercase; white-space: nowrap;
+  font: 900 15px/1 var(--font-display); letter-spacing: .02em;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.0) 0 2px, rgba(255,255,255,.22) 2px 3px, rgba(0,0,0,.05) 3px 5px),
+    linear-gradient(180deg, #ffffff 0%, #e4e6e9 38%, #a7abb1 52%, #cfd2d6 70%, #f4f5f6 100%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.65), 0 10px 30px rgba(255,255,255,.12), 0 2px 0 rgba(0,0,0,.6);
+  transition: transform .2s ease, box-shadow .25s ease, filter .2s ease;
+}
+.bw-silver i { font-style: normal; font-size: 1.25em; line-height: .8; transition: transform .2s ease; }
+.bw-silver::after { content: ""; position: absolute; inset: -40% auto -40% -60%; width: 40%; transform: skewX(-22deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.95), transparent); animation: bwShine 3.4s ease-in-out infinite 1.2s; }
+.bw-silver:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px #fff, 0 16px 44px rgba(255,255,255,.22), 0 2px 0 rgba(0,0,0,.6); }
+.bw-silver:hover i { transform: translateX(4px); }
+.bw-silver:active { transform: translateY(0); filter: brightness(.94); }
+.bw-silver:disabled { cursor: default; filter: grayscale(1) brightness(.6); }
+.bw-silver:disabled::after { display: none; }
+@keyframes bwShine { 0%, 62% { left: -60%; } 100% { left: 130%; } }
+
+/* ---- pop-up ---- */
+html.bwp-lock { overflow: hidden; }
+.bwp { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 16px; }
+.bwp__bg { position: absolute; inset: 0; background: rgba(0,0,0,.78); animation: bwpFade .45s ease both; }
+@media (min-width: 901px) and (hover: hover) { .bwp__bg { backdrop-filter: blur(6px); } }
+.bwp.is-closing .bwp__bg { animation: bwpFadeOut .5s ease .1s both; }
+
+.bwp__card { position: relative; width: min(1180px, 100%, calc((100svh - 64px) * 16 / 9)); background: #000; transform-origin: 0 0;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.14), 0 40px 120px rgba(0,0,0,.9), 0 0 140px rgba(255,255,255,.06);
+  animation: bwpIn .75s cubic-bezier(.16, 1, .3, 1) both; container-type: inline-size; }
+.bwp.is-closing .bwp__card { animation: none; transition: transform .62s cubic-bezier(.7, 0, .2, 1), box-shadow .62s ease; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+.bwp.is-closing .bwp__x, .bwp.is-closing .bwp__cta { opacity: 0; transition: opacity .15s ease; }
+
+.bwp__art { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+.bwp__art img { display: block; width: 100%; height: 100%; object-fit: cover; animation: bwpZoom 9s ease-out both; }
+.bwp__sweep { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.16) 47%, rgba(255,255,255,.04) 53%, transparent 62%);
+  transform: translateX(-100%); animation: bwpSweep 2.2s cubic-bezier(.4, 0, .2, 1) .5s both; }
+/* bottom-left, under the title — the right corner carries the banner's own "do -50%" */
+.bwp__cta { position: absolute; left: 7.4%; bottom: 8.5%; padding: 1.15em 1.9em; font-size: clamp(13px, 2.15cqw, 26px);
+  animation: bwpUp .7s cubic-bezier(.16, 1, .3, 1) .55s both; }
+
+.bwp__x { position: absolute; top: 10px; right: 10px; width: 46px; height: 46px; display: grid; place-items: center; z-index: 2;
+  background: transparent; border: 0; cursor: pointer; animation: bwpFade .4s ease .4s both; }
+.bwp__x svg { width: 26px; height: 26px; stroke: #fff; stroke-width: 2.4; fill: none; stroke-linecap: square; filter: drop-shadow(0 2px 6px rgba(0,0,0,.8)); transition: transform .25s ease; }
+.bwp__x:hover svg { transform: rotate(90deg) scale(1.08); }
+.bwp__x:focus-visible, .bwp__cta:focus-visible, .bwp-pill:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* narrow screens: the picture on top, the button full width under it */
+@container (max-width: 620px) {
+  .bwp__art { aspect-ratio: auto; }
+  .bwp__art img { height: auto; aspect-ratio: 16 / 9; }
+  .bwp__sweep { bottom: auto; aspect-ratio: 16 / 9; }
+  .bwp__cta { position: static; display: flex; width: calc(100% - 28px); margin: 14px; padding: 18px 14px; font-size: 16px; }
+  .bwp__x { top: 4px; right: 4px; }
+  .bwp__x svg { width: 22px; height: 22px; }
+}
+
+/* ---- the badge in the corner ---- */
+.bwp-pill { position: fixed; left: 16px; bottom: 16px; z-index: 320; width: 232px; padding: 0; border: 0; cursor: pointer; background: #000; text-align: left;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 14px 40px rgba(0,0,0,.55); animation: bwpPill .5s cubic-bezier(.16, 1, .3, 1) both; transition: transform .2s ease, box-shadow .2s ease; }
+.bwp-pill:hover { transform: translateY(-3px); box-shadow: 0 0 0 1px rgba(255,255,255,.4), 0 20px 50px rgba(0,0,0,.6), 0 0 40px rgba(255,255,255,.1); }
+.bwp-pill__img { display: block; aspect-ratio: 16 / 9; overflow: hidden; }
+.bwp-pill__img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bwp-pill__cta { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 10px; color: #0b0b0c; font: 900 12px/1 var(--font-display);
+  background: linear-gradient(180deg, #fff 0%, #dfe1e4 45%, #a7abb1 56%, #eceef0 100%); }
+.bwp-pill__cta i { font-style: normal; font-size: 15px; line-height: .7; }
+@media (max-width: 560px) { .bwp-pill { width: 172px; left: 12px; bottom: 12px; } .bwp-pill__cta { font-size: 11px; padding: 8px; } }
+
+@keyframes bwpFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bwpFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes bwpIn { from { opacity: 0; transform: translateY(26px) scale(.94); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes bwpZoom { from { transform: scale(1.08); } to { transform: scale(1); } }
+@keyframes bwpSweep { to { transform: translateX(100%); } }
+@keyframes bwpUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes bwpPill { from { opacity: 0; transform: translateY(20px) scale(.9); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .bwp__card, .bwp__art img, .bwp__sweep, .bwp__cta, .bwp-pill, .bw-silver::after { animation: none !important; }
+}

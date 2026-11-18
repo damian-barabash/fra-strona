@@ -5,6 +5,7 @@ import { tpayConfigured, tpayCreateTransaction, tpayToken, TPAY_API } from "../_
 import { fulfillOrder, sendOrderMails, VAT_RATE, gross, round2 } from "../_shared/orders.ts";
 import { syncToFpl } from "../_shared/fpl.ts";
 import { gcalSync, gcalLater, gcalConfigured } from "../_shared/gcal.ts";
+import { BW, bwItem, bwOn } from "../_shared/blackweek.ts";
 import { REASON, normCode, validCode, stateOf, findCode, fits, offFor, reserve, release, describeTarget, variantsOf, type Code } from "../_shared/discounts.ts";
 
 const cors = {
@@ -190,7 +191,7 @@ const TABLE_PERM: Record<string, string> = {
 };
 // which permission a named action needs (prefix match); actions missing here are open to every admin (reads)
 const ACTION_PERM: [RegExp, string][] = [
-  [/^config\./, "settings"], [/^gcal\./, "settings"], [/^bookings\./, "orders"], [/^gifts\./, "orders"], [/^discounts\./, "discounts"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
+  [/^config\./, "settings"], [/^gcal\./, "settings"], [/^bookings\./, "orders"], [/^gifts\./, "orders"], [/^bw\./, "orders"], [/^discounts\./, "discounts"], [/^messages\./, "messages"], [/^content\./, "content"], [/^admins\./, "admins"],
 ];
 const UPLOAD_PERMS = ["content", "products", "cars", "terms", "tracks", "instructors", "blog"];
 function allowed(a: Admin, action: string, table: string): boolean {
@@ -205,7 +206,7 @@ function allowed(a: Admin, action: string, table: string): boolean {
 }
 
 /* ---------------- audit log ---------------- */
-const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|fplSync|cancel|read|create|update|generate|release|sync|ship|unship|use|unuse|mode)$/;
+const MUTATING = /\.(upsert|delete|reorder|set|save|upload|markPaid|resendMail|fplSync|cancel|read|create|update|generate|release|sync|ship|unship|use|unuse|mode|check|settings)$/;
 async function audit(req: Request, a: Admin, action: string, target: string | null, details: unknown) {
   try {
     const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
@@ -596,9 +597,81 @@ async function createGiftBooking(p: any, req: Request) {
   }, p, { test });
 }
 
+/* ---------------- BLACK FRIDAY WEEKS (/black-week) ----------------
+   Normal price, normal Tpay payment — the order only carries the campaign and the gifts to hand over.
+   The switch (content bw.on) closes the configurator and the pop-up; the server refuses orders while it is off. */
+async function createBwBooking(p: any) {
+  if (!(await bwOn())) return json({ ok: false, error: "Promocja Black Friday Weeks jest zakończona." }, 409);
+  const payer = payerOf(p); if ("err" in payer) return json({ ok: false, error: payer.err }, 400);
+  const item = await bwItem(p.bw); if ("err" in item) return json({ ok: false, error: item.err }, 400);
+  const product = String(p.bw?.product);
+  // bought as a gift: a voucher with the recipient's name, its code is issued after payment
+  let voucher: { for: string } | null = null;
+  if (p.bw?.mode === "gift") {
+    const name = str(p.bw?.gift_for, 40).replace(/\s+/g, " ");
+    if (name.length < 2) return json({ ok: false, error: "Wpisz imię osoby obdarowanej." }, 400);
+    voucher = { for: name };
+  }
+  // a gift voucher can also be printed and sent to an InPost locker (same fee as the holiday page)
+  let delivery = "email", deliveryData: Record<string, string> | null = null, fee = 0;
+  const gifts = item.gifts.map((g) => ({ ...g, done: !!g.done }));
+  if (voucher && p.delivery === "inpost") {
+    const locker = String(p.delivery_data?.locker ?? "").toUpperCase().replace(/\s+/g, "").slice(0, 12);
+    const phone = str(p.delivery_data?.phone, 30), name = str(p.delivery_data?.name, 120);
+    if (!/^[A-Z]{3}[0-9]{1,4}[A-Z]{0,3}$/.test(locker)) return json({ ok: false, error: "Wybierz Paczkomat InPost." }, 400);
+    if (!phoneOf(phone)) return json({ ok: false, error: "Podaj numer telefonu do powiadomień InPost." }, 400);
+    delivery = "inpost"; fee = await giftFee();
+    deliveryData = { locker, phone, name: name || payer.full_name, address: str(p.delivery_data?.address, 160) };
+    gifts.push({ id: "inpost", label: `Wydrukować voucher dla ${voucher.for} i wysłać do Paczkomatu ${locker}${deliveryData.address ? ` (${deliveryData.address})` : ""} · ${deliveryData.name} · ${phone}`, done: false } as any);
+  }
+  return startPayment({
+    ...item.row, ...payer, promo: BW, voucher_for: voucher?.for ?? null, delivery: voucher ? delivery : null, delivery_fee: fee, delivery_data: deliveryData,
+    promo_data: { product, title: item.title, options: item.options, voucher, gifts },
+  }, { ...p, discount_code: undefined });   // a gift campaign — no discount codes on top
+}
+
+/* ADMIN: the Black Week list (checklist of gifts per order), the switch and its settings */
+async function bwAdmin(action: string, p: any, me: Admin): Promise<Response> {
+  const content = async (k: string) => (await db.from("content").select("pl").eq("key", k).maybeSingle()).data?.pl ?? "";
+  if (action === "bw.list") {
+    const { data: rows, error } = await db.from("bookings").select("*").eq("promo", BW).order("created_at", { ascending: false }).limit(2000);
+    if (error) return json({ ok: false, error: error.message }, 500);
+    return json({ ok: true, on: await bwOn(), heels_basic: num(await content("bw.heels.basic")), heels_premium: num(await content("bw.heels.premium")), bw_to: await cfg("bw_to", "mariusz.miekos@greywolfgroup.pl"), rows: rows ?? [] });
+  }
+  if (action === "bw.mode" || action === "bw.settings") {
+    if (!can(me, "settings")) return json({ ok: false, error: "forbidden", perm: true }, 403);
+    const put = (key: string, pl: string) => db.from("content").upsert({ key, pl, kind: "url", updated_at: new Date().toISOString() });
+    if (p?.on != null) await put("bw.on", p.on ? "1" : "0");
+    for (const k of ["basic", "premium"]) { const v = num(p?.[`heels_${k}`]); if (v > 0) await put(`bw.heels.${k}`, String(v)); }
+    if (p?.bw_to != null) { const list = listOf(String(p.bw_to)); if (!list.length) return json({ ok: false, error: "Podaj poprawny adres e-mail." }, 400); await db.from("app_config").upsert({ key: "bw_to", value: list.join(", ") }); }
+    return json({ ok: true, on: await bwOn() });
+  }
+  if (action === "bw.check") {
+    const { data: o } = await db.from("bookings").select("id, promo, promo_data").eq("id", String(p?.id ?? "")).maybeSingle();
+    if (!o || o.promo !== BW) return json({ ok: false, error: "not found" }, 404);
+    const d = { ...(o.promo_data || {}) };
+    let hit = false;
+    d.gifts = (d.gifts || []).map((g: any) => {
+      if (g.id !== p.gift) return g;
+      hit = true;
+      return p.done ? { ...g, done: true, done_at: new Date().toISOString(), done_by: me.name || me.login } : { ...g, done: false, done_at: null, done_by: null };
+    });
+    if (!hit) return json({ ok: false, error: "not found" }, 404);
+    const { data, error } = await db.from("bookings").update({ promo_data: d }).eq("id", o.id).select("*").single();
+    return error ? json({ ok: false, error: error.message }, 500) : json({ ok: true, row: data });
+  }
+  return json({ ok: false, error: "unknown action" }, 400);
+}
+
 /** the order of a holiday voucher is cancelled / deleted → its code stops working (removed if never used) */
 async function dropGiftCode(id: string, remove: boolean) {
-  const { data: o } = await db.from("bookings").select("voucher_code, voucher_campaign").eq("id", id).maybeSingle();
+  const { data: o } = await db.from("bookings").select("voucher_code, voucher_campaign, promo_data").eq("id", id).maybeSingle();
+  // Black Week Race Taxi: the free second voucher goes with its order
+  // Black Week: the free second Race Taxi voucher and the gift voucher go with their order
+  for (const bwCode of [o?.promo_data?.taxi_code, o?.promo_data?.voucher?.code].filter(Boolean)) {
+    if (remove) await db.from("discount_codes").delete().eq("code", bwCode).is("used_at", null);
+    await db.from("discount_codes").update({ active: false }).eq("code", bwCode);
+  }
   if (!o?.voucher_campaign || !o.voucher_code) return;
   if (remove) await db.from("discount_codes").delete().eq("code", o.voucher_code).is("used_at", null);
   await db.from("discount_codes").update({ active: false }).eq("code", o.voucher_code);
@@ -685,7 +758,7 @@ async function orderStatus(p: any) {
   const id = String(p?.id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ ok: false, error: "not found" }, 404);
   const { data: o } = await db.from("bookings")
-    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at, is_test, meta, invoice")
+    .select("id, number, kind, status, total, total_gross, currency, amount_pln, discount_code, discount_pln, car_name, product_name, package_name, sessions, persons, term_label, date_from, date_to, payment_url, voucher_code, voucher_for, full_name, email, paid_at, created_at, is_test, meta, invoice, promo, promo_data")
     .eq("id", id).maybeSingle();
   if (!o) return json({ ok: false, error: "not found" }, 404);
   const { meta, ...pub } = o as any;
@@ -754,6 +827,7 @@ Deno.serve(async (req) => {
     if (action === "booking.createTrip") return await createTripBooking(payload ?? {});
     if (action === "booking.createVoucher") return await createVoucherBooking(payload ?? {});
     if (action === "booking.createGift") return await createGiftBooking(payload ?? {}, req);
+    if (action === "booking.createBw") return await createBwBooking(payload ?? {});
     if (action === "gift.info") return await giftInfo();
     if (action === "booking.status") return await orderStatus(payload ?? {});
     if (action === "discount.check") return await checkDiscount(payload ?? {}, req);
@@ -789,6 +863,7 @@ function describe(action: string, p: any, table: string): { target: string | nul
     return { target: `${p.settings?.batch || p.batch || ""}${n ? ` · ${n} kod(ów)` : ""}`.replace(/^ · /, "") || null, details: { settings: p.settings ?? null, patch: p.patch ?? null, codes: (p.codes ?? []).slice(0, 20) } };
   }
   if (action.startsWith("messages.")) return { target: String(p.id ?? ""), details: null };
+  if (action.startsWith("bw.")) return { target: action === "bw.check" ? `${p.id ?? ""} · ${p.gift ?? ""}` : "Black Week", details: action === "bw.check" ? { done: !!p.done } : { on: p.on ?? null, heels_basic: p.heels_basic ?? null, heels_premium: p.heels_premium ?? null, bw_to: p.bw_to ?? null } };
   if (action.startsWith("admins.")) return { target: String(p.login ?? p.id ?? ""), details: { role: p.role, perms: p.perms, name: p.name, position: p.position } };
   if (table) {
     if (action.endsWith(".reorder")) return { target: table, details: { ids: (p.ids ?? []).length } };
@@ -942,6 +1017,7 @@ async function handle(req: Request, me: Admin, action: string, payload: any, tab
 
     if (action.startsWith("discounts.")) return await discountsAdmin(action, payload, me);
     if (action.startsWith("gifts.")) return await giftsAdmin(action, payload, me);
+    if (action.startsWith("bw.")) return await bwAdmin(action, payload, me);
 
     if (action === "messages.list") {
       const { data, error } = await db.from("messages").select("*").order("created_at", { ascending: false }).limit(300);
