@@ -94,7 +94,7 @@ test("landing: hero with countdown, benefits, offers, holiday vouchers, how it w
   await expect(page.locator(".bwc-perk")).toHaveCount(3);
   await expect(page.locator(".bwc-prod")).toHaveCount(5);
   await expect(page.locator(".bwc-faq details")).toHaveCount(6);
-  await expect(page.locator(".bwc-how li")).toHaveCount(3);
+  await expect(page.locator(".bwc-how:not(.bwc-how--cfg) li")).toHaveCount(3);
   await page.waitForTimeout(1200);
   await shot(page, "lp-top");
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/lp-full-${page.viewportSize().width}.png`, fullPage: true });

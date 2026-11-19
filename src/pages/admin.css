@@ -102,12 +102,15 @@
 .adm-search:focus { outline: none; border-color: var(--ink); }
 .adm-toolbar__sum { font: 500 12.5px var(--font-body); color: var(--muted); } .adm-toolbar__sum b { color: var(--ink); }
 .adm-table { background: #fff; border: 1px solid var(--line); }
-.adm-tr { display: grid; grid-template-columns: 64px 130px 1.1fr 1.5fr 120px 120px 96px; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 13px; }
+.adm-tr { display: grid; grid-template-columns: 64px 130px minmax(0, 1.1fr) minmax(0, 1.5fr) 120px 120px 96px; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 13px; }
 .adm-tr--head { border-top: none; background: var(--bg); font: 700 10px var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 .adm-tr.is-pending { background: #fffaf0; }
 .adm-tr__no { font: 800 13px var(--font-display); }
 .adm-tr__date { font-size: 12px; color: var(--muted); }
 .adm-tr__who b, .adm-tr__what b { display: block; font: 700 13px var(--font-body); }
+/* long company names / term labels never push the columns (a grid item's min-width is its content by default) */
+.adm-tr > span { min-width: 0; }
+.adm-tr__who b, .adm-tr__what b { overflow-wrap: anywhere; }
 .adm-tr__who small, .adm-tr__what small { display: block; font: 500 11.5px var(--font-body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adm-tr__what .adm-kind { margin-bottom: 4px; }
 .adm-tr__sum b { display: block; font: 800 14px var(--font-display); } .adm-tr__sum small { display: block; font: 500 11px var(--font-body); color: var(--muted); }
@@ -254,7 +257,7 @@
 .adm-link:hover { color: var(--red); }
 
 /* ---- responsive ---- */
-@media (max-width: 1100px) { .adm-kpis { grid-template-columns: repeat(2, 1fr); } .adm-grid2 { grid-template-columns: 1fr; } .adm-tr { grid-template-columns: 56px 1fr 1.4fr 110px 100px 90px; } .adm-tr__date { display: none; } }
+@media (max-width: 1100px) { .adm-kpis { grid-template-columns: repeat(2, 1fr); } .adm-grid2 { grid-template-columns: 1fr; } .adm-tr { grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1.4fr) 110px 100px 90px; } .adm-tr__date { display: none; } }
 @media (max-width: 860px) {
   .adm { padding-left: 0; }
   .adm-side { transform: translateX(-100%); transition: transform .25s; }
@@ -629,3 +632,4 @@
   .adm-bw-gifts li { flex-direction: column; align-items: flex-start; gap: 2px; }
   .adm-bw-switch { flex-direction: column; align-items: flex-start; }
 }
+.adm-kind--bw { background: #0b0b0c !important; margin-left: 4px; }

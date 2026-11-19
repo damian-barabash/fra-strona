@@ -454,7 +454,7 @@ function OrdersTab({ only }) {
           ))}
         </div>
         <input className="adm-search" placeholder="Szukaj: numer, klient, e-mail, kod…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <span className="adm-toolbar__sum">Opłacone: <b>{fmtZl(sumPaid)}</b></span>
+        <span className="adm-toolbar__sum">Opłacone: <b>{money2(sumPaid)}</b></span>
       </div>
 
       {rows === null ? <div className="adm-empty">Ładowanie…</div> : !list.length ? <div className="adm-empty">Brak zamówień.</div> : (
@@ -464,8 +464,8 @@ function OrdersTab({ only }) {
             <div key={b.id} className={`adm-tr ${b.status === "pending" ? "is-pending" : ""} ${b.is_test ? "is-test" : ""}`}>
               <span className="adm-tr__no">#{b.number}{b.is_test && <i className="adm-badge adm-badge--test">TEST</i>}</span>
               <span className="adm-tr__date">{when(b.created_at)}</span>
-              <span className="adm-tr__who"><b>{b.full_name}{b.invoice?.nip && <i className="adm-badge adm-badge--fv" title={`Faktura VAT: ${b.invoice.company}`}>FV</i>}</b><small>{b.invoice?.nip ? b.invoice.company : b.email}</small></span>
-              <span className="adm-tr__what"><span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span><b>{b.car_name || b.product_name}</b><small>{b.sessions ? `${b.sessions} sesji · ` : ""}{b.term_label || b.package_name || ""}{b.voucher_code ? ` · ${b.voucher_code}` : ""}</small></span>
+              <span className="adm-tr__who"><b>{b.full_name}{b.invoice?.nip && <i className="adm-badge adm-badge--fv" title={`Faktura VAT: ${b.invoice.company}`}>FV</i>}</b><small title={b.invoice?.nip ? b.invoice.company : b.email}>{b.invoice?.nip ? b.invoice.company : b.email}</small></span>
+              <span className="adm-tr__what"><span className="adm-kind" style={{ background: KIND[b.kind]?.[1] }}>{KIND[b.kind]?.[0]}</span>{b.promo && <span className="adm-kind adm-kind--bw">BLACK WEEK</span>}<b>{b.car_name || b.product_name}</b><small title={`${b.sessions ? `${b.sessions} sesji · ` : ""}${b.term_label || b.package_name || ""}${b.voucher_code ? ` · ${b.voucher_code}` : ""}`}>{b.sessions ? `${b.sessions} sesji · ` : ""}{b.term_label || b.package_name || ""}{b.voucher_code ? ` · ${b.voucher_code}` : ""}</small></span>
               <span className="adm-tr__sum">{Number(b.discount_pln) > 0
                 ? <><b>{money2(b.amount_pln)}</b><small>kod {b.discount_code} −{money2(b.discount_pln)} · {money(b)} netto</small></>
                 : <><b>{money2(grossOf(b), b.currency)}</b><small>{money(b)} netto{b.currency === "EUR" ? ` · ${money2(b.amount_pln)}` : ""}</small></>}</span>

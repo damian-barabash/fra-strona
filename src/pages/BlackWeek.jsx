@@ -88,8 +88,8 @@ export default function BlackWeek() {
   const [err, setErr] = useState("");
   const [paying, setPaying] = useState(false);
   const [flash, setFlash] = useState("");          // "Bonus Black Friday dodany: …"
-  const cfgRef = useRef(null);
-  const [cfgInView, setCfgInView] = useState(false);
+  const bodyRef = useRef(null);
+  const [cfgOpen, setCfgOpen] = useState(!!(preset || presetGift));   // the configurator is a full-screen window
   const gift = mode === "gift";
 
   const d2r = products.find((p) => p.slug === "driver2racer");
@@ -116,12 +116,14 @@ export default function BlackWeek() {
   const step = STEPS[Math.min(stepIdx, STEPS.length - 1)];
   const cartStep = STEPS[STEPS.indexOf("dane") - 1];   // its "next" adds to the cart
 
-  /* the sticky step bar only while the configurator is on screen */
+  /* the window: page scroll locked, Esc closes it */
   useEffect(() => {
-    const el = cfgRef.current; if (!el || !("IntersectionObserver" in window)) return;
-    const io = new IntersectionObserver(([e]) => setCfgInView(e.isIntersecting), { rootMargin: "-80px 0px -120px 0px" });
-    io.observe(el); return () => io.disconnect();
-  }, []);
+    if (!cfgOpen) return;
+    const key = (e) => e.key === "Escape" && !paying && setCfgOpen(false);
+    document.documentElement.classList.add("bwp-lock");
+    window.addEventListener("keydown", key);
+    return () => { document.documentElement.classList.remove("bwp-lock"); window.removeEventListener("keydown", key); };
+  }, [cfgOpen, paying]);
 
   /* ---- price (net, product currency) ---- */
   const hp = heelsPkg ? heelsPrice(raw, heelsPkg) : 0;
@@ -186,10 +188,8 @@ export default function BlackWeek() {
     if (step === "dane") { if (!(form.full_name.trim() && validEmail && form.phone.trim())) return "Uzupełnij imię i nazwisko, e-mail i telefon."; const ip = invoiceProblem(inv); if (ip) return t(ip); }
     return "";
   };
-  const toCfg = (smooth = true) => requestAnimationFrame(() => {
-    const el = cfgRef.current; if (!el) return;
-    window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - (window.innerWidth <= 900 ? 64 : 84)), behavior: smooth ? "smooth" : "auto" });
-  });
+  // a new step starts at the top of the window's content (the window itself never scrolls the page)
+  const toCfg = () => { setCfgOpen(true); requestAnimationFrame(() => bodyRef.current?.scrollTo({ top: 0 })); };
   const goNext = () => {
     const p = problem(); if (p) { setErr(p); return; }
     setErr("");
@@ -208,7 +208,7 @@ export default function BlackWeek() {
   useEffect(() => {
     if (preset && preset.id !== pid) pick(preset, false);
     if (presetGift) setMode("gift");
-    if (preset || presetGift) setTimeout(() => toCfg(false), 60);
+    if (preset || presetGift) setCfgOpen(true);
   }, [search]); // eslint-disable-line
 
   const cartItem = P ? { name: `Black Week · ${P.title}${gift ? " (voucher)" : ""}`, price: net, currency: cur, id: `bw-${P.q}`, category: "black-week" } : null;
@@ -286,14 +286,78 @@ export default function BlackWeek() {
           </div>
         </section>
 
-        {/* ---------- CONFIGURATOR ---------- */}
-        <section className="bwc-sec bwc-cfg" id="konfigurator" ref={cfgRef}>
+        {/* ---------- CONFIGURATOR (teaser — the configurator itself is a full-screen window) ---------- */}
+        <section className="bwc-sec bwc-cfg" id="konfigurator">
           <div className="container">
             <h2 className="bwc-h2">Skonfiguruj swoje doświadczenie</h2>
             <p className="bwc-lead">Trzy kroki i gotowe. Bonus Black Friday pojawi się w koszyku automatycznie.</p>
-            <Steps steps={STEPS} idx={stepIdx} onPick={(i) => { if (i < stepIdx) { setStepIdx(i); setErr(""); toCfg(); } }} />
+            <ol className="bwc-how bwc-how--cfg">
+              {[["Wybierz program", "Sport Driving, Driver2Racer, Race Taxi, Heels on the Track czy Ice Driving?"], ["Dla kogo?", "Dla siebie albo na prezent. Na prezent dostajesz voucher na mail."], ["Dopasuj szczegóły", "Auto, liczba sesji, tor i termin, zależnie od programu."]].map(([b, d], i) => (
+                <li key={b} style={{ ["--i"]: i }}><span className="bwc-metal">{i + 1}</span><b>{b}</b><p>{d}</p></li>
+              ))}
+            </ol>
+            <button type="button" className="bw-silver bwc-hero__cta bwc-cfg__open" onClick={startAny}>Otwórz konfigurator <i>›</i></button>
           </div>
-          <div className={`container bwc-grid is-${step}`}>
+        </section>
+
+        {/* ---------- HOLIDAY VOUCHERS ---------- */}
+        <section className="bwc-sec bwc-xmas">
+          <div className="container bwc-xmas__in">
+            <div>
+              <h2 className="bwc-h2">Prezent dla kogoś, kto „ma wszystko”</h2>
+              <p className="bwc-lead">Promocja Black Friday obejmuje też vouchery świąteczne. Kupujesz teraz, dostajesz więcej, a wręczasz pod choinką. Voucher kupisz online i od razu masz go na mailu. Możesz też zrobić prezent sobie, nikt nie musi wiedzieć.</p>
+              <ul className="bwc-ticks">
+                <li>Voucher na mail od razu po zakupie</li>
+                <li>Gotowy do wydruku albo wysłania</li>
+                <li>Ważny 12 miesięcy</li>
+              </ul>
+              <button type="button" className="bw-silver bwc-xmas__cta" onClick={startGift}>Kup voucher świąteczny <i>›</i></button>
+            </div>
+            <div className="bwc-xmas__v"><GiftVoucher lang="pl" name="Ciebie" title="SZKOLENIE JAZDY SPORTOWEJ NA TORZE" lines={["Black Friday Weeks", "+ bonus do każdego programu"]} /></div>
+          </div>
+        </section>
+
+        {/* ---------- HOW IT WORKS ---------- */}
+        <section className="bwc-sec">
+          <div className="container">
+            <h2 className="bwc-h2">Jak to działa</h2>
+            <ol className="bwc-how">
+              {[["Wybierasz.", "Program z bonusem Black Friday."], ["Kupujesz.", "Bonus dolicza się automatycznie, bez kodów."], ["Jedziesz albo dajesz w prezencie.", "Termin wybierasz sam, a voucher od razu ląduje na mailu."]].map(([b, s], i) => (
+                <li key={b} style={{ ["--i"]: i }}><span className="bwc-metal">{i + 1}</span><b>{b}</b><p>{s}</p></li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* ---------- FAQ ---------- */}
+        <section className="bwc-sec">
+          <div className="container bwc-faq">
+            <h2 className="bwc-h2">FAQ</h2>
+            {FAQ(iceTxt).map(([q, a]) => (
+              <details key={q}><summary>{q}</summary><p>{a}</p></details>
+            ))}
+          </div>
+        </section>
+
+        {/* ---------- FINAL CTA ---------- */}
+        <section className="bwc-final">
+          <div className="bwc-final__art" aria-hidden="true"><img src="/assets/bw/car.webp" alt="" width="790" height="520" loading="lazy" /></div>
+          <div className="container bwc-final__in">
+            <h2 className="bwc-metal bwc-final__t">Potem wracają standardowe warunki</h2>
+            <p className="bwc-lead">Black Friday Weeks kończy się 30 listopada. Nie czekaj, wybierz swoje doświadczenie i zgarnij bonus.</p>
+            <button type="button" className="bw-silver bwc-hero__cta" onClick={startAny}>Sprawdź ofertę Black Friday <i>›</i></button>
+          </div>
+        </section>
+      </main>
+      <Footer />
+      {cfgOpen && (
+        <div className="bwm" role="dialog" aria-modal="true" aria-label="Konfigurator Black Friday Weeks">
+          <div className="bwm__head">
+            <b className="bwc-metal bwm__brand">BLACK FRIDAY WEEKS</b>
+            <Steps steps={STEPS} idx={stepIdx} onPick={(i) => { if (i < stepIdx) { setStepIdx(i); setErr(""); toCfg(); } }} />
+            <button type="button" className="bwm__x" onClick={() => setCfgOpen(false)} aria-label="Zamknij konfigurator"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg></button>
+          </div>
+          <div className={`bwm__body bwc-grid is-${step}`} ref={bodyRef}>
             <div className="bwc-main">
               <div className="bwc-card" key={step}>
                 <span className="bwc-steptag">KROK {stepIdx + 1} / {STEPS.length}</span>
@@ -536,7 +600,7 @@ export default function BlackWeek() {
                       {gift && <div><dt>Dostawa</dt><dd>{delivery === "inpost" ? `Wydruk w kopercie · Paczkomat ${inpost.locker.toUpperCase()}${inpost.point ? ` (${addressOf(inpost.point)})` : ""} + e-mail` : `E-mail · ${form.email}`}</dd></div>}
                       {when && <div><dt>Termin</dt><dd>{when}</dd></div>}
                       <div className="is-gift"><dt>Bonus Black Friday</dt><dd>{gifts.join(" · ")}</dd></div>
-                      <div><dt>Zamawia</dt><dd>{form.full_name} · {form.email} · {form.phone}</dd></div>
+                      <div className="is-who"><dt>Zamawia</dt><dd>{form.full_name} · {form.email} · {form.phone}</dd></div>
                       {inv.want && <div><dt>Faktura</dt><dd>{inv.company} · NIP {inv.nip}</dd></div>}
                       <div><dt>Cena</dt><dd>{money(net)} netto</dd></div>
                       {fee > 0 && <div><dt>Wysyłka InPost</dt><dd>{fmtZl(fee)} netto · {fmtMoney(gross(fee))} brutto</dd></div>}
@@ -553,13 +617,6 @@ export default function BlackWeek() {
               </div>
 
               {err && <div className="bwc-err" role="alert">{err}</div>}
-              {step !== "program" && (
-                <div className={`bwc-foot ${cfgInView ? "" : "is-away"}`}>
-                  <button type="button" className="bwc-foot__back" onClick={goPrev}><i>‹</i>WSTECZ</button>
-                  <div className="bwc-foot__sum">{net > 0 && <><span>{P?.title}{gift ? " · voucher" : ""}</span><b>{money(net)} <small>netto</small></b></>}</div>
-                  {step !== "sum" && <button type="button" className={`bw-silver bwc-foot__next ${problem() ? "is-locked" : ""}`} onClick={goNext}>{nextLabel} <i>›</i></button>}
-                </div>
-              )}
             </div>
 
             {P && step !== "program" && (
@@ -579,58 +636,14 @@ export default function BlackWeek() {
               </aside>
             )}
           </div>
-        </section>
-
-        {/* ---------- HOLIDAY VOUCHERS ---------- */}
-        <section className="bwc-sec bwc-xmas">
-          <div className="container bwc-xmas__in">
-            <div>
-              <h2 className="bwc-h2">Prezent dla kogoś, kto „ma wszystko”</h2>
-              <p className="bwc-lead">Promocja Black Friday obejmuje też vouchery świąteczne. Kupujesz teraz, dostajesz więcej, a wręczasz pod choinką. Voucher kupisz online i od razu masz go na mailu. Możesz też zrobić prezent sobie, nikt nie musi wiedzieć.</p>
-              <ul className="bwc-ticks">
-                <li>Voucher na mail od razu po zakupie</li>
-                <li>Gotowy do wydruku albo wysłania</li>
-                <li>Ważny 12 miesięcy</li>
-              </ul>
-              <button type="button" className="bw-silver bwc-xmas__cta" onClick={startGift}>Kup voucher świąteczny <i>›</i></button>
-            </div>
-            <div className="bwc-xmas__v"><GiftVoucher lang="pl" name="Ciebie" title="SZKOLENIE JAZDY SPORTOWEJ NA TORZE" lines={["Black Friday Weeks", "+ bonus do każdego programu"]} /></div>
+          <div className="bwc-foot">
+            {stepIdx > 0 ? <button type="button" className="bwc-foot__back" onClick={goPrev}><i>‹</i>WSTECZ</button>
+              : <button type="button" className="bwc-foot__back" onClick={() => setCfgOpen(false)}><i>‹</i>ZAMKNIJ</button>}
+            <div className="bwc-foot__sum">{net > 0 && <><span>{P?.title}{gift ? " · voucher" : ""}</span><b>{money(net)} <small>netto</small></b></>}</div>
+            {step !== "sum" && step !== "program" && <button type="button" className={`bw-silver bwc-foot__next ${problem() ? "is-locked" : ""}`} onClick={goNext}>{nextLabel} <i>›</i></button>}
           </div>
-        </section>
-
-        {/* ---------- HOW IT WORKS ---------- */}
-        <section className="bwc-sec">
-          <div className="container">
-            <h2 className="bwc-h2">Jak to działa</h2>
-            <ol className="bwc-how">
-              {[["Wybierasz.", "Program z bonusem Black Friday."], ["Kupujesz.", "Bonus dolicza się automatycznie, bez kodów."], ["Jedziesz albo dajesz w prezencie.", "Termin wybierasz sam, a voucher od razu ląduje na mailu."]].map(([b, s], i) => (
-                <li key={b} style={{ ["--i"]: i }}><span className="bwc-metal">{i + 1}</span><b>{b}</b><p>{s}</p></li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        {/* ---------- FAQ ---------- */}
-        <section className="bwc-sec">
-          <div className="container bwc-faq">
-            <h2 className="bwc-h2">FAQ</h2>
-            {FAQ(iceTxt).map(([q, a]) => (
-              <details key={q}><summary>{q}</summary><p>{a}</p></details>
-            ))}
-          </div>
-        </section>
-
-        {/* ---------- FINAL CTA ---------- */}
-        <section className="bwc-final">
-          <div className="bwc-final__art" aria-hidden="true"><img src="/assets/bw/car.webp" alt="" width="790" height="520" loading="lazy" /></div>
-          <div className="container bwc-final__in">
-            <h2 className="bwc-metal bwc-final__t">Potem wracają standardowe warunki</h2>
-            <p className="bwc-lead">Black Friday Weeks kończy się 30 listopada. Nie czekaj, wybierz swoje doświadczenie i zgarnij bonus.</p>
-            <button type="button" className="bw-silver bwc-hero__cta" onClick={startAny}>Sprawdź ofertę Black Friday <i>›</i></button>
-          </div>
-        </section>
-      </main>
-      <Footer />
+        </div>
+      )}
       {paying && <PayOverlay create={() => createBwBooking(payload())} onClose={() => setPaying(false)} />}
       <CmsBar />
     </div>
